@@ -1,0 +1,65 @@
+# Tap House Rules — the Tap family house style. Copy verbatim into every *Tap repo.
+# 4-space indent (incl. namespaces), aligned declaration/assignment columns,
+# attached braces (else/catch break), comma-first ctor initializers,
+# left-bound pointers, 120-column limit. Layout only — naming and mandatory
+# braces are enforced separately by .clang-tidy (clang-format cannot check
+# identifier names, and its brace insertion is not semantically aware).
+Language: Cpp
+BasedOnStyle: LLVM
+Standard: c++20
+
+ColumnLimit: 120
+IndentWidth: 4
+AccessModifierOffset: -2
+NamespaceIndentation: All
+
+PointerAlignment: Left
+DerivePointerAlignment: false
+BreakBeforeBinaryOperators: NonAssignment
+SpaceBeforeCpp11BracedList: false
+AlwaysBreakTemplateDeclarations: Yes
+
+# Braces attach everywhere (including functions); only else/catch break.
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterFunction: false
+  AfterClass: false
+  AfterStruct: false
+  AfterNamespace: false
+  AfterControlStatement: Never
+  BeforeElse: true
+  BeforeCatch: true
+BreakConstructorInitializers: BeforeComma
+PackConstructorInitializers: Never
+
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignTrailingComments: true
+
+# Short accessor functions and lambdas may stay inline, but control-flow
+# statements never do: every if/for/while is braced AND expanded (see
+# .clang-tidy readability-braces-around-statements).
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortLambdasOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+
+BreakStringLiterals: false
+KeepEmptyLinesAtTheStartOfBlocks: false
+InsertNewlineAtEOF: true
+
+# Include ordering: main header (auto, priority 0) -> C++ standard ->
+# third-party -> this project. Regroup enforces it; blank lines between groups.
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  # C++ standard library: <angle> with no '/' and no '.' (e.g. <vector>)
+  - Regex: '^<[[:alnum:]_]+>$'
+    Priority: 2
+  # Other angle-bracket headers (third-party, e.g. <gtest/gtest.h>)
+  - Regex: '^<.*>$'
+    Priority: 3
+  # This project: quoted includes
+  - Regex: '^".*"$'
+    Priority: 4

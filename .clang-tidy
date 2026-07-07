@@ -1,0 +1,132 @@
+# Tap House Rules — naming + mandatory-braces enforcement. Copy verbatim into
+# every *Tap repo. This is what actually checks m_ members, k_ constants, snake_case
+# types/functions, PascalCase template parameters, and braces around every
+# control-flow body — clang-format cannot (and its InsertBraces is not
+# semantically aware). Scope is intentionally limited to these for now;
+# correctness/modernize checks can be layered on later.
+#
+# NOTE: WarningsAsErrors is intentionally NOT set here so local runs only warn.
+# CI passes --warnings-as-errors=readability-* to make the gate blocking.
+Checks: >
+  -*,
+  readability-identifier-naming,
+  readability-braces-around-statements
+# Analyze this project's own headers only (under include/); vendored third_party
+# and fetched deps live outside include/ and are excluded. Generated tables
+# (room_data.h, hrtf_data.h, tdesigns.h) live under include/ but carry
+# // NOLINTBEGIN(readability-identifier-naming) markers from their generators.
+# NOTE: clang-tidy uses llvm::Regex, which has NO negative lookahead — a
+# '^(?!...)' pattern silently matches nothing and disables the check.
+HeaderFilterRegex: '.*/(include|tests)/.*'
+
+# --- Linear-algebra notation carve-out --------------------------------------
+# The DSP math deliberately uses capitalized matrix/vector symbols (Y = SH
+# matrix, D = decoder, R = rotation, ...). Permit a leading-capital symbol with
+# an optional short subscript and _snake suffixes (Y, Yd, R9, Y_virtual). This
+# Also matrix products (DtD, YtD). Still rejects camelCase (frameCount).
+# Applied below per category via <Category>IgnoredRegexp.
+CheckOptions:
+  # --- Types: snake_case ---
+  - key: readability-identifier-naming.ClassCase
+    value: lower_case
+  - key: readability-identifier-naming.StructCase
+    value: lower_case
+  - key: readability-identifier-naming.UnionCase
+    value: lower_case
+  - key: readability-identifier-naming.EnumCase
+    value: lower_case
+  - key: readability-identifier-naming.EnumConstantCase
+    value: lower_case
+  - key: readability-identifier-naming.ScopedEnumConstantCase
+    value: lower_case
+  - key: readability-identifier-naming.TypeAliasCase
+    value: lower_case
+  - key: readability-identifier-naming.TypedefCase
+    value: lower_case
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
+
+  # --- Concepts: snake_case (like the types they constrain, per P1754) ---
+  - key: readability-identifier-naming.ConceptCase
+    value: lower_case
+
+  # --- Functions / methods: snake_case ---
+  - key: readability-identifier-naming.FunctionCase
+    value: lower_case
+  - key: readability-identifier-naming.MethodCase
+    value: lower_case
+
+  # --- Variables / parameters / locals: snake_case, no prefix ---
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+  - key: readability-identifier-naming.ParameterCase
+    value: lower_case
+  - key: readability-identifier-naming.LocalVariableCase
+    value: lower_case
+  - key: readability-identifier-naming.LocalConstantCase
+    value: lower_case
+  # Math-notation carve-out (see header): capitalized matrix/vector symbols.
+  - key: readability-identifier-naming.ParameterIgnoredRegexp
+    value: '^[A-Z][A-Za-z0-9]*(_[A-Za-z0-9]+)*$'
+  - key: readability-identifier-naming.LocalVariableIgnoredRegexp
+    value: '^[A-Z][A-Za-z0-9]*(_[A-Za-z0-9]+)*$'
+  - key: readability-identifier-naming.LocalConstantIgnoredRegexp
+    value: '^[A-Z][A-Za-z0-9]*(_[A-Za-z0-9]+)*$'
+  - key: readability-identifier-naming.VariableIgnoredRegexp
+    value: '^[A-Z][A-Za-z0-9]*(_[A-Za-z0-9]+)*$'
+
+  # --- Data members: private/protected get m_; public struct fields bare ---
+  - key: readability-identifier-naming.PrivateMemberCase
+    value: lower_case
+  - key: readability-identifier-naming.PrivateMemberPrefix
+    value: 'm_'
+  - key: readability-identifier-naming.ProtectedMemberCase
+    value: lower_case
+  - key: readability-identifier-naming.ProtectedMemberPrefix
+    value: 'm_'
+  - key: readability-identifier-naming.PublicMemberCase
+    value: lower_case
+  # const (non-static) data members are still members -> keep the m_ marker
+  - key: readability-identifier-naming.ConstantMemberCase
+    value: lower_case
+  - key: readability-identifier-naming.ConstantMemberPrefix
+    value: 'm_'
+  # Math-notation carve-out for capitalized matrix/vector member symbols.
+  - key: readability-identifier-naming.PublicMemberIgnoredRegexp
+    value: '^[A-Z][A-Za-z0-9]*(_[A-Za-z0-9]+)*$'
+  - key: readability-identifier-naming.PrivateMemberIgnoredRegexp
+    value: '^[A-Z][A-Za-z0-9]*(_[A-Za-z0-9]+)*$'
+  - key: readability-identifier-naming.ProtectedMemberIgnoredRegexp
+    value: '^[A-Z][A-Za-z0-9]*(_[A-Za-z0-9]+)*$'
+
+  # --- Constants at namespace/class/static scope: k_ + snake_case ---
+  # (constexpr/const LOCALS stay bare via LocalConstantCase above)
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: lower_case
+  - key: readability-identifier-naming.GlobalConstantPrefix
+    value: 'k_'
+  - key: readability-identifier-naming.ClassConstantCase
+    value: lower_case
+  - key: readability-identifier-naming.ClassConstantPrefix
+    value: 'k_'
+  - key: readability-identifier-naming.StaticConstantCase
+    value: lower_case
+  - key: readability-identifier-naming.StaticConstantPrefix
+    value: 'k_'
+
+  # --- Template parameters: PascalCase (the ONLY leading-capital names) ---
+  # Applies to type AND non-type params: template <int Order>, not <int order>.
+  - key: readability-identifier-naming.TemplateParameterCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypeTemplateParameterCase
+    value: CamelCase
+  - key: readability-identifier-naming.ValueTemplateParameterCase
+    value: CamelCase
+
+  # --- Macros: ALL_CAPS ---
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
+
+  # --- Mandatory braces: brace every control-flow body, even one-liners ---
+  - key: readability-braces-around-statements.ShortStatementLines
+    value: '0'

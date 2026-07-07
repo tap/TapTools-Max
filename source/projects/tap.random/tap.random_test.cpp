@@ -1,24 +1,26 @@
 /// @file
 /// @brief      Unit tests for tap.random.
-/// @copyright  Copyright 2001-2026 Timothy Place. Distributed under the New BSD License.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright 2001-2026 Timothy Place.
 
-#include "c74_min_unittest.h"   // required unit-test header (defines main via Catch)
-#include "tap.random.cpp"       // include the object source so we can instantiate it
-#include <cstdlib>
 #include <cstdint>
+#include <cstdlib>
+
+#include "c74_min_unittest.h" // required unit-test header (defines main via Catch)
+#include "tap.random.cpp"     // include the object source so we can instantiate it
 
 using namespace c74;
 
 // Reproduce the object's transform on a given rand() result.
 static double expected_from_rand(uint32_t r) {
-    r = r * 1103515245u + 12345u;
+    r           = r * 1103515245u + 12345u;
     const int i = static_cast<int>((r >> 16) & 077777);
     return static_cast<double>(i) / 16384.0 - 1.0;
 }
 
 static double last_float(max::t_sequence* seq) {
     REQUIRE(!seq->empty());
-    const auto& msg = seq->back();    // [sym("float"), value]
+    const auto& msg = seq->back(); // [sym("float"), value]
     return static_cast<double>(msg[1]);
 }
 
