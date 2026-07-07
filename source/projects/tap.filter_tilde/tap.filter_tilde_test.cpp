@@ -3,12 +3,13 @@
 /// @details    The mock kernel reports a samplerate of 44100 Hz (see c74_mock.cpp / sys_getsr),
 ///             so the object's samplerate() returns 44100 and the expected coefficient numbers
 ///             below are derived from the RBJ Audio EQ Cookbook formulas at Fs = 44100.
-/// @copyright  Copyright 1999-2026 Timothy Place. Distributed under the New BSD License.
-
-#include "c74_min_unittest.h"      // required unit-test header (defines main via Catch)
-#include "tap.filter_tilde.cpp"    // include the object source so we can instantiate it
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright 1999-2026 Timothy Place.
 
 #include <cmath>
+
+#include "c74_min_unittest.h"   // required unit-test header (defines main via Catch)
+#include "tap.filter_tilde.cpp" // include the object source so we can instantiate it
 
 // Run a coefficient set as a Transposed Direct Form II biquad over a block of input, returning the
 // last output sample (after the filter has settled). Mirrors the runtime in operator().
@@ -23,7 +24,7 @@ static double run_tdf2(const filter::coeffs& c, const std::vector<double>& in) {
 }
 
 SCENARIO("tap.filter~ instantiates with the expected defaults") {
-    ext_main(nullptr);    // configure the class (required once per test executable)
+    ext_main(nullptr); // configure the class (required once per test executable)
 
     GIVEN("a default instance") {
         test_wrapper<filter> an_instance;
@@ -74,7 +75,7 @@ SCENARIO("tap.filter~ lowpass passes DC and attenuates high frequencies") {
 
         WHEN("a DC (unity) signal is filtered") {
             std::vector<double> dc(4096, 1.0);
-            double settled = run_tdf2(c, dc);
+            double              settled = run_tdf2(c, dc);
             THEN("the output settles to ~unity (the lowpass passes DC)") {
                 REQUIRE(settled == Approx(1.0).epsilon(0.001));
             }
@@ -83,19 +84,21 @@ SCENARIO("tap.filter~ lowpass passes DC and attenuates high frequencies") {
         WHEN("a high-frequency (Nyquist-quarter) signal is filtered") {
             // alternating-ish high tone near 11 kHz at Fs = 44100; expect strong attenuation.
             std::vector<double> hi(8192);
-            const double w = 2.0 * M_PI * 11025.0 / 44100.0;
-            for (size_t i = 0; i < hi.size(); ++i)
+            const double        w = 2.0 * M_PI * 11025.0 / 44100.0;
+            for (size_t i = 0; i < hi.size(); ++i) {
                 hi[i] = std::sin(w * static_cast<double>(i));
+            }
 
             double peak_out = 0.0;
             double z1 = 0.0, z2 = 0.0;
             for (size_t i = 0; i < hi.size(); ++i) {
                 double x = hi[i];
                 double y = c.b0 * x + z1;
-                z1 = c.b1 * x - c.a1 * y + z2;
-                z2 = c.b2 * x - c.a2 * y;
-                if (i > 2048 && std::abs(y) > peak_out)    // measure after settling
+                z1       = c.b1 * x - c.a1 * y + z2;
+                z2       = c.b2 * x - c.a2 * y;
+                if (i > 2048 && std::abs(y) > peak_out) { // measure after settling
                     peak_out = std::abs(y);
+                }
             }
             THEN("the high-frequency content is strongly attenuated (< 0.1 of input peak)") {
                 REQUIRE(peak_out < 0.1);
@@ -115,7 +118,7 @@ SCENARIO("tap.filter~ recomputes coefficients when the mode changes") {
 
         WHEN("the mode is switched to highpass") {
             my_object.mode = symbol("highpass");
-            auto hp = my_object.compute(1000.0);
+            auto hp        = my_object.compute(1000.0);
 
             THEN("the feedforward coefficients differ from the lowpass set") {
                 REQUIRE(hp.b0 != Approx(lp.b0));

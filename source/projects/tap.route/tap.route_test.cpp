@@ -1,15 +1,16 @@
 /// @file
 /// @brief      Unit tests for tap.route.
-/// @copyright  Copyright 2003-2026 Timothy Place. Distributed under the New BSD License.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright 2003-2026 Timothy Place.
 
-#include "c74_min_unittest.h"   // required unit-test header (defines main via Catch)
-#include "tap.route.cpp"        // include the object source so we can instantiate it
+#include "c74_min_unittest.h" // required unit-test header (defines main via Catch)
+#include "tap.route.cpp"      // include the object source so we can instantiate it
 
 using namespace c74;
 
 // Outlet indices: 0 = matched, 1 = unmatched, 2 = dump.
-static constexpr int OUT_MATCHED   = 0;
-static constexpr int OUT_UNMATCHED = 1;
+static constexpr int k_out_matched   = 0;
+static constexpr int k_out_unmatched = 1;
 
 SCENARIO("tap.route instantiates with the documented defaults") {
     ext_main(nullptr);
@@ -39,10 +40,10 @@ SCENARIO("tap.route sends matching messages out the matched outlet and others ou
     GIVEN("an instance watching position 1 for the symbol \"foo\"") {
         test_wrapper<route> an_instance;
         route&              my_object = an_instance;
-        my_object.searchstring = symbol("foo");
+        my_object.searchstring        = symbol("foo");
 
-        auto* matched   = max::object_getoutput(my_object.maxobj(), OUT_MATCHED);
-        auto* unmatched = max::object_getoutput(my_object.maxobj(), OUT_UNMATCHED);
+        auto* matched   = max::object_getoutput(my_object.maxobj(), k_out_matched);
+        auto* unmatched = max::object_getoutput(my_object.maxobj(), k_out_unmatched);
 
         WHEN("a message beginning with foo arrives") {
             matched->clear();
@@ -81,11 +82,11 @@ SCENARIO("tap.route only tests watched positions") {
     GIVEN("an instance watching position 2 for the symbol \"foo\"") {
         test_wrapper<route> an_instance;
         route&              my_object = an_instance;
-        my_object.searchstring   = symbol("foo");
-        my_object.searchpositions = atoms{ 2 };
+        my_object.searchstring        = symbol("foo");
+        my_object.searchpositions     = atoms{2};
 
-        auto* matched   = max::object_getoutput(my_object.maxobj(), OUT_MATCHED);
-        auto* unmatched = max::object_getoutput(my_object.maxobj(), OUT_UNMATCHED);
+        auto* matched   = max::object_getoutput(my_object.maxobj(), k_out_matched);
+        auto* unmatched = max::object_getoutput(my_object.maxobj(), k_out_unmatched);
 
         WHEN("foo appears at position 2") {
             matched->clear();
@@ -117,10 +118,10 @@ SCENARIO("tap.route matches int and float tokens by their string rendering") {
     GIVEN("an instance watching position 1 for the symbol \"5\"") {
         test_wrapper<route> an_instance;
         route&              my_object = an_instance;
-        my_object.searchstring = symbol("5");
+        my_object.searchstring        = symbol("5");
 
-        auto* matched   = max::object_getoutput(my_object.maxobj(), OUT_MATCHED);
-        auto* unmatched = max::object_getoutput(my_object.maxobj(), OUT_UNMATCHED);
+        auto* matched   = max::object_getoutput(my_object.maxobj(), k_out_matched);
+        auto* unmatched = max::object_getoutput(my_object.maxobj(), k_out_unmatched);
 
         WHEN("an int 5 arrives as a list") {
             matched->clear();
@@ -152,11 +153,11 @@ SCENARIO("tap.route partialmatch matches a leading prefix") {
     GIVEN("an instance with partialmatch on, searching for \"foo\"") {
         test_wrapper<route> an_instance;
         route&              my_object = an_instance;
-        my_object.searchstring = symbol("foo");
-        my_object.partialmatch = true;
+        my_object.searchstring        = symbol("foo");
+        my_object.partialmatch        = true;
 
-        auto* matched   = max::object_getoutput(my_object.maxobj(), OUT_MATCHED);
-        auto* unmatched = max::object_getoutput(my_object.maxobj(), OUT_UNMATCHED);
+        auto* matched   = max::object_getoutput(my_object.maxobj(), k_out_matched);
+        auto* unmatched = max::object_getoutput(my_object.maxobj(), k_out_unmatched);
 
         WHEN("a token begins with foo") {
             matched->clear();

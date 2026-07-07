@@ -1,9 +1,10 @@
 /// @file
 /// @brief      Unit tests for tap.delay.
-/// @copyright  Copyright 1999-2026 Timothy Place. Distributed under the New BSD License.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright 1999-2026 Timothy Place.
 
-#include "c74_min_unittest.h"   // required unit-test header (defines main via Catch)
-#include "tap.delay.cpp"        // include the object source so we can instantiate it
+#include "c74_min_unittest.h" // required unit-test header (defines main via Catch)
+#include "tap.delay.cpp"      // include the object source so we can instantiate it
 
 using namespace c74;
 
@@ -53,7 +54,7 @@ SCENARIO("tap.delay sets the delay time from a number to the right inlet") {
         delay&              my_object = an_instance;
 
         WHEN("an int arrives in the right inlet (inlet 1)") {
-            my_object.m_int(atoms{ 75 }, 1);
+            my_object.m_int(atoms{75}, 1);
 
             THEN("delaytime updates to that value, and the message is not delayed") {
                 REQUIRE(static_cast<double>(my_object.delaytime) == 75.0);
@@ -61,7 +62,7 @@ SCENARIO("tap.delay sets the delay time from a number to the right inlet") {
         }
 
         WHEN("a float arrives in the right inlet (inlet 1)") {
-            my_object.m_float(atoms{ 42.5 }, 1);
+            my_object.m_float(atoms{42.5}, 1);
 
             THEN("delaytime updates to the float value") {
                 REQUIRE(static_cast<double>(my_object.delaytime) == 42.5);
@@ -76,11 +77,11 @@ SCENARIO("tap.delay stop cancels the pending message without error") {
     GIVEN("a default instance with a left-inlet input scheduled") {
         test_wrapper<delay> an_instance;
         delay&              my_object = an_instance;
-        my_object.delaytime = 1000.0;        // long delay so it will not fire during the test
+        my_object.delaytime           = 1000.0; // long delay so it will not fire during the test
 
         WHEN("a message is scheduled and then stopped") {
-            my_object.m_int(atoms{ 5 }, 0);   // schedule into the left inlet
-            my_object.stop();                 // cancel the pending timer
+            my_object.m_int(atoms{5}, 0); // schedule into the left inlet
+            my_object.stop();             // cancel the pending timer
 
             THEN("the object remains in a valid state with its delaytime intact") {
                 // The timer is cancelled; we can only assert that the documented attribute

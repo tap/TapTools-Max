@@ -1,9 +1,10 @@
 /// @file
 /// @brief      Unit tests for tap.bits.
-/// @copyright  Copyright 2003-2026 Timothy Place. Distributed under the New BSD License.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright 2003-2026 Timothy Place.
 
-#include "c74_min_unittest.h"   // required unit-test header (defines main via Catch)
-#include "tap.bits.cpp"         // include the object source so we can instantiate it
+#include "c74_min_unittest.h" // required unit-test header (defines main via Catch)
+#include "tap.bits.cpp"       // include the object source so we can instantiate it
 
 using namespace c74;
 
@@ -63,7 +64,7 @@ SCENARIO("tap.bits explodes an integer into a 32-bit list (ints2bits)") {
     GIVEN("an instance in ints2bits mode") {
         test_wrapper<bits> an_instance;
         bits&              my_object = an_instance;
-        my_object.mode = "ints2bits";
+        my_object.mode               = "ints2bits";
 
         auto* output = max::object_getoutput(my_object.maxobj(), 0);
 
@@ -79,8 +80,12 @@ SCENARIO("tap.bits explodes an integer into a 32-bit list (ints2bits)") {
                 // 5 occupies the three least-significant bits: positions 29,30,31 -> 1,0,1
                 for (int i = 0; i < 32; ++i) {
                     long expected = 0;
-                    if (i == 29) expected = 1;   // bit value 4
-                    if (i == 31) expected = 1;   // bit value 1
+                    if (i == 29) {
+                        expected = 1; // bit value 4
+                    }
+                    if (i == 31) {
+                        expected = 1; // bit value 1
+                    }
                     INFO("bit position " << i);
                     REQUIRE(static_cast<long>(bitlist[i]) == expected);
                 }
@@ -107,10 +112,10 @@ SCENARIO("tap.bits round-trips an integer through ints2bits and bits2ints") {
     GIVEN("two instances, one per mode") {
         test_wrapper<bits> exploder_w;
         bits&              exploder = exploder_w;
-        exploder.mode = "ints2bits";
+        exploder.mode               = "ints2bits";
 
         test_wrapper<bits> packer_w;
-        bits&              packer = packer_w;   // default bits2ints
+        bits&              packer = packer_w; // default bits2ints
 
         auto* explode_out = max::object_getoutput(exploder.maxobj(), 0);
         auto* pack_out    = max::object_getoutput(packer.maxobj(), 0);
@@ -118,7 +123,7 @@ SCENARIO("tap.bits round-trips an integer through ints2bits and bits2ints") {
         THEN("exploding 42 and re-packing yields 42") {
             explode_out->clear();
             exploder.number(atoms{42});
-            const atoms bitlist = (*explode_out)[0];   // 32 bits
+            const atoms bitlist = (*explode_out)[0]; // 32 bits
 
             pack_out->clear();
             packer.list_msg(bitlist);
@@ -133,8 +138,8 @@ SCENARIO("tap.bits formats integers for a matrixctrl (ints2matrixctrl)") {
     GIVEN("an instance in ints2matrixctrl mode with width 4") {
         test_wrapper<bits> an_instance;
         bits&              my_object = an_instance;
-        my_object.mode = "ints2matrixctrl";
-        my_object.matrix_width = 4;
+        my_object.mode               = "ints2matrixctrl";
+        my_object.matrix_width       = 4;
 
         auto* output = max::object_getoutput(my_object.maxobj(), 0);
 
@@ -145,12 +150,12 @@ SCENARIO("tap.bits formats integers for a matrixctrl (ints2matrixctrl)") {
             THEN("width [column row state] triples are emitted, LSB first") {
                 // 5 = 0b0101. For column j=0, bits 0..3 = 1,0,1,0.
                 REQUIRE(output->size() == 4);
-                const long expected_state[4] = { 1, 0, 1, 0 };
+                const long expected_state[4] = {1, 0, 1, 0};
                 for (int col = 0; col < 4; ++col) {
-                    const auto& triple = (*output)[col];   // [col, row, state]
+                    const auto& triple = (*output)[col]; // [col, row, state]
                     REQUIRE(triple.size() == 3);
-                    REQUIRE(static_cast<long>(triple[0]) == col);    // column index
-                    REQUIRE(static_cast<long>(triple[1]) == 0);      // row index (input #0)
+                    REQUIRE(static_cast<long>(triple[0]) == col); // column index
+                    REQUIRE(static_cast<long>(triple[1]) == 0);   // row index (input #0)
                     INFO("column " << col);
                     REQUIRE(static_cast<long>(triple[2]) == expected_state[col]);
                 }

@@ -25,83 +25,87 @@
 ///                 is the one intentional behavioral change from the legacy code.
 ///
 /// @author     Timothy Place
-/// @copyright  Copyright 2002-2026 Timothy Place. Distributed under the New BSD License.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright 2002-2026 Timothy Place.
 
 #include "c74_min.h"
 
 using namespace c74::min;
 
-
 // Portable clip, replacing Jamoma's TTClip<float>() used by the original.
-template<typename T>
+template <typename T>
 static T clip(T value, T low, T high) {
-    if (value < low)
+    if (value < low) {
         return low;
-    if (value > high)
+    }
+    if (value > high) {
         return high;
+    }
     return value;
 }
 
-
 class jit_kernel : public object<jit_kernel>, public matrix_operator<> {
-public:
-    MIN_DESCRIPTION { "Generate a radial (gaussian-style) kernel matrix. With no matrix input this "
-                      "object acts as a generator, filling the output matrix with a soft circular "
-                      "blob whose location, per-axis size, and overall weight are set by attributes." };
-    MIN_TAGS    { "jitter, generators" };
-    MIN_AUTHOR  { "Timothy Place" };
-    MIN_RELATED { "jit.gradient, jit.bfg, tap.jit.thresh" };
+  public:
+    MIN_DESCRIPTION{"Generate a radial (gaussian-style) kernel matrix. With no matrix input this "
+                    "object acts as a generator, filling the output matrix with a soft circular "
+                    "blob whose location, per-axis size, and overall weight are set by attributes."};
+    MIN_TAGS{"jitter, generators"};
+    MIN_AUTHOR{"Timothy Place"};
+    MIN_RELATED{"jit.gradient, jit.bfg, tap.jit.thresh"};
 
     // Generator MOP: declare ONLY a matrix outlet and no matrix inlet. The SDK keys off the absence
     // of a matrix inlet to wire this up as a generator (it owns its own outputmatrix / jit_matrix).
-    outlet<> output { this, "(matrix) the generated kernel", "matrix" };
+    outlet<> output{this, "(matrix) the generated kernel", "matrix"};
 
+    attribute<std::vector<double>> center{
+        this,
+        "center",
+        {0.5, 0.5},
+        description{"Coordinates (x y, normalized 0..1) for the center of the kernel within the matrix."}};
 
-    attribute<std::vector<double>> center { this, "center", { 0.5, 0.5 },
-        description { "Coordinates (x y, normalized 0..1) for the center of the kernel within the matrix." }
-    };
+    attribute<std::vector<double>> size{
+        this,
+        "size",
+        {1.0, 1.0},
+        description{"Horizontal and vertical size of the kernel (larger values produce a tighter blob)."}};
 
-    attribute<std::vector<double>> size { this, "size", { 1.0, 1.0 },
-        description { "Horizontal and vertical size of the kernel (larger values produce a tighter blob)." }
-    };
-
-    attribute<double> weight { this, "weight", 1.0,
-        description { "Overall weight applied to the kernel (larger values produce a tighter blob)." }
-    };
-
+    attribute<double> weight{
+        this, "weight", 1.0,
+        description{"Overall weight applied to the kernel (larger values produce a tighter blob)."}};
 
     // Called once per output cell by the MOP engine.
-    template<typename matrix_type, size_t planecount>
-    cell<matrix_type, planecount> calc_cell(cell<matrix_type, planecount> input, const matrix_info& info, matrix_coord& position) {
+    template <typename MatrixType, size_t Planecount>
+    cell<MatrixType, Planecount> calc_cell(cell<MatrixType, Planecount> input, const matrix_info& info,
+                                           matrix_coord& position) {
         // Start from the (zeroed, for a generator) input cell so only plane 1 is overwritten —
         // matching the original, which set plane 1 only and left the rest as-is.
-        cell<matrix_type, planecount> out = input;
+        cell<MatrixType, Planecount> out = input;
 
         const long width  = info.width();
         const long height = info.height();
 
         // The original swaps the center/size components and takes the reciprocal of size/weight.
-        const double center0 = center.get()[1];   // reversed (see header note)
+        const double center0 = center.get()[1]; // reversed (see header note)
         const double center1 = center.get()[0];
         const double size0   = 1.0 / size.get()[1];
         const double size1   = 1.0 / size.get()[0];
-        const double w        = 1.0 / weight;
+        const double w       = 1.0 / weight;
 
         // position.x() == column (j), position.y() == row (i)
         const long i = position.y();
         const long j = position.x();
 
         // Reproduce the original per-cell math exactly (including the crossed width/height usage).
-        float temp1 = static_cast<float>(i - (width  * center0));
+        float temp1 = static_cast<float>(i - (width * center0));
         float temp2 = static_cast<float>(j - (height * center1));
 
-        temp1 = temp1 / static_cast<float>(width  * 0.5);   // scale down
-        temp2 = temp2 / static_cast<float>(height * 0.5);   // scale down
-        temp1 = temp1 * static_cast<float>(size0);          // size: x
-        temp2 = temp2 * static_cast<float>(size1);          // size: y
+        temp1 = temp1 / static_cast<float>(width * 0.5);  // scale down
+        temp2 = temp2 / static_cast<float>(height * 0.5); // scale down
+        temp1 = temp1 * static_cast<float>(size0);        // size: x
+        temp2 = temp2 * static_cast<float>(size1);        // size: y
 
-        float temp3 = std::sqrt((temp1 * temp1) + (temp2 * temp2));   // pythagorean (radius)
-        temp3 = temp3 * static_cast<float>(w);                        // weight
+        float temp3 = std::sqrt((temp1 * temp1) + (temp2 * temp2)); // pythagorean (radius)
+        temp3       = temp3 * static_cast<float>(w);                // weight
 
         temp3 -= 1.0f;
         temp3 *= -1.0f;
@@ -109,12 +113,12 @@ public:
 
         // Original wrote float32 plane 1; here we cast to the matrix's element type for any output
         // type. Plane 1 is the only plane written (other planes pass through untouched).
-        if (planecount > 1)
-            out[1] = static_cast<matrix_type>(temp3);
+        if (Planecount > 1) {
+            out[1] = static_cast<MatrixType>(temp3);
+        }
 
         return out;
     }
 };
-
 
 MIN_EXTERNAL(jit_kernel);

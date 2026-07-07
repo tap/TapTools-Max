@@ -1,12 +1,13 @@
 /// @file
 /// @brief      Unit tests for tap.sift~.
-/// @copyright  Copyright 2000-2026 Timothy Place. Distributed under the New BSD License.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright 2000-2026 Timothy Place.
 
-#include "c74_min_unittest.h"     // required unit-test header (defines main via Catch)
-#include "tap.sift_tilde.cpp"     // include the object source so we can instantiate it
+#include "c74_min_unittest.h" // required unit-test header (defines main via Catch)
+#include "tap.sift_tilde.cpp" // include the object source so we can instantiate it
 
 SCENARIO("tap.sift~ instantiates with the expected defaults") {
-    ext_main(nullptr);    // configure the class (required once per test executable)
+    ext_main(nullptr); // configure the class (required once per test executable)
 
     GIVEN("a default instance (float-output mode)") {
         test_wrapper<sift> an_instance;

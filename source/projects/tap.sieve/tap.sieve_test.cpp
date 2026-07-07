@@ -1,9 +1,10 @@
 /// @file
 /// @brief      Unit tests for tap.sieve.
-/// @copyright  Copyright 2000-2026 Timothy Place. Distributed under the New BSD License.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright 2000-2026 Timothy Place.
 
-#include "c74_min_unittest.h"   // required unit-test header (defines main via Catch)
-#include "tap.sieve.cpp"        // include the object source so we can instantiate it
+#include "c74_min_unittest.h" // required unit-test header (defines main via Catch)
+#include "tap.sieve.cpp"      // include the object source so we can instantiate it
 
 using namespace c74;
 
@@ -26,7 +27,7 @@ SCENARIO("tap.sieve passes a matching value and blocks a non-matching one") {
     GIVEN("an instance set to match the value 5") {
         test_wrapper<sieve> an_instance;
         sieve&              my_object = an_instance;
-        my_object.value = 5;
+        my_object.value               = 5;
 
         auto* output = max::object_getoutput(my_object.maxobj(), 0);
 

@@ -1,9 +1,10 @@
 /// @file
 /// @brief      Unit tests for tap.crossfade~.
-/// @copyright  Copyright 2001-2026 Timothy Place. Distributed under the New BSD License.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright 2001-2026 Timothy Place.
 
-#include "c74_min_unittest.h"          // required unit-test header (defines main via Catch)
-#include "tap.crossfade_tilde.cpp"     // include the object source so we can instantiate it
+#include "c74_min_unittest.h"      // required unit-test header (defines main via Catch)
+#include "tap.crossfade_tilde.cpp" // include the object source so we can instantiate it
 
 // With no signal connected to the position inlet, operator() reads the `position` attribute, so
 // these tests set `position` directly and pass a dummy third argument.
@@ -54,19 +55,19 @@ SCENARIO("tap.crossfade~ linear curve via shape=1") {
     GIVEN("an instance with shape set to linear (index 1)") {
         test_wrapper<crossfade> an_instance;
         crossfade&              my_object = an_instance;
-        my_object.shape = 1;
+        my_object.shape                   = 1;
 
         THEN("the integer shape index round-trips") {
             REQUIRE(static_cast<int>(my_object.shape) == 1);
         }
         THEN("position 0.5 gives equal linear weights of 0.5") {
             my_object.position = 0.5;
-            REQUIRE(static_cast<double>(my_object(1.0, 0.0)) == APPROX(0.5));   // wa = 0.5
-            REQUIRE(static_cast<double>(my_object(0.0, 1.0)) == APPROX(0.5));   // wb = 0.5
+            REQUIRE(static_cast<double>(my_object(1.0, 0.0)) == APPROX(0.5)); // wa = 0.5
+            REQUIRE(static_cast<double>(my_object(0.0, 1.0)) == APPROX(0.5)); // wb = 0.5
         }
         THEN("position 0.25 gives wa=0.75, wb=0.25") {
             my_object.position = 0.25;
-            REQUIRE(static_cast<double>(my_object(1.0, 1.0)) == APPROX(1.0));   // 0.75 + 0.25
+            REQUIRE(static_cast<double>(my_object(1.0, 1.0)) == APPROX(1.0)); // 0.75 + 0.25
             REQUIRE(static_cast<double>(my_object(1.0, 0.0)) == APPROX(0.75));
         }
     }

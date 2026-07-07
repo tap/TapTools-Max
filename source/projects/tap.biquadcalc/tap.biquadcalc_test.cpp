@@ -1,9 +1,10 @@
 /// @file
 /// @brief      Unit tests for tap.biquadcalc.
-/// @copyright  Copyright 2004-2026 Timothy Place. Distributed under the New BSD License.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright 2004-2026 Timothy Place.
 
-#include "c74_min_unittest.h"     // required unit-test header (defines main via Catch)
-#include "tap.biquadcalc.cpp"     // include the object source so we can instantiate it
+#include "c74_min_unittest.h" // required unit-test header (defines main via Catch)
+#include "tap.biquadcalc.cpp" // include the object source so we can instantiate it
 
 using namespace c74;
 
@@ -13,8 +14,9 @@ static std::vector<double> last_coeffs(max::t_sequence* seq) {
     const auto& msg = seq->back();
     REQUIRE(msg.size() == 5);
     std::vector<double> out;
-    for (const auto& a : msg)
+    for (const auto& a : msg) {
         out.push_back(static_cast<double>(a));
+    }
     return out;
 }
 
@@ -63,15 +65,15 @@ SCENARIO("tap.biquadcalc computes lowpass coefficients for cf=1000 Q=1 sr=44100"
 
             THEN("the five coefficients match the known reference values") {
                 auto c = last_coeffs(output);
-                REQUIRE(c[0] == APPROX(0.0047304174129274516));   // a0
-                REQUIRE(c[1] == APPROX(0.009460834825854903));    // a1
-                REQUIRE(c[2] == APPROX(0.0047304174129274516));   // a2
-                REQUIRE(c[3] == APPROX(-1.8484969161333196));     // b1
-                REQUIRE(c[4] == APPROX(0.8674185857850293));      // b2
+                REQUIRE(c[0] == APPROX(0.0047304174129274516)); // a0
+                REQUIRE(c[1] == APPROX(0.009460834825854903));  // a1
+                REQUIRE(c[2] == APPROX(0.0047304174129274516)); // a2
+                REQUIRE(c[3] == APPROX(-1.8484969161333196));   // b1
+                REQUIRE(c[4] == APPROX(0.8674185857850293));    // b2
             }
 
             AND_THEN("the lowpass has unity DC gain: (a0+a1+a2)/(1+b1+b2) == 1") {
-                auto c = last_coeffs(output);
+                auto         c  = last_coeffs(output);
                 const double dc = (c[0] + c[1] + c[2]) / (1.0 + c[3] + c[4]);
                 REQUIRE(dc == APPROX(1.0));
             }
@@ -85,7 +87,7 @@ SCENARIO("tap.biquadcalc computes highpass coefficients for cf=1000 Q=1 sr=44100
     GIVEN("a highpass instance") {
         test_wrapper<biquadcalc> an_instance;
         biquadcalc&              my_object = an_instance;
-        my_object.filter_type = "highpass";
+        my_object.filter_type              = "highpass";
 
         auto* output = max::object_getoutput(my_object.maxobj(), 0);
 
@@ -95,11 +97,11 @@ SCENARIO("tap.biquadcalc computes highpass coefficients for cf=1000 Q=1 sr=44100
 
             THEN("the five coefficients match the known reference values") {
                 auto c = last_coeffs(output);
-                REQUIRE(c[0] == APPROX(0.9289788754795872));    // a0
-                REQUIRE(c[1] == APPROX(-1.8579577509591745));   // a1
-                REQUIRE(c[2] == APPROX(0.9289788754795872));    // a2
-                REQUIRE(c[3] == APPROX(-1.8484969161333196));   // b1
-                REQUIRE(c[4] == APPROX(0.8674185857850293));    // b2
+                REQUIRE(c[0] == APPROX(0.9289788754795872));  // a0
+                REQUIRE(c[1] == APPROX(-1.8579577509591745)); // a1
+                REQUIRE(c[2] == APPROX(0.9289788754795872));  // a2
+                REQUIRE(c[3] == APPROX(-1.8484969161333196)); // b1
+                REQUIRE(c[4] == APPROX(0.8674185857850293));  // b2
             }
         }
     }
@@ -111,7 +113,7 @@ SCENARIO("tap.biquadcalc computes bandpass and allpass coefficients") {
     GIVEN("a bandpass instance") {
         test_wrapper<biquadcalc> an_instance;
         biquadcalc&              my_object = an_instance;
-        my_object.filter_type = "bandpass";
+        my_object.filter_type              = "bandpass";
 
         auto* output = max::object_getoutput(my_object.maxobj(), 0);
 
@@ -121,11 +123,11 @@ SCENARIO("tap.biquadcalc computes bandpass and allpass coefficients") {
 
             THEN("the bandpass coefficients match the reference (a1 == 0)") {
                 auto c = last_coeffs(output);
-                REQUIRE(c[0] == APPROX(0.06629070710748529));    // a0
-                REQUIRE(c[1] == APPROX(0.0));                    // a1
-                REQUIRE(c[2] == APPROX(-0.06629070710748529));   // a2
-                REQUIRE(c[3] == APPROX(-1.8484969161333196));    // b1
-                REQUIRE(c[4] == APPROX(0.8674185857850293));     // b2
+                REQUIRE(c[0] == APPROX(0.06629070710748529));  // a0
+                REQUIRE(c[1] == APPROX(0.0));                  // a1
+                REQUIRE(c[2] == APPROX(-0.06629070710748529)); // a2
+                REQUIRE(c[3] == APPROX(-1.8484969161333196));  // b1
+                REQUIRE(c[4] == APPROX(0.8674185857850293));   // b2
             }
         }
     }
@@ -133,7 +135,7 @@ SCENARIO("tap.biquadcalc computes bandpass and allpass coefficients") {
     GIVEN("an allpass instance") {
         test_wrapper<biquadcalc> an_instance;
         biquadcalc&              my_object = an_instance;
-        my_object.filter_type = "allpass";
+        my_object.filter_type              = "allpass";
 
         auto* output = max::object_getoutput(my_object.maxobj(), 0);
 
@@ -143,11 +145,11 @@ SCENARIO("tap.biquadcalc computes bandpass and allpass coefficients") {
 
             THEN("the allpass coefficients match the reference (a2 == 1)") {
                 auto c = last_coeffs(output);
-                REQUIRE(c[0] == APPROX(0.8674185857850293));    // a0
-                REQUIRE(c[1] == APPROX(-1.8484969161333196));   // a1
-                REQUIRE(c[2] == APPROX(1.0));                   // a2
-                REQUIRE(c[3] == APPROX(-1.8484969161333196));   // b1
-                REQUIRE(c[4] == APPROX(0.8674185857850293));    // b2
+                REQUIRE(c[0] == APPROX(0.8674185857850293));  // a0
+                REQUIRE(c[1] == APPROX(-1.8484969161333196)); // a1
+                REQUIRE(c[2] == APPROX(1.0));                 // a2
+                REQUIRE(c[3] == APPROX(-1.8484969161333196)); // b1
+                REQUIRE(c[4] == APPROX(0.8674185857850293));  // b2
             }
         }
     }

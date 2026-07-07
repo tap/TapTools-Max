@@ -1,9 +1,10 @@
 /// @file
 /// @brief      Unit tests for tap.change.
-/// @copyright  Copyright 2002-2026 Timothy Place. Distributed under the New BSD License.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright 2002-2026 Timothy Place.
 
-#include "c74_min_unittest.h"   // required unit-test header (defines main via Catch)
-#include "tap.change.cpp"       // include the object source so we can instantiate it
+#include "c74_min_unittest.h" // required unit-test header (defines main via Catch)
+#include "tap.change.cpp"     // include the object source so we can instantiate it
 
 using namespace c74;
 
@@ -41,7 +42,7 @@ SCENARIO("tap.change filters out a repeated value") {
         auto* main_out = max::object_getoutput(my_object.maxobj(), 0);
         auto* bang_out = max::object_getoutput(my_object.maxobj(), 1);
 
-        my_object.m_int(atoms{5}, 0);   // primes the stored value
+        my_object.m_int(atoms{5}, 0); // primes the stored value
 
         WHEN("the same value 5 arrives again") {
             main_out->clear();

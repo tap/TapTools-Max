@@ -1,0 +1,47 @@
+name: Tap House Style
+
+# Enforces the shared Tap House Rules: a drift check against the canonical
+# TapHouse configs, a clang-format check, and clang-tidy (naming + mandatory
+# braces) over the externals' own sources.
+#
+# clang-tidy configures only (it works off the compile database) — it does not
+# build/link. Max externals don't link on Linux (min-devkit passes ld the macOS
+# relocatable-bundle flag -r), but every TU compiles clean against min-api.
+on: [push, pull_request]
+
+jobs:
+  drift:
+    # Fails if this repo's .clang-format/.clang-tidy/STYLE.md diverge from TapHouse.
+    uses: tap/taphouse/.github/workflows/drift-check.yml@v1
+    with:
+      ref: v1
+
+  clang-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install clang-format
+        run: sudo apt-get update && sudo apt-get install -y clang-format-18
+      - name: clang-format check
+        run: clang-format-18 --dry-run --Werror $(git ls-files 'source/projects/*.cpp')
+
+  clang-tidy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y clang-tidy-18 cmake python3
+      - name: Configure (compile database only; no build — Max doesn't link on Linux)
+        run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+      - name: clang-tidy (TapTools externals' own TUs)
+        run: |
+          files=$(python3 -c "import json; print('\n'.join(e['file'] for e in json.load(open('build/compile_commands.json')) if '/source/projects/' in e['file']))")
+          fail=0
+          for f in $files; do
+            out=$(clang-tidy-18 -p build -header-filter='.*/source/projects/.*' "$f" 2>/dev/null || true)
+            if echo "$out" | grep -qE "warning:|error:"; then echo "$out"; fail=1; fi
+          done
+          [ "$fail" -eq 0 ] && echo "clang-tidy clean." || { echo "::error::clang-tidy found violations"; exit 1; }

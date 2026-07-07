@@ -1,9 +1,10 @@
 /// @file
 /// @brief      Unit tests for tap.list.index.
-/// @copyright  Copyright 2005-2026 Timothy Place. Distributed under the New BSD License.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright 2005-2026 Timothy Place.
 
-#include "c74_min_unittest.h"     // required unit-test header (defines main via Catch)
-#include "tap.list.index.cpp"     // include the object source so we can instantiate it
+#include "c74_min_unittest.h" // required unit-test header (defines main via Catch)
+#include "tap.list.index.cpp" // include the object source so we can instantiate it
 
 using namespace c74;
 
@@ -58,8 +59,8 @@ SCENARIO("tap.list.index honors offset and onebased in list2indexed mode") {
     GIVEN("an instance with offset 10 and one-based indexing") {
         test_wrapper<list_index> an_instance;
         list_index&              my_object = an_instance;
-        my_object.offset   = 10;
-        my_object.onebased = true;
+        my_object.offset                   = 10;
+        my_object.onebased                 = true;
 
         auto* output = max::object_getoutput(my_object.maxobj(), 0);
 
@@ -84,7 +85,7 @@ SCENARIO("tap.list.index assembles a list from [index value] pairs (indexed2list
     GIVEN("an instance in indexed2list mode") {
         test_wrapper<list_index> an_instance;
         list_index&              my_object = an_instance;
-        my_object.mode = "indexed2list";
+        my_object.mode                     = "indexed2list";
 
         auto* output = max::object_getoutput(my_object.maxobj(), 0);
 
