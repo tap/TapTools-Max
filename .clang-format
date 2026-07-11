@@ -63,3 +63,12 @@ IncludeCategories:
   # This project: quoted includes
   - Regex: '^".*"$'
     Priority: 4
+
+# Min-DevKit declarative DSL (Max/Min externals: TapTools, AmbiTap-Max, ...).
+# MIN_FUNCTION / MIN_ARGUMENT_FUNCTION expand to a lambda; teach clang-format
+# their shape so attribute/message/argument setter bodies format as lambda
+# blocks instead of being shredded. Completely inert for repos that don't use
+# these macros (the pure-C++ libraries). Requires clang-format >= 15.
+Macros:
+  - 'MIN_FUNCTION=[](const atoms& args, int inlet) -> atoms'
+  - 'MIN_ARGUMENT_FUNCTION=[](const atom& arg, int index) -> void'

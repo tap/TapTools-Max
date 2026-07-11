@@ -32,30 +32,28 @@ class dcblock : public object<dcblock>, public sample_operator<1, 1> {
     message<> clear{this, "clear",
                     "Reset the filter's internal memory. "
                     "Useful for resetting the filter if it has blown up.",
-                    MIN_FUNCTION{m_x1 = 0.0;
-    m_y1 = 0.0;
-    return {};
-}
-}
-;
+                    MIN_FUNCTION{
+                        m_x1 = 0.0;
+                        m_y1 = 0.0;
+                        return {};
+                    }};
 
-sample operator()(sample x) {
-    if (bypass) {
-        return x;
+    sample operator()(sample x) {
+        if (bypass) {
+            return x;
+        }
+
+        const sample y = x - m_x1 + k_coefficient * m_y1;
+        m_x1           = x;
+        m_y1           = y;
+
+        return mute ? 0.0 : y;
     }
 
-    const sample y = x - m_x1 + k_coefficient * m_y1;
-    m_x1           = x;
-    m_y1           = y;
-
-    return mute ? 0.0 : y;
-}
-
-private:
-static constexpr sample k_coefficient{0.9997}; ///< feedback coefficient (matches Jamoma TTDCBlock)
-sample                  m_x1{0.0};             ///< previous input  (x[n-1])
-sample                  m_y1{0.0};             ///< previous output (y[n-1])
-}
-;
+  private:
+    static constexpr sample k_coefficient{0.9997}; ///< feedback coefficient (matches Jamoma TTDCBlock)
+    sample                  m_x1{0.0};             ///< previous input  (x[n-1])
+    sample                  m_y1{0.0};             ///< previous output (y[n-1])
+};
 
 MIN_EXTERNAL(dcblock);

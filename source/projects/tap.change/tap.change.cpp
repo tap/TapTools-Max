@@ -28,91 +28,91 @@ class change : public object<change> {
     outlet<> m_outlet_dump{this, "(anything) dumpout"};
 
     message<> m_int{this, "int", "Filter an integer.",
-                    MIN_FUNCTION{if (inlet == 0){
-                        if (is_novel(args)){m_outlet_main.send(static_cast<long>(args[0])); // re-emit as a true int
-} else {
-    m_outlet_bang.send("bang");
-}
-}
-remember(args);
-return {};
-}
-}
-;
+                    MIN_FUNCTION{
+                        if (inlet == 0) {
+                            if (is_novel(args)) {
+                                m_outlet_main.send(static_cast<long>(args[0])); // re-emit as a true int
+                            }
+                            else {
+                                m_outlet_bang.send("bang");
+                            }
+                        }
+                        remember(args);
+                        return {};
+                    }};
 
-message<> m_float{this, "float", "Filter a float.",
-                  MIN_FUNCTION{if (inlet == 0){
-                      if (is_novel(args)){m_outlet_main.send(static_cast<double>(args[0])); // re-emit as a true float
-}
-else {
-    m_outlet_bang.send("bang");
-}
-}
-remember(args);
-return {};
-}
-}
-;
+    message<> m_float{this, "float", "Filter a float.",
+                      MIN_FUNCTION{
+                          if (inlet == 0) {
+                              if (is_novel(args)) {
+                                  m_outlet_main.send(static_cast<double>(args[0])); // re-emit as a true float
+                              }
+                              else {
+                                  m_outlet_bang.send("bang");
+                              }
+                          }
+                          remember(args);
+                          return {};
+                      }};
 
-message<> m_list{this, "list", "Filter a list.",
-                 MIN_FUNCTION{if (inlet == 0){if (is_novel(args)){m_outlet_main.send(args);
-}
-else {
-    m_outlet_bang.send("bang");
-}
-}
-remember(args);
-return {};
-}
-}
-;
+    message<> m_list{this, "list", "Filter a list.",
+                     MIN_FUNCTION{
+                         if (inlet == 0) {
+                             if (is_novel(args)) {
+                                 m_outlet_main.send(args);
+                             }
+                             else {
+                                 m_outlet_bang.send("bang");
+                             }
+                         }
+                         remember(args);
+                         return {};
+                     }};
 
-// For an "anything" message Min prepends the selector, so args == { selector, contents... },
-// which is exactly the form needed to both compare and re-emit it faithfully.
-message<> m_anything{this, "anything", "Filter a symbol or arbitrary message.",
-                     MIN_FUNCTION{if (inlet == 0){if (is_novel(args)){m_outlet_main.send(args);
-}
-else {
-    m_outlet_bang.send("bang");
-}
-}
-remember(args);
-return {};
-}
-}
-;
+    // For an "anything" message Min prepends the selector, so args == { selector, contents... },
+    // which is exactly the form needed to both compare and re-emit it faithfully.
+    message<> m_anything{this, "anything", "Filter a symbol or arbitrary message.",
+                         MIN_FUNCTION{
+                             if (inlet == 0) {
+                                 if (is_novel(args)) {
+                                     m_outlet_main.send(args);
+                                 }
+                                 else {
+                                     m_outlet_bang.send("bang");
+                                 }
+                             }
+                             remember(args);
+                             return {};
+                         }};
 
-private:
-atoms m_previous{};        ///< the previous input, stored verbatim
-bool  m_have_input{false}; ///< false until the first input arrives (so it always passes)
+  private:
+    atoms m_previous{};        ///< the previous input, stored verbatim
+    bool  m_have_input{false}; ///< false until the first input arrives (so it always passes)
 
-/// True if the input differs from the previous input (and should be passed through).
-bool is_novel(const atoms& input) const {
-    return !m_have_input || !matches_previous(input);
-}
+    /// True if the input differs from the previous input (and should be passed through).
+    bool is_novel(const atoms& input) const { return !m_have_input || !matches_previous(input); }
 
-/// Store the input as the new comparison reference (both inlets do this).
-void remember(const atoms& input) {
-    m_previous   = input;
-    m_have_input = true;
-}
-
-/// Compare two messages for equality. A difference in atom *type* (e.g. int 5 vs float 5.)
-/// counts as a change — matching the behavior of the original tap.change.
-bool matches_previous(const atoms& input) const {
-    if (input.size() != m_previous.size()) {
-        return false;
+    /// Store the input as the new comparison reference (both inlets do this).
+    void remember(const atoms& input) {
+        m_previous   = input;
+        m_have_input = true;
     }
-    for (size_t i = 0; i < input.size(); ++i) {
-        const c74::max::t_atom& a = input[i];
-        const c74::max::t_atom& b = m_previous[i];
-        if (a.a_type != b.a_type || a.a_w.w_obj != b.a_w.w_obj) {
+
+    /// Compare two messages for equality. A difference in atom *type* (e.g. int 5 vs float 5.)
+    /// counts as a change — matching the behavior of the original tap.change.
+    bool matches_previous(const atoms& input) const {
+        if (input.size() != m_previous.size()) {
             return false;
         }
+        for (size_t i = 0; i < input.size(); ++i) {
+            const c74::max::t_atom& a = input[i];
+            const c74::max::t_atom& b = m_previous[i];
+            if (a.a_type != b.a_type || a.a_w.w_obj != b.a_w.w_obj) {
+                return false;
+            }
+        }
+        return true;
     }
-    return true;
-}
-}
-;
+};
 
 MIN_EXTERNAL(change);

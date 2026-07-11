@@ -33,39 +33,32 @@ class split : public object<split>, public sample_operator<3, 3> {
     attribute<number> high{this, "high", 1.0, description{"Upper limit of the in-range region."}};
 
     argument<number> low_arg{this, "low", "Initial lower limit (same as the low attribute).",
-                             MIN_ARGUMENT_FUNCTION{low = arg;
-}
-}
-;
+                             MIN_ARGUMENT_FUNCTION{ low = arg; }};
 
-argument<number> high_arg{this, "high", "Initial upper limit (same as the high attribute).",
-                          MIN_ARGUMENT_FUNCTION{high = arg;
-}
-}
-;
+    argument<number> high_arg{this, "high", "Initial upper limit (same as the high attribute).",
+                              MIN_ARGUMENT_FUNCTION{ high = arg; }};
 
-// Float to the 2nd inlet sets the low limit; to the 3rd inlet sets the high limit.
-message<> m_number{this, "number", "Set the low (inlet 2) or high (inlet 3) limit.",
-                   MIN_FUNCTION{if (inlet == 1){low = args[0];
-}
-else if (inlet == 2) {
-    high = args[0];
-}
-return {};
-}
-}
-;
+    // Float to the 2nd inlet sets the low limit; to the 3rd inlet sets the high limit.
+    message<> m_number{this, "number", "Set the low (inlet 2) or high (inlet 3) limit.",
+                       MIN_FUNCTION{
+                           if (inlet == 1) {
+                               low = args[0];
+                           }
+                           else if (inlet == 2) {
+                               high = args[0];
+                           }
+                           return {};
+                       }};
 
-samples<3> operator()(sample x, sample low_sig, sample high_sig) {
-    const double lo = m_in_low.has_signal_connection() ? low_sig : static_cast<double>(low);
-    const double hi = m_in_high.has_signal_connection() ? high_sig : static_cast<double>(high);
+    samples<3> operator()(sample x, sample low_sig, sample high_sig) {
+        const double lo = m_in_low.has_signal_connection() ? low_sig : static_cast<double>(low);
+        const double hi = m_in_high.has_signal_connection() ? high_sig : static_cast<double>(high);
 
-    if (x >= lo && x <= hi) {
-        return {x, 0.0, 1.0};
+        if (x >= lo && x <= hi) {
+            return {x, 0.0, 1.0};
+        }
+        return {0.0, x, 0.0};
     }
-    return {0.0, x, 0.0};
-}
-}
-;
+};
 
 MIN_EXTERNAL(split);

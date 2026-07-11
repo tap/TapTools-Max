@@ -52,123 +52,121 @@ class midimapper : public object<midimapper> {
         {0, 0, 0},
         description{"Flags [channel, value1, value2] for which incoming items to append to the output."}};
 
-    message<> mapto{this, "mapto", "Set the output message template.", MIN_FUNCTION{m_mapto = args;
-    return {};
-}
-}
-;
+    message<> mapto{this, "mapto", "Set the output message template.",
+                    MIN_FUNCTION{
+                        m_mapto = args;
+                        return {};
+                    }};
 
-message<>    int_msg{this, "int", "Program (inlet 4), aftertouch (5), bend (6), or channel (7).",
-                  MIN_FUNCTION{const long val = args[0];
-const symbol t = type;
-switch (inlet) {
-case 3:
-    if (t == "program" || t == "any") {
-        map_one(val);
-    }
-    break;
-case 4:
-    if (t == "touch" || t == "any") {
-        map_one(val);
-    }
-    break;
-case 5:
-    if (t == "bend" || t == "any") {
-        map_one(val);
-    }
-    break;
-case 6:
-    m_inchannel = val;
-    break;
-}
-return {};
-}
-}
-;
+    message<> int_msg{this, "int", "Program (inlet 4), aftertouch (5), bend (6), or channel (7).",
+                      MIN_FUNCTION{
+                          const long   val = args[0];
+                          const symbol t   = type;
+                          switch (inlet) {
+                          case 3:
+                              if (t == "program" || t == "any") {
+                                  map_one(val);
+                              }
+                              break;
+                          case 4:
+                              if (t == "touch" || t == "any") {
+                                  map_one(val);
+                              }
+                              break;
+                          case 5:
+                              if (t == "bend" || t == "any") {
+                                  map_one(val);
+                              }
+                              break;
+                          case 6:
+                              m_inchannel = val;
+                              break;
+                          }
+                          return {};
+                      }};
 
-message<> list_msg{this, "list", "Note (inlet 1), poly pressure (2), or control change (3).",
-                   MIN_FUNCTION{if (args.size() < 2){return {};
-}
-const long   v1 = args[0];
-const long   v2 = args[1];
-const symbol t  = type;
-switch (inlet) {
-case 0:
-    if (t == "note" || t == "any") {
-        map_two(v1, v2);
-    }
-    break;
-case 1:
-    if (t == "polypressure" || t == "any") {
-        map_two(v1, v2);
-    }
-    break;
-case 2:
-    if (t == "control" || t == "any") {
-        map_two(v1, v2);
-    }
-    break;
-}
-return {};
-}
-}
-;
+    message<> list_msg{this, "list", "Note (inlet 1), poly pressure (2), or control change (3).",
+                       MIN_FUNCTION{
+                           if (args.size() < 2) {
+                               return {};
+                           }
+                           const long   v1 = args[0];
+                           const long   v2 = args[1];
+                           const symbol t  = type;
+                           switch (inlet) {
+                           case 0:
+                               if (t == "note" || t == "any") {
+                                   map_two(v1, v2);
+                               }
+                               break;
+                           case 1:
+                               if (t == "polypressure" || t == "any") {
+                                   map_two(v1, v2);
+                               }
+                               break;
+                           case 2:
+                               if (t == "control" || t == "any") {
+                                   map_two(v1, v2);
+                               }
+                               break;
+                           }
+                           return {};
+                       }};
 
-private:
-atoms m_mapto;
-long  m_inchannel{0};
+  private:
+    atoms m_mapto;
+    long  m_inchannel{0};
 
-bool channel_matches() const {
-    const int ch = channel;
-    return (ch == m_inchannel) || (ch < 0);
-}
-
-int include_flag(size_t i) const {
-    const std::vector<int>& f = includes;
-    return (i < f.size()) ? f[i] : 0;
-}
-
-void map_one(long val) {
-    if (!channel_matches()) {
-        return;
-    }
-    if (static_cast<int>(match1) != static_cast<int>(val) && static_cast<int>(match1) >= 0) {
-        return;
+    bool channel_matches() const {
+        const int ch = channel;
+        return (ch == m_inchannel) || (ch < 0);
     }
 
-    atoms out = m_mapto;
-    if (include_flag(0)) {
-        out.push_back(static_cast<int>(m_inchannel));
-    }
-    if (include_flag(2)) {
-        out.push_back(static_cast<int>(val));
-    }
-    m_out.send(out);
-}
-
-void map_two(long val1, long val2) {
-    if (!channel_matches()) {
-        return;
-    }
-    const bool m1 = (static_cast<int>(match1) == static_cast<int>(val1)) || (static_cast<int>(match1) < 0);
-    const bool m2 = (static_cast<int>(match2) == static_cast<int>(val2)) || (static_cast<int>(match2) < 0);
-    if (!m1 || !m2) {
-        return;
+    int include_flag(size_t i) const {
+        const std::vector<int>& f = includes;
+        return (i < f.size()) ? f[i] : 0;
     }
 
-    atoms out = m_mapto;
-    if (include_flag(0)) {
-        out.push_back(static_cast<int>(m_inchannel));
+    void map_one(long val) {
+        if (!channel_matches()) {
+            return;
+        }
+        if (static_cast<int>(match1) != static_cast<int>(val) && static_cast<int>(match1) >= 0) {
+            return;
+        }
+
+        atoms out = m_mapto;
+        if (include_flag(0)) {
+            out.push_back(static_cast<int>(m_inchannel));
+        }
+        if (include_flag(2)) {
+            out.push_back(static_cast<int>(val));
+        }
+        m_out.send(out);
     }
-    if (include_flag(1)) {
-        out.push_back(static_cast<int>(val1));
+
+    void map_two(long val1, long val2) {
+        if (!channel_matches()) {
+            return;
+        }
+        const bool m1 = (static_cast<int>(match1) == static_cast<int>(val1)) || (static_cast<int>(match1) < 0);
+        const bool m2 = (static_cast<int>(match2) == static_cast<int>(val2)) || (static_cast<int>(match2) < 0);
+        if (!m1 || !m2) {
+            return;
+        }
+
+        atoms out = m_mapto;
+        if (include_flag(0)) {
+            out.push_back(static_cast<int>(m_inchannel));
+        }
+        if (include_flag(1)) {
+            out.push_back(static_cast<int>(val1));
+        }
+        if (include_flag(2)) {
+            out.push_back(static_cast<int>(val2));
+        }
+        m_out.send(out);
     }
-    if (include_flag(2)) {
-        out.push_back(static_cast<int>(val2));
-    }
-    m_out.send(out);
-}
-}
-;
+};
 
 MIN_EXTERNAL(midimapper);

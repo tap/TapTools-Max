@@ -30,52 +30,47 @@ class counter : public object<counter>, public sample_operator<1, 1> {
 
     attribute<symbol> direction{this, "direction", "up", range{"up", "down"}, description{"Count up or down."}};
 
-    attribute<int> init_value{this, "init_value", 0, setter{MIN_FUNCTION{m_stored = args[0];
-    return args;
-}
-}
-, description {
-    "Value the count is initialized and reset to."
-}
-}
-;
+    attribute<int> init_value{this, "init_value", 0, setter{MIN_FUNCTION{
+                                  m_stored = args[0];
+                                  return args;
+                              }},
+                              description{"Value the count is initialized and reset to."}};
 
-message<> set{this, "set", "Set the current count.", MIN_FUNCTION{m_stored = static_cast<int>(args[0]);
-return {};
-}
-}
-;
+    message<> set{this, "set", "Set the current count.",
+                  MIN_FUNCTION{
+                      m_stored = static_cast<int>(args[0]);
+                      return {};
+                  }};
 
-message<> reset{this, "reset", "Reset the count to init_value.", MIN_FUNCTION{m_stored = init_value;
-return {};
-}
-}
-;
+    message<> reset{this, "reset", "Reset the count to init_value.",
+                    MIN_FUNCTION{
+                        m_stored = init_value;
+                        return {};
+                    }};
 
-sample operator()(sample x) {
-    if (x != 0.0 && m_last == 0.0) { // rising edge from zero
-        const symbol dir = direction;
-        if (dir == "up") {
-            m_stored++;
-            if (m_stored > high_bound) {
-                m_stored = low_bound;
+    sample operator()(sample x) {
+        if (x != 0.0 && m_last == 0.0) { // rising edge from zero
+            const symbol dir = direction;
+            if (dir == "up") {
+                m_stored++;
+                if (m_stored > high_bound) {
+                    m_stored = low_bound;
+                }
+            }
+            else {
+                m_stored--;
+                if (m_stored < low_bound) {
+                    m_stored = high_bound;
+                }
             }
         }
-        else {
-            m_stored--;
-            if (m_stored < low_bound) {
-                m_stored = high_bound;
-            }
-        }
+        m_last = x;
+        return static_cast<sample>(m_stored);
     }
-    m_last = x;
-    return static_cast<sample>(m_stored);
-}
 
-private:
-long   m_stored{0};
-double m_last{0.0};
-}
-;
+  private:
+    long   m_stored{0};
+    double m_last{0.0};
+};
 
 MIN_EXTERNAL(counter);

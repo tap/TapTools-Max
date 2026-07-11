@@ -47,32 +47,30 @@ class crossfade : public object<crossfade>, public sample_operator<3, 1> {
                                            "Overridden by a signal connected to the right inlet."}};
 
     message<threadsafe::yes> m_number{this, "number", "Set the crossfade position (0..1).",
-                                      MIN_FUNCTION{position = args;
-    return {};
-}
-}
-;
+                                      MIN_FUNCTION{
+                                          position = args;
+                                          return {};
+                                      }};
 
-sample operator()(sample a, sample b, sample pos = 0.5) {
-    double p = m_in_pos.has_signal_connection() ? static_cast<double>(pos) : static_cast<double>(position);
-    p        = MIN_CLAMP(p, 0.0, 1.0);
+    sample operator()(sample a, sample b, sample pos = 0.5) {
+        double p = m_in_pos.has_signal_connection() ? static_cast<double>(pos) : static_cast<double>(position);
+        p        = MIN_CLAMP(p, 0.0, 1.0);
 
-    double wa, wb;
-    if (shape == equalpower) {
-        const double rad = p * k_half_pi;
-        wa               = std::cos(rad);
-        wb               = std::sin(rad);
+        double wa, wb;
+        if (shape == equalpower) {
+            const double rad = p * k_half_pi;
+            wa               = std::cos(rad);
+            wb               = std::sin(rad);
+        }
+        else {
+            wa = 1.0 - p;
+            wb = p;
+        }
+        return a * wa + b * wb;
     }
-    else {
-        wa = 1.0 - p;
-        wb = p;
-    }
-    return a * wa + b * wb;
-}
 
-private:
-static constexpr double k_half_pi{1.57079632679489661923};
-}
-;
+  private:
+    static constexpr double k_half_pi{1.57079632679489661923};
+};
 
 MIN_EXTERNAL(crossfade);

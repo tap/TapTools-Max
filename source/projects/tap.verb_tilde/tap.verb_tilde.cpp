@@ -308,361 +308,308 @@ class verb : public object<verb>, public sample_operator<2, 2> {
     outlet<> m_out_l{this, "(signal) left output", "signal"};
     outlet<> m_out_r{this, "(signal) right output", "signal"};
 
-    attribute<number> mix{this, "mix", 100.0,
-                          setter{MIN_FUNCTION{m_mix = MIN_CLAMP(static_cast<double>(args[0]), 0.0, 100.0) * 0.01;
-    return args;
-}
-}
-, description {
-    "Dry/wet mix, 0 (dry) to 100 (wet)."
-}
-}
-;
-attribute<number> gain{this, "gain", 0.0, setter{MIN_FUNCTION{m_gain = db_to_amp(args[0]);
-return args;
-}
-}
-, description {
-    "Output gain in decibels."
-}
-}
-;
-attribute<number> delay{this, "delay", 100.0, setter{MIN_FUNCTION{m_l.set_delay(args[0]);
-m_r.set_delay(args[0]);
-return args;
-}
-}
-, description {
-    "Base comb delay time in milliseconds (sets the room size)."
-}
-}
-;
-attribute<number> decay{this, "decay", 3.5, setter{MIN_FUNCTION{m_l.set_decay(args[0]);
-m_r.set_decay(args[0]);
-return args;
-}
-}
-, description {
-    "Reverb decay time in seconds."
-}
-}
-;
-attribute<number> damping{this, "damping", 20000.0, setter{MIN_FUNCTION{m_l.set_damping(args[0]);
-m_r.set_damping(args[0]);
-return args;
-}
-}
-, description {
-    "Cutoff (Hz) of the lowpass in each comb's feedback loop."
-}
-}
-;
-attribute<number> lowpass{this, "lowpass", 15000.0, setter{MIN_FUNCTION{m_l.set_lowpass(args[0]);
-m_r.set_lowpass(args[0]);
-return args;
-}
-}
-, description {
-    "Output lowpass cutoff in Hz."
-}
-}
-;
-attribute<number> modfreq{this, "modfreq", 0.1, setter{MIN_FUNCTION{m_l.set_modfreq(args[0]);
-m_r.set_modfreq(args[0]);
-return args;
-}
-}
-, description {
-    "Comb-delay modulation frequency in Hz."
-}
-}
-;
-attribute<number> moddepth{this, "moddepth", 0.1, setter{MIN_FUNCTION{m_l.set_moddepth(args[0]);
-m_r.set_moddepth(args[0]);
-return args;
-}
-}
-, description {
-    "Comb-delay modulation depth in milliseconds."
-}
-}
-;
-attribute<bool>   er{this, "er", true, description{"Include the early-reflection stage."}};
-attribute<bool>   dcblock{this, "dcblock", true, description{"Apply a DC blocker to the output."}};
-attribute<bool>   clip{this, "clip", false, description{"Hard-clip the output to +/-1."}};
-attribute<bool>   limit{this, "limit", true, description{"Apply a look-ahead limiter to the output."}};
-attribute<number> limiter_threshold{this, "limiter_threshold", 0.0,
-                                    setter{MIN_FUNCTION{m_lim_threshold = db_to_amp(args[0]);
-return args;
-}
-}
-, description {
-    "Limiter threshold in decibels."
-}
-}
-;
-attribute<int> limiter_lookahead{
-    this, "limiter_lookahead", 100,
-    setter{MIN_FUNCTION{m_lim_lookahead = std::clamp(static_cast<int>(args[0]), 1, k_lim_size - 1);
-m_lim_recip = 1.0 / static_cast<double>(m_lim_lookahead);
-return {m_lim_lookahead};
-}
-}
-, description {
-    "Limiter look-ahead in samples (1-255)."
-}
-}
-;
-attribute<number> limiter_release{this, "limiter_release", 1000.0, setter{MIN_FUNCTION{m_lim_release = args[0];
-set_recover();
-return args;
-}
-}
-, description {
-    "Limiter release time in milliseconds."
-}
-}
-;
-attribute<int> oversampling{this, "oversampling", 1, setter{MIN_FUNCTION{int v = static_cast<int>(args[0]);
-// Snap to the legacy factor set {1, 2, 4, 8}; anything else rounds down to the nearest.
-if (v >= 8) {
-    v = 8;
-}
-else if (v >= 4) {
-    v = 4;
-}
-else if (v >= 2) {
-    v = 2;
-}
-else {
-    v = 1;
-}
-m_oversampling = v;
-if (m_ready) { // skip during attribute construction; constructor calls it once cores exist
-    reconfigure_oversampling();
-}
-return {v};
-}
-}
-, description {
-    "Internal oversampling factor (1, 2, 4, or 8). When >1 the reverb core runs at "
-    "that multiple of the host sample rate, with antialiasing up/downsampling around "
-    "it [default: 1 = off]."
-}
-}
-;
-attribute<bool> bypass{this, "bypass", false, description{"Pass the input through unprocessed."}};
-attribute<bool> mute{this, "mute", false, description{"Silence the output."}};
-
-message<> clear{this, "clear", "Clear the reverb's internal state.", MIN_FUNCTION{m_l.clear();
-m_r.clear();
-m_up_l.clear();
-m_up_r.clear();
-m_down_l.clear();
-m_down_r.clear();
-reset_limiter();
-return {};
-}
-}
-;
-
-message<> dspsetup{this, "dspsetup", "Allocate buffers and recompute for the current sample rate.",
-                   MIN_FUNCTION{reconfigure_oversampling();
-reset_limiter();
-push_all();
-return {};
-}
-}
-;
-
-verb(const atoms& = {}) {
-    m_ready = true;
-    reconfigure_oversampling();
-    reset_limiter();
-}
-
-samples<2> operator()(sample in_l, sample in_r) {
-    if (mute) {
-        return {0.0, 0.0};
-    }
-    if (bypass) {
-        return {in_l, in_r};
-    }
-
-    double wl, wr;
-    if (m_oversampling == 1) {
-        // Factor 1: bypass the resampler entirely so the path is bit-identical to no oversampling.
-        wl = m_l.process(in_l, er);
-        wr = m_r.process(in_r, er);
-    }
-    else {
-        // Upsample by zero-stuffing (gain-compensated so the passband level is preserved), run
-        // the core once per oversampled subsample, then decimate through the anti-aliasing filter.
-        const int    N = m_oversampling;
-        const double g = static_cast<double>(N); // zero-stuff gain compensation
-        for (int k = 0; k < N; ++k) {
-            const double xl = (k == 0) ? in_l * g : 0.0;
-            const double xr = (k == 0) ? in_r * g : 0.0;
-            const double ul = m_up_l.process(xl);
-            const double ur = m_up_r.process(xr);
-            const double cl = m_l.process(ul, er);
-            const double cr = m_r.process(ur, er);
-            wl              = m_down_l.process(cl); // running the decimation lowpass on every subsample;
-            wr              = m_down_r.process(cr); // the value retained after the last subsample is the output
-        }
-    }
-
-    // equal-power dry/wet mix
-    const double wet_g = std::sin(m_mix * 1.57079632679489661923);
-    const double dry_g = std::cos(m_mix * 1.57079632679489661923);
-    double       out_l = (in_l * dry_g + wl * wet_g) * m_gain;
-    double       out_r = (in_r * dry_g + wr * wet_g) * m_gain;
-
-    if (dcblock) {
-        out_l = dc_block(out_l, m_dc_l);
-        out_r = dc_block(out_r, m_dc_r);
-    }
-    if (limit) {
-        limit_stereo(out_l, out_r);
-    }
-    if (clip) {
-        out_l = std::clamp(out_l, -1.0, 1.0);
-        out_r = std::clamp(out_r, -1.0, 1.0);
-    }
-    return {out_l, out_r};
-}
-
-private:
-struct dc_state {
-    double x1{0.0}, y1{0.0};
-};
-
-verb_core m_l, m_r;
-double    m_mix{1.0};
-double    m_gain{1.0};
-dc_state  m_dc_l, m_dc_r;
-
-// --- oversampling ---
-int       m_oversampling{1};
-aa_filter m_up_l, m_up_r;     // anti-imaging lowpass after zero-stuffing (upsample)
-aa_filter m_down_l, m_down_r; // anti-aliasing lowpass before decimation (downsample)
-
-// Re-prepare the reverb cores for the (possibly oversampled) core rate and set the
-// antialiasing filter cutoffs. Called from the constructor, dspsetup, and on factor change.
-void reconfigure_oversampling() {
-    const double host_sr = samplerate();
-    const double core_sr = host_sr * static_cast<double>(m_oversampling);
-
-    m_l.prepare(core_sr);
-    m_r.prepare(core_sr);
-    push_all();
-
-    // Cutoff at (just under) the host Nyquist so images/aliasing above it are suppressed.
-    const double cutoff = host_sr * 0.45;
-    for (auto* f : {&m_up_l, &m_up_r, &m_down_l, &m_down_r}) {
-        f->set(cutoff, core_sr);
-    }
-    m_up_l.clear();
-    m_up_r.clear();
-    m_down_l.clear();
-    m_down_r.clear();
-}
-
-static double dc_block(double x, dc_state& s) {
-    const double y = x - s.x1 + 0.9997 * s.y1;
-    s.x1           = x;
-    s.y1           = y;
-    return y;
-}
-
-void push_all() {
-    for (auto* c : {&m_l, &m_r}) {
-        c->set_delay(delay);
-        c->set_decay(decay);
-        c->set_damping(damping);
-        c->set_lowpass(lowpass);
-        c->set_modfreq(modfreq);
-        c->set_moddepth(moddepth);
-    }
-}
-
-// --- stereo look-ahead limiter (exponential recovery), matching tap.limi~ ---
-static constexpr int k_lim_size{256};
-
-double m_lim_threshold{1.0};
-int    m_lim_lookahead{100};
-double m_lim_recip{1.0 / 100.0};
-double m_lim_release{1000.0};
-double m_lim_recover{0.0};
-double m_lim_buf1[k_lim_size]{};
-double m_lim_buf2[k_lim_size]{};
-double m_lim_gain[k_lim_size]{};
-long   m_lim_bp{0};
-double m_lim_last{1.0};
-
-void set_recover() {
-    m_lim_recover = 1000.0 / (m_lim_release * samplerate());
-    if (m_lim_recover == 0.0) {
-        m_lim_recover = 1000.0 / (100000.0 * samplerate());
-    }
-    m_lim_recover *= 0.707; // exponential
-}
-
-void reset_limiter() {
-    for (int i = 0; i < k_lim_size; ++i) {
-        m_lim_buf1[i] = 0.0;
-        m_lim_buf2[i] = 0.0;
-        m_lim_gain[i] = 1.0;
-    }
-    m_lim_bp   = 0;
-    m_lim_last = 1.0;
-    set_recover();
-}
-
-void limit_stereo(double& l, double& r) {
-    m_lim_buf1[m_lim_bp] = l;
-    m_lim_buf2[m_lim_bp] = r;
-
-    const double peak    = std::max(std::abs(l), std::abs(r));
-    const double rising  = m_lim_last + m_lim_recover * ((m_lim_last > 0.01) ? m_lim_last : 1.0);
-    double       maybe   = (rising > m_lim_threshold) ? m_lim_threshold : rising;
-    m_lim_gain[m_lim_bp] = maybe;
-
-    if (peak * maybe > m_lim_threshold) {
-        const double curgain = m_lim_threshold / peak;
-        const double inc     = m_lim_threshold - curgain;
-        double       acc     = 0.0;
-        bool         stop    = false;
-        for (int i = 0; !stop && i < m_lim_lookahead; ++i) {
-            long ind = m_lim_bp - i;
-            if (ind < 0) {
-                ind += k_lim_size;
+    attribute<number> mix{this, "mix", 100.0, setter{MIN_FUNCTION{
+                              m_mix = MIN_CLAMP(static_cast<double>(args[0]), 0.0, 100.0) * 0.01;
+                              return args;
+                          }},
+                          description{"Dry/wet mix, 0 (dry) to 100 (wet)."}};
+    attribute<number> gain{this, "gain", 0.0, setter{MIN_FUNCTION{
+                               m_gain = db_to_amp(args[0]);
+                               return args;
+                           }},
+                           description{"Output gain in decibels."}};
+    attribute<number> delay{this, "delay", 100.0, setter{MIN_FUNCTION{
+                                m_l.set_delay(args[0]);
+                                m_r.set_delay(args[0]);
+                                return args;
+                            }},
+                            description{"Base comb delay time in milliseconds (sets the room size)."}};
+    attribute<number> decay{this, "decay", 3.5, setter{MIN_FUNCTION{
+                                m_l.set_decay(args[0]);
+                                m_r.set_decay(args[0]);
+                                return args;
+                            }},
+                            description{"Reverb decay time in seconds."}};
+    attribute<number> damping{this, "damping", 20000.0, setter{MIN_FUNCTION{
+                                  m_l.set_damping(args[0]);
+                                  m_r.set_damping(args[0]);
+                                  return args;
+                              }},
+                              description{"Cutoff (Hz) of the lowpass in each comb's feedback loop."}};
+    attribute<number> lowpass{this, "lowpass", 15000.0, setter{MIN_FUNCTION{
+                                  m_l.set_lowpass(args[0]);
+                                  m_r.set_lowpass(args[0]);
+                                  return args;
+                              }},
+                              description{"Output lowpass cutoff in Hz."}};
+    attribute<number> modfreq{this, "modfreq", 0.1, setter{MIN_FUNCTION{
+                                  m_l.set_modfreq(args[0]);
+                                  m_r.set_modfreq(args[0]);
+                                  return args;
+                              }},
+                              description{"Comb-delay modulation frequency in Hz."}};
+    attribute<number> moddepth{this, "moddepth", 0.1, setter{MIN_FUNCTION{
+                                   m_l.set_moddepth(args[0]);
+                                   m_r.set_moddepth(args[0]);
+                                   return args;
+                               }},
+                               description{"Comb-delay modulation depth in milliseconds."}};
+    attribute<bool>   er{this, "er", true, description{"Include the early-reflection stage."}};
+    attribute<bool>   dcblock{this, "dcblock", true, description{"Apply a DC blocker to the output."}};
+    attribute<bool>   clip{this, "clip", false, description{"Hard-clip the output to +/-1."}};
+    attribute<bool>   limit{this, "limit", true, description{"Apply a look-ahead limiter to the output."}};
+    attribute<number> limiter_threshold{this, "limiter_threshold", 0.0, setter{MIN_FUNCTION{
+                                            m_lim_threshold = db_to_amp(args[0]);
+                                            return args;
+                                        }},
+                                        description{"Limiter threshold in decibels."}};
+    attribute<int>    limiter_lookahead{this, "limiter_lookahead", 100, setter{MIN_FUNCTION{
+                                         m_lim_lookahead = std::clamp(static_cast<int>(args[0]), 1, k_lim_size - 1);
+                                         m_lim_recip     = 1.0 / static_cast<double>(m_lim_lookahead);
+                                         return {m_lim_lookahead};
+                                     }},
+                                     description{"Limiter look-ahead in samples (1-255)."}};
+    attribute<number> limiter_release{this, "limiter_release", 1000.0, setter{MIN_FUNCTION{
+                                          m_lim_release = args[0];
+                                          set_recover();
+                                          return args;
+                                      }},
+                                      description{"Limiter release time in milliseconds."}};
+    attribute<int>    oversampling{
+        this, "oversampling", 1, setter{MIN_FUNCTION{
+            int v = static_cast<int>(args[0]);
+            // Snap to the legacy factor set {1, 2, 4, 8}; anything else rounds down to the nearest.
+            if (v >= 8) {
+                v = 8;
             }
-            const double newgain = curgain + inc * (acc * acc);
-            if (newgain < m_lim_gain[ind]) {
-                m_lim_gain[ind] = newgain;
+            else if (v >= 4) {
+                v = 4;
+            }
+            else if (v >= 2) {
+                v = 2;
             }
             else {
-                stop = true;
+                v = 1;
             }
-            acc += m_lim_recip;
+            m_oversampling = v;
+            if (m_ready) { // skip during attribute construction; constructor calls it once cores exist
+                reconfigure_oversampling();
+            }
+            return {v};
+        }},
+        description{"Internal oversampling factor (1, 2, 4, or 8). When >1 the reverb core runs at "
+                       "that multiple of the host sample rate, with antialiasing up/downsampling around "
+                       "it [default: 1 = off]."}};
+    attribute<bool> bypass{this, "bypass", false, description{"Pass the input through unprocessed."}};
+    attribute<bool> mute{this, "mute", false, description{"Silence the output."}};
+
+    message<> clear{this, "clear", "Clear the reverb's internal state.",
+                    MIN_FUNCTION{
+                        m_l.clear();
+                        m_r.clear();
+                        m_up_l.clear();
+                        m_up_r.clear();
+                        m_down_l.clear();
+                        m_down_r.clear();
+                        reset_limiter();
+                        return {};
+                    }};
+
+    message<> dspsetup{this, "dspsetup", "Allocate buffers and recompute for the current sample rate.",
+                       MIN_FUNCTION{
+                           reconfigure_oversampling();
+                           reset_limiter();
+                           push_all();
+                           return {};
+                       }};
+
+    verb(const atoms& = {}) {
+        m_ready = true;
+        reconfigure_oversampling();
+        reset_limiter();
+    }
+
+    samples<2> operator()(sample in_l, sample in_r) {
+        if (mute) {
+            return {0.0, 0.0};
+        }
+        if (bypass) {
+            return {in_l, in_r};
+        }
+
+        double wl, wr;
+        if (m_oversampling == 1) {
+            // Factor 1: bypass the resampler entirely so the path is bit-identical to no oversampling.
+            wl = m_l.process(in_l, er);
+            wr = m_r.process(in_r, er);
+        }
+        else {
+            // Upsample by zero-stuffing (gain-compensated so the passband level is preserved), run
+            // the core once per oversampled subsample, then decimate through the anti-aliasing filter.
+            const int    N = m_oversampling;
+            const double g = static_cast<double>(N); // zero-stuff gain compensation
+            for (int k = 0; k < N; ++k) {
+                const double xl = (k == 0) ? in_l * g : 0.0;
+                const double xr = (k == 0) ? in_r * g : 0.0;
+                const double ul = m_up_l.process(xl);
+                const double ur = m_up_r.process(xr);
+                const double cl = m_l.process(ul, er);
+                const double cr = m_r.process(ur, er);
+                wl              = m_down_l.process(cl); // running the decimation lowpass on every subsample;
+                wr              = m_down_r.process(cr); // the value retained after the last subsample is the output
+            }
+        }
+
+        // equal-power dry/wet mix
+        const double wet_g = std::sin(m_mix * 1.57079632679489661923);
+        const double dry_g = std::cos(m_mix * 1.57079632679489661923);
+        double       out_l = (in_l * dry_g + wl * wet_g) * m_gain;
+        double       out_r = (in_r * dry_g + wr * wet_g) * m_gain;
+
+        if (dcblock) {
+            out_l = dc_block(out_l, m_dc_l);
+            out_r = dc_block(out_r, m_dc_r);
+        }
+        if (limit) {
+            limit_stereo(out_l, out_r);
+        }
+        if (clip) {
+            out_l = std::clamp(out_l, -1.0, 1.0);
+            out_r = std::clamp(out_r, -1.0, 1.0);
+        }
+        return {out_l, out_r};
+    }
+
+  private:
+    struct dc_state {
+        double x1{0.0}, y1{0.0};
+    };
+
+    verb_core m_l, m_r;
+    double    m_mix{1.0};
+    double    m_gain{1.0};
+    dc_state  m_dc_l, m_dc_r;
+
+    // --- oversampling ---
+    int       m_oversampling{1};
+    aa_filter m_up_l, m_up_r;     // anti-imaging lowpass after zero-stuffing (upsample)
+    aa_filter m_down_l, m_down_r; // anti-aliasing lowpass before decimation (downsample)
+
+    // Re-prepare the reverb cores for the (possibly oversampled) core rate and set the
+    // antialiasing filter cutoffs. Called from the constructor, dspsetup, and on factor change.
+    void reconfigure_oversampling() {
+        const double host_sr = samplerate();
+        const double core_sr = host_sr * static_cast<double>(m_oversampling);
+
+        m_l.prepare(core_sr);
+        m_r.prepare(core_sr);
+        push_all();
+
+        // Cutoff at (just under) the host Nyquist so images/aliasing above it are suppressed.
+        const double cutoff = host_sr * 0.45;
+        for (auto* f : {&m_up_l, &m_up_r, &m_down_l, &m_down_r}) {
+            f->set(cutoff, core_sr);
+        }
+        m_up_l.clear();
+        m_up_r.clear();
+        m_down_l.clear();
+        m_down_r.clear();
+    }
+
+    static double dc_block(double x, dc_state& s) {
+        const double y = x - s.x1 + 0.9997 * s.y1;
+        s.x1           = x;
+        s.y1           = y;
+        return y;
+    }
+
+    void push_all() {
+        for (auto* c : {&m_l, &m_r}) {
+            c->set_delay(delay);
+            c->set_decay(decay);
+            c->set_damping(damping);
+            c->set_lowpass(lowpass);
+            c->set_modfreq(modfreq);
+            c->set_moddepth(moddepth);
         }
     }
 
-    long bbp = m_lim_bp - m_lim_lookahead;
-    if (bbp < 0) {
-        bbp += k_lim_size;
+    // --- stereo look-ahead limiter (exponential recovery), matching tap.limi~ ---
+    static constexpr int k_lim_size{256};
+
+    double m_lim_threshold{1.0};
+    int    m_lim_lookahead{100};
+    double m_lim_recip{1.0 / 100.0};
+    double m_lim_release{1000.0};
+    double m_lim_recover{0.0};
+    double m_lim_buf1[k_lim_size]{};
+    double m_lim_buf2[k_lim_size]{};
+    double m_lim_gain[k_lim_size]{};
+    long   m_lim_bp{0};
+    double m_lim_last{1.0};
+
+    void set_recover() {
+        m_lim_recover = 1000.0 / (m_lim_release * samplerate());
+        if (m_lim_recover == 0.0) {
+            m_lim_recover = 1000.0 / (100000.0 * samplerate());
+        }
+        m_lim_recover *= 0.707; // exponential
     }
 
-    l = m_lim_buf1[bbp] * m_lim_gain[bbp];
-    r = m_lim_buf2[bbp] * m_lim_gain[bbp];
-
-    m_lim_last = m_lim_gain[m_lim_bp];
-    if (++m_lim_bp >= k_lim_size) {
-        m_lim_bp = 0;
+    void reset_limiter() {
+        for (int i = 0; i < k_lim_size; ++i) {
+            m_lim_buf1[i] = 0.0;
+            m_lim_buf2[i] = 0.0;
+            m_lim_gain[i] = 1.0;
+        }
+        m_lim_bp   = 0;
+        m_lim_last = 1.0;
+        set_recover();
     }
-}
-}
-;
+
+    void limit_stereo(double& l, double& r) {
+        m_lim_buf1[m_lim_bp] = l;
+        m_lim_buf2[m_lim_bp] = r;
+
+        const double peak    = std::max(std::abs(l), std::abs(r));
+        const double rising  = m_lim_last + m_lim_recover * ((m_lim_last > 0.01) ? m_lim_last : 1.0);
+        double       maybe   = (rising > m_lim_threshold) ? m_lim_threshold : rising;
+        m_lim_gain[m_lim_bp] = maybe;
+
+        if (peak * maybe > m_lim_threshold) {
+            const double curgain = m_lim_threshold / peak;
+            const double inc     = m_lim_threshold - curgain;
+            double       acc     = 0.0;
+            bool         stop    = false;
+            for (int i = 0; !stop && i < m_lim_lookahead; ++i) {
+                long ind = m_lim_bp - i;
+                if (ind < 0) {
+                    ind += k_lim_size;
+                }
+                const double newgain = curgain + inc * (acc * acc);
+                if (newgain < m_lim_gain[ind]) {
+                    m_lim_gain[ind] = newgain;
+                }
+                else {
+                    stop = true;
+                }
+                acc += m_lim_recip;
+            }
+        }
+
+        long bbp = m_lim_bp - m_lim_lookahead;
+        if (bbp < 0) {
+            bbp += k_lim_size;
+        }
+
+        l = m_lim_buf1[bbp] * m_lim_gain[bbp];
+        r = m_lim_buf2[bbp] * m_lim_gain[bbp];
+
+        m_lim_last = m_lim_gain[m_lim_bp];
+        if (++m_lim_bp >= k_lim_size) {
+            m_lim_bp = 0;
+        }
+    }
+};
 
 MIN_EXTERNAL(verb);

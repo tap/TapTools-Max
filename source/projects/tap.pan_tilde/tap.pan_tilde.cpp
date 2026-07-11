@@ -48,42 +48,41 @@ class pan : public object<pan>, public sample_operator<2, 2> {
                                description{"Pan position, from -1 (left) through 0 (center) to 1 (right). "
                                            "Overridden by a signal connected to the right inlet."}};
 
-    message<threadsafe::yes> m_number{this, "number", "Set the pan position (-1..1).", MIN_FUNCTION{position = args;
-    return {};
-}
-}
-;
+    message<threadsafe::yes> m_number{this, "number", "Set the pan position (-1..1).",
+                                      MIN_FUNCTION{
+                                          position = args;
+                                          return {};
+                                      }};
 
-samples<2> operator()(sample x, sample pos = 0.0) {
-    double p            = m_in_pos.has_signal_connection() ? static_cast<double>(pos) : static_cast<double>(position);
-    p                   = MIN_CLAMP(p, -1.0, 1.0);
-    const double scaled = 0.5 * (p + 1.0); // map -1..1 to 0..1
+    samples<2> operator()(sample x, sample pos = 0.0) {
+        double p = m_in_pos.has_signal_connection() ? static_cast<double>(pos) : static_cast<double>(position);
+        p        = MIN_CLAMP(p, -1.0, 1.0);
+        const double scaled = 0.5 * (p + 1.0); // map -1..1 to 0..1
 
-    double    wl, wr;
-    const int s = shape;
-    switch (s) {
-    case linear:
-        wl = 1.0 - scaled;
-        wr = scaled;
-        break;
-    case squareroot:
-        wl = std::sqrt(1.0 - scaled);
-        wr = std::sqrt(scaled);
-        break;
-    case equalpower:
-    default: {
-        const double rad = scaled * k_half_pi;
-        wl               = std::cos(rad);
-        wr               = std::sin(rad);
-        break;
+        double    wl, wr;
+        const int s = shape;
+        switch (s) {
+        case linear:
+            wl = 1.0 - scaled;
+            wr = scaled;
+            break;
+        case squareroot:
+            wl = std::sqrt(1.0 - scaled);
+            wr = std::sqrt(scaled);
+            break;
+        case equalpower:
+        default: {
+            const double rad = scaled * k_half_pi;
+            wl               = std::cos(rad);
+            wr               = std::sin(rad);
+            break;
+        }
+        }
+        return {x * wl, x * wr};
     }
-    }
-    return {x * wl, x * wr};
-}
 
-private:
-static constexpr double k_half_pi{1.57079632679489661923};
-}
-;
+  private:
+    static constexpr double k_half_pi{1.57079632679489661923};
+};
 
 MIN_EXTERNAL(pan);

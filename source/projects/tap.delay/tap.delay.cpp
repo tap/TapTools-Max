@@ -53,65 +53,66 @@ class delay : public object<delay> {
     // Set the delay time (ms) when a number arrives in the right inlet; schedule the pending
     // message when input arrives in the left inlet.
     message<> m_int{this, "int", "Delay an integer, or (right inlet) set the delay time.",
-                    MIN_FUNCTION{if (inlet == 1){delaytime = static_cast<double>(args[0]);
-} else {
-    schedule({static_cast<long>(args[0])});
-}
-return {};
-}
-}
-;
+                    MIN_FUNCTION{
+                        if (inlet == 1) {
+                            delaytime = static_cast<double>(args[0]);
+                        }
+                        else {
+                            schedule({static_cast<long>(args[0])});
+                        }
+                        return {};
+                    }};
 
-message<> m_float{this, "float", "Delay a float, or (right inlet) set the delay time.",
-                  MIN_FUNCTION{if (inlet == 1){delaytime = static_cast<double>(args[0]);
-}
-else {
-    schedule({static_cast<double>(args[0])});
-}
-return {};
-}
-}
-;
+    message<> m_float{this, "float", "Delay a float, or (right inlet) set the delay time.",
+                      MIN_FUNCTION{
+                          if (inlet == 1) {
+                              delaytime = static_cast<double>(args[0]);
+                          }
+                          else {
+                              schedule({static_cast<double>(args[0])});
+                          }
+                          return {};
+                      }};
 
-message<> m_list{this, "list", "Delay a list.", MIN_FUNCTION{if (inlet == 0){schedule(args);
-}
-return {};
-}
-}
-;
+    message<> m_list{this, "list", "Delay a list.",
+                     MIN_FUNCTION{
+                         if (inlet == 0) {
+                             schedule(args);
+                         }
+                         return {};
+                     }};
 
-// Min prepends the selector for an 'anything' message, so args is the full message — exactly
-// the form needed to re-emit it faithfully.
-message<> m_anything{this, "anything", "Delay a symbol or arbitrary message.",
-                     MIN_FUNCTION{if (inlet == 0){schedule(args);
-}
-return {};
-}
-}
-;
+    // Min prepends the selector for an 'anything' message, so args is the full message — exactly
+    // the form needed to re-emit it faithfully.
+    message<> m_anything{this, "anything", "Delay a symbol or arbitrary message.",
+                         MIN_FUNCTION{
+                             if (inlet == 0) {
+                                 schedule(args);
+                             }
+                             return {};
+                         }};
 
-message<> stop{this, "stop", "Cancel the pending delayed message.", MIN_FUNCTION{m_timer.stop();
-return {};
-}
-}
-;
+    message<> stop{this, "stop", "Cancel the pending delayed message.",
+                   MIN_FUNCTION{
+                       m_timer.stop();
+                       return {};
+                   }};
 
-private:
-atoms m_pending{};
+  private:
+    atoms m_pending{};
 
-// A new input replaces any previously pending message and restarts the clock — matching the
-// single-pending, retriggerable behavior of Max's delay.
-void schedule(const atoms& message) {
-    m_pending = message;
-    m_timer.delay(std::max(0.0, static_cast<double>(delaytime)));
-}
+    // A new input replaces any previously pending message and restarts the clock — matching the
+    // single-pending, retriggerable behavior of Max's delay.
+    void schedule(const atoms& message) {
+        m_pending = message;
+        m_timer.delay(std::max(0.0, static_cast<double>(delaytime)));
+    }
 
-timer<> m_timer{this, MIN_FUNCTION{m_out.send(m_pending);
-return {};
-}
-}
-;
-}
-;
+    timer<> m_timer{this,
+                    MIN_FUNCTION{
+                        m_out.send(m_pending);
+                        return {};
+                    }};
+};
 
 MIN_EXTERNAL(delay);
