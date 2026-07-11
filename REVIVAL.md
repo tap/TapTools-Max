@@ -474,6 +474,28 @@ working tree now contains only the modern package: `CMakeLists.txt`, `source/min
 (submodule), `source/projects/`, `docs/`, `help/`, `package-info.json.in`, and the
 GitHub Actions CI.
 
+- ✅ **`tap.ladder~` added (2026-07-11)** — a **virtual-analog transistor-ladder filter**,
+  the nonlinear sibling of `tap.fourpole~` (which stays as the cheap linear Stilson/Smith
+  ladder; the two maxrefs cross-reference, and fourpole~ finally *got* a maxref — it had
+  none). New ground for the repo: **nothing else here had tanh/nonlinear feedback or
+  filter oversampling**. Kernel (`source/projects/tap.ladder_tilde/ladder.h`,
+  `taptools::ladder::ladder_filter`): zero-delay-feedback TPT 4-stage ladder, prewarped
+  tuning, per-stage tanh via linear-ZDF prediction + one corrective nonlinear pass
+  (full Newton solve flagged in-file as a possible future upgrade — unnecessary at these
+  oversampling factors), `k = 4·resonance` up to 4.4 for clean bounded self-oscillation
+  (unit-tested: oscillation frequency within 3% at 1 kHz *and* 8 kHz — the top-octave
+  accuracy the Stilson/Smith model can't deliver), `drive` into the nonlinearity, `comp`
+  passband-loss compensation, **1/2/4× oversampling** (4th-order Butterworth anti-image/
+  anti-alias cascades, tap.verb~ pattern, default 2×), and **Xpander-style pole-mixing
+  multimode** (lp24/lp12/bp12/bp24/hp12/hp24). Wrapper: mono + a right inlet for **true
+  per-sample signal-rate cutoff** (one better than tap.filter~'s per-vector read), house
+  ramps + 16-slot preset morphing. 10 Catch scenarios (self-osc tuning/boundedness,
+  24 dB/oct slope, resonance monotonicity, drive THD, mode shapes, comp, oversampling
+  passband-consistency + alias reduction at a driven 5 kHz tone, morph/sweep continuity)
+  plus `ladder_render` demos. Note in docs: exact unity gain is impossible in a
+  saturating filter — the runtime maxtest uses a small signal with a loosened tolerance.
+  Compile/ctest-verified on Linux/GCC; **audio still needs runtime validation in Max.**
+
 ---
 
 ## 8. The `taptools-min` reconciliation (2026-06-17)

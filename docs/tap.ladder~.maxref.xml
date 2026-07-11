@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.ladder~" module="msp" category="TapTools, MSP Filters">
+
+	<digest>
+		Virtual-analog transistor-ladder filter
+	</digest>
+
+	<description>
+		The <o>tap.ladder~</o> object is a virtual-analog model of the classic 4-pole
+		transistor-ladder filter: a zero-delay-feedback ladder with tanh saturation in every stage,
+		running oversampled (2x by default). The prewarped tuning stays accurate into the top
+		octaves at any sample rate. Resonance reaches clean self-oscillation (1.0 is the edge;
+		above it the filter sings at the cutoff frequency, amplitude-limited by the saturation —
+		give it a ping to start, as a perfectly silent filter is a fixed point). The drive
+		attribute pushes the input into the nonlinearity for anything from subtle thickening to
+		full growl, and comp restores the passband level that a real ladder loses as resonance
+		rises. A mode attribute selects lowpass, bandpass, and highpass responses by mixing the
+		ladder's stage taps (the Oberheim Xpander technique). A signal in the right inlet
+		modulates the cutoff with true per-sample resolution. All parameters glide smoothly, and
+		sixteen preset slots can be stored and morphed between. For the simple linear
+		Stilson/Smith ladder, see <o>tap.fourpole~</o> — this object is its nonlinear sibling.
+		Note that exact unity gain is impossible in a saturating filter: large signals are gently
+		compressed by design. Single-channel: wrap in mc. for multichannel.
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Filter</metadata>
+	</metadatalist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="float">
+			<arglist>
+				<arg name="input" type="float" optional="0" id="0" />
+			</arglist>
+			<description>In the right inlet, sets the cutoff frequency in Hz.</description>
+		</method>
+		<method name="store">
+			<arglist>
+				<arg name="slot" type="int" optional="0"/>
+			</arglist>
+			<description>Store the current parameters in a preset slot (1-16).</description>
+		</method>
+		<method name="recall">
+			<arglist>
+				<arg name="slot" type="int" optional="0"/>
+				<arg name="time" type="float" optional="1"/>
+			</arglist>
+			<description>
+				Morph all parameters to a stored preset (1-16). The optional second argument
+				overrides the morph time in milliseconds (default: the interp attribute).
+			</description>
+		</method>
+		<method name="clear">
+			<arglist/>
+			<description>Reset the filter state (this also stops self-oscillation).</description>
+		</method>
+	</methodlist>
+
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="frequency" get="1" set="1" type="float" size="1">
+			<description>Cutoff frequency in Hz (10-20000). A signal in the right inlet overrides
+			this with per-sample resolution.</description>
+		</attribute>
+		<attribute name="resonance" get="1" set="1" type="float" size="1">
+			<description>Resonance (0-1.1). 1.0 is the edge of self-oscillation; above it the
+			filter oscillates at the cutoff, bounded by the tanh stages.</description>
+		</attribute>
+		<attribute name="drive" get="1" set="1" type="float" size="1">
+			<description>Input drive in dB (-24..24): how hard the signal hits the saturating
+			ladder stages.</description>
+		</attribute>
+		<attribute name="comp" get="1" set="1" type="float" size="1">
+			<description>Passband-loss compensation (0-1). 0 is the authentic ladder passband
+			droop at high resonance; 1 fully compensates.</description>
+		</attribute>
+		<attribute name="gain" get="1" set="1" type="float" size="1">
+			<description>Output gain in dB.</description>
+		</attribute>
+		<attribute name="mode" get="1" set="1" type="int" size="1">
+			<description>Filter response via pole mixing: 0 = lp24, 1 = lp12, 2 = bp12,
+			3 = bp24, 4 = hp12, 5 = hp24.</description>
+		</attribute>
+		<attribute name="oversample" get="1" set="1" type="int" size="1">
+			<description>Internal oversampling factor (1, 2, or 4; default 2). Higher factors
+			reduce aliasing from the saturation, at higher CPU cost.</description>
+		</attribute>
+		<attribute name="interp" get="1" set="1" type="float" size="1">
+			<description>Default preset-morph time in milliseconds used by the recall message.</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>Anti-zipper interpolation time in milliseconds applied to parameter changes.</description>
+		</attribute>
+		<attribute name="bypass" get="1" set="1" type="int" size="1">
+			<description>Pass the input through unprocessed.</description>
+		</attribute>
+		<attribute name="mute" get="1" set="1" type="int" size="1">
+			<description>Silence the output.</description>
+		</attribute>
+	</attributelist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.fourpole~"/>
+		<seealso name="tap.svf~"/>
+		<seealso name="tap.filter~"/>
+		<seealso name="lores~"/>
+	</seealsolist>
+
+
+</c74object>
