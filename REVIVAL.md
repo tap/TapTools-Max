@@ -501,6 +501,31 @@ GitHub Actions CI.
   feedback), equal-power mix. Compile/ctest-verified on Linux/GCC; **audio still needs
   runtime validation in Max.**
 
+- ✅ **`tap.pitchaccum~` added (2026-07-11)** — second GRM recreation, **net-new** (no legacy
+  TapTools ancestor): the GRM Tools Classic **"PitchAccum"** — two independent granular
+  transposers ("shadows"), each ±24 semitones with its own delay (≤ 3 s), feedback, and
+  gain, where the feedback **re-enters the transposer** so pitch accumulates pass after
+  pass (the shimmer/spiral the plugin is named for). Same architecture as `tap.5comb~`:
+  all DSP in a portable header-only kernel
+  (`source/projects/tap.pitchaccum_tilde/grm_pitchaccum.h`,
+  `taptools::pitchaccum::accum_bank`), 17 per-sample-ramped parameters, 16-slot
+  preset-morph engine, thin Min shim. The transposer is the `tap.shift~`/tt_shift engine
+  (phasor sweeping two taps half a cycle apart) modernized: Hermite fractional taps and a
+  **complementary cos²-flank envelope pair that sums exactly to 1** (constant level at any
+  `xfade`, vs tt_shift's fixed padded-Welch ripple), with the crossfade width exposed as
+  GRM's Cross-fade control. Global LFO (voice 2 phase-offset via `modphase`) + per-voice
+  deterministic random transposition modulation; DC blocker in each feedback loop, fb
+  capped at 0.99. Optional **pitch follower** (`follow`, default off): decimated
+  normalized autocorrelation, smallest-lag-near-max peak picking (global max picks
+  subharmonics — caught by the unit test), confidence-gated, window → ~2 detected periods.
+  GRM's stereo-width fader intentionally dropped (mono object; `mc.` for multichannel).
+  Full slice: maxref, help patcher, runtime maxtest, 10 Catch scenarios (Goertzel
+  transposition checks, the two-pass accumulation signature at +7→+14 st, delay timing,
+  modulation spread, bit-exact determinism, morph continuity, follower convergence and
+  noise fallback, 0.99-feedback boundedness), and `grm_pitchaccum_render` (offline WAV
+  demos, lands in `tests/`). Compile/ctest-verified on Linux/GCC; **audio still needs
+  runtime validation in Max.**
+
 ---
 
 ## 8. The `taptools-min` reconciliation (2026-06-17)
