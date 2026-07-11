@@ -32,56 +32,56 @@ class jit_proximity : public object<jit_proximity> {
     attribute<symbol> name{this, "name", "", description{"Name of the registered jit.matrix holding the points."}};
 
     message<> coords{this, "coords", "Find the matrix point nearest to (x, y).",
-                     MIN_FUNCTION{if (args.size() < 2){return {};
-} const double xin = args[0];
-const double   yin = args[1];
+                     MIN_FUNCTION{
+                         if (args.size() < 2) {
+                             return {};
+                         }
+                         const double xin = args[0];
+                         const double yin = args[1];
 
-const symbol matrix_name = name;
-auto*        matrix      = mx::jit_object_findregistered(static_cast<mx::t_symbol*>(matrix_name));
-if (!matrix || !mx::jit_object_method(matrix, mx::gensym("class_jit_matrix"))) {
-    return {};
-}
+                         const symbol matrix_name = name;
+                         auto*        matrix = mx::jit_object_findregistered(static_cast<mx::t_symbol*>(matrix_name));
+                         if (!matrix || !mx::jit_object_method(matrix, mx::gensym("class_jit_matrix"))) {
+                             return {};
+                         }
 
-const long savelock =
-    reinterpret_cast<long>(mx::jit_object_method(matrix, mx::gensym("lock"), reinterpret_cast<void*>(1)));
+                         const long savelock = reinterpret_cast<long>(
+                             mx::jit_object_method(matrix, mx::gensym("lock"), reinterpret_cast<void*>(1)));
 
-mx::t_jit_matrix_info info{};
-mx::jit_object_method(matrix, mx::gensym("getinfo"), &info);
-char* bp = nullptr;
-mx::jit_object_method(matrix, mx::gensym("getdata"), &bp);
+                         mx::t_jit_matrix_info info{};
+                         mx::jit_object_method(matrix, mx::gensym("getinfo"), &info);
+                         char* bp = nullptr;
+                         mx::jit_object_method(matrix, mx::gensym("getdata"), &bp);
 
-if (bp) {
-    const long rows   = (info.dimcount > 1) ? info.dim[1] : 1;
-    double     best   = 1.0e30;
-    long       best_i = 0;
-    float      best_x = 0.0f, best_y = 0.0f;
+                         if (bp) {
+                             const long rows   = (info.dimcount > 1) ? info.dim[1] : 1;
+                             double     best   = 1.0e30;
+                             long       best_i = 0;
+                             float      best_x = 0.0f, best_y = 0.0f;
 
-    for (long i = 0; i < rows; ++i) {
-        const float  px = get_f32(bp, info, 0, i); // column 0
-        const float  py = get_f32(bp, info, 1, i); // column 1
-        const double d  = std::abs(xin - px) + std::abs(yin - py);
-        if (d < best) {
-            best   = d;
-            best_i = i;
-            best_x = px;
-            best_y = py;
-        }
+                             for (long i = 0; i < rows; ++i) {
+                                 const float  px = get_f32(bp, info, 0, i); // column 0
+                                 const float  py = get_f32(bp, info, 1, i); // column 1
+                                 const double d  = std::abs(xin - px) + std::abs(yin - py);
+                                 if (d < best) {
+                                     best   = d;
+                                     best_i = i;
+                                     best_x = px;
+                                     best_y = py;
+                                 }
+                             }
+                             m_out.send(static_cast<int>(best_i + 1), best_x, best_y);
+                         }
+
+                         mx::jit_object_method(matrix, mx::gensym("lock"), reinterpret_cast<void*>(savelock));
+                         return {};
+                     }};
+
+  private:
+    static float get_f32(char* bp, const mx::t_jit_matrix_info& info, long col, long row) {
+        char* p = bp + row * info.dimstride[1] + col * info.dimstride[0];
+        return reinterpret_cast<float*>(p)[0]; // plane 0
     }
-    m_out.send(static_cast<int>(best_i + 1), best_x, best_y);
-}
-
-mx::jit_object_method(matrix, mx::gensym("lock"), reinterpret_cast<void*>(savelock));
-return {};
-}
-}
-;
-
-private:
-static float get_f32(char* bp, const mx::t_jit_matrix_info& info, long col, long row) {
-    char* p = bp + row * info.dimstride[1] + col * info.dimstride[0];
-    return reinterpret_cast<float*>(p)[0]; // plane 0
-}
-}
-;
+};
 
 MIN_EXTERNAL(jit_proximity);

@@ -27,38 +27,34 @@ class buffer_peak : public object<buffer_peak> {
     buffer_reference m_buffer{this}; // adds the 'set' and 'dblclick' messages automatically
 
     argument<symbol> name_arg{this, "buffer", "Name of the buffer~ to analyze.",
-                              MIN_ARGUMENT_FUNCTION{m_buffer.set(arg);
-}
-}
-;
+                              MIN_ARGUMENT_FUNCTION{ m_buffer.set(arg); }};
 
-message<> bang{this, "bang", "Find the peak sample and output its index.", MIN_FUNCTION{buffer_lock<false> b(m_buffer);
-if (!b.valid()) {
-    cerr << "no valid buffer~ is bound to this object" << endl;
-    return {};
-}
+    message<> bang{this, "bang", "Find the peak sample and output its index.",
+                   MIN_FUNCTION{
+                       buffer_lock<false> b(m_buffer);
+                       if (!b.valid()) {
+                           cerr << "no valid buffer~ is bound to this object" << endl;
+                           return {};
+                       }
 
-long         peak_index = 0;
-double       peak       = 0.0;
-const size_t frames     = b.frame_count();
-const size_t channels   = b.channel_count();
+                       long         peak_index = 0;
+                       double       peak       = 0.0;
+                       const size_t frames     = b.frame_count();
+                       const size_t channels   = b.channel_count();
 
-for (size_t frame = 0; frame < frames; ++frame) {
-    for (size_t channel = 0; channel < channels; ++channel) {
-        const double v = std::abs(static_cast<double>(b.lookup(frame, channel)));
-        if (v > peak) {
-            peak       = v;
-            peak_index = static_cast<long>(frame);
-        }
-    }
-}
+                       for (size_t frame = 0; frame < frames; ++frame) {
+                           for (size_t channel = 0; channel < channels; ++channel) {
+                               const double v = std::abs(static_cast<double>(b.lookup(frame, channel)));
+                               if (v > peak) {
+                                   peak       = v;
+                                   peak_index = static_cast<long>(frame);
+                               }
+                           }
+                       }
 
-m_out.send(peak_index);
-return {};
-}
-}
-;
-}
-;
+                       m_out.send(peak_index);
+                       return {};
+                   }};
+};
 
 MIN_EXTERNAL(buffer_peak);

@@ -50,6 +50,20 @@ member/parameter collision, and prefixes would clutter the public signatures
 that *are* the library's contract. Lean on `const` and small functions for
 input/local clarity.
 
+**Repo exception — OscTap (drop-in legacy continuation).** OscTap continues
+[oscpack](http://www.rossbencina.com/code/oscpack) as a *drop-in
+source-compatible* successor: its public API keeps oscpack's original
+identifiers — PascalCase types and methods (`ReceivedMessage`,
+`OutboundPacketStream`, `BeginBundle()`, `AsFloat()`) and trailing-underscore
+data members (`size_`, `value_`). Renaming these to the house `snake_case`/`m_`
+scheme would break the source compatibility that is the library's reason to
+exist. OscTap therefore adopts the **layout** rules (`.clang-format`) in full
+but is **exempt from the naming rules** (`readability-identifier-naming`): it
+ships a local `.clang-tidy` that disables that check while keeping mandatory
+braces, and its CI runs a format-only style gate instead of the shared
+`drift-check.yml`. The exemption is specific to legacy-continuation repos;
+greenfield `*Tap` code follows the naming rules above.
+
 ## 2. Layout
 
 - **Indent:** 4 spaces, including inside namespaces.

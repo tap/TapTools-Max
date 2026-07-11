@@ -26,73 +26,73 @@ class jit_sum : public object<jit_sum> {
     outlet<> m_out{this, "(int/float) sum of the matrix values"};
     outlet<> m_dump{this, "(anything) dumpout"};
 
-    message<> jit_matrix{this, "jit_matrix", "Sum the named matrix and output the result.",
-                         MIN_FUNCTION{if (args.empty()){return {};
-}
+    message<> jit_matrix{
+        this, "jit_matrix", "Sum the named matrix and output the result.",
+        MIN_FUNCTION{
+            if (args.empty()) {
+                return {};
+            }
 
-auto* matrix = mx::jit_object_findregistered(args[0]);
-if (!matrix || !mx::jit_object_method(matrix, mx::gensym("class_jit_matrix"))) {
-    return {};
-}
+            auto* matrix = mx::jit_object_findregistered(args[0]);
+            if (!matrix || !mx::jit_object_method(matrix, mx::gensym("class_jit_matrix"))) {
+                return {};
+            }
 
-const long savelock =
-    reinterpret_cast<long>(mx::jit_object_method(matrix, mx::gensym("lock"), reinterpret_cast<void*>(1)));
+            const long savelock =
+                reinterpret_cast<long>(mx::jit_object_method(matrix, mx::gensym("lock"), reinterpret_cast<void*>(1)));
 
-mx::t_jit_matrix_info info{};
-mx::jit_object_method(matrix, mx::gensym("getinfo"), &info);
-char* data = nullptr;
-mx::jit_object_method(matrix, mx::gensym("getdata"), &data);
+            mx::t_jit_matrix_info info{};
+            mx::jit_object_method(matrix, mx::gensym("getinfo"), &info);
+            char* data = nullptr;
+            mx::jit_object_method(matrix, mx::gensym("getdata"), &data);
 
-if (data) {
-    const double sum     = sum_matrix(info, data);
-    const bool   integer = (info.type == mx::gensym("char") || info.type == mx::gensym("long"));
-    if (integer) {
-        m_out.send(static_cast<int>(sum));
-    }
-    else {
-        m_out.send(sum);
-    }
-}
-
-mx::jit_object_method(matrix, mx::gensym("lock"), reinterpret_cast<void*>(savelock));
-m_dump.send("done");
-return {};
-}
-}
-;
-
-private:
-static double sum_matrix(const mx::t_jit_matrix_info& info, char* data) {
-    const long width   = info.dim[0];
-    const long height  = (info.dimcount > 1) ? info.dim[1] : 1;
-    const long planes  = info.planecount;
-    const long rstride = info.dimstride[1];
-    const long cstride = info.dimstride[0];
-
-    double sum = 0.0;
-    for (long y = 0; y < height; ++y) {
-        char* row = data + y * rstride;
-        for (long x = 0; x < width; ++x) {
-            char* cell = row + x * cstride;
-            for (long p = 0; p < planes; ++p) {
-                if (info.type == mx::gensym("char")) {
-                    sum += reinterpret_cast<unsigned char*>(cell)[p];
+            if (data) {
+                const double sum     = sum_matrix(info, data);
+                const bool   integer = (info.type == mx::gensym("char") || info.type == mx::gensym("long"));
+                if (integer) {
+                    m_out.send(static_cast<int>(sum));
                 }
-                else if (info.type == mx::gensym("long")) {
-                    sum += reinterpret_cast<mx::t_int32*>(cell)[p];
+                else {
+                    m_out.send(sum);
                 }
-                else if (info.type == mx::gensym("float32")) {
-                    sum += reinterpret_cast<float*>(cell)[p];
-                }
-                else if (info.type == mx::gensym("float64")) {
-                    sum += reinterpret_cast<double*>(cell)[p];
+            }
+
+            mx::jit_object_method(matrix, mx::gensym("lock"), reinterpret_cast<void*>(savelock));
+            m_dump.send("done");
+            return {};
+        }};
+
+  private:
+    static double sum_matrix(const mx::t_jit_matrix_info& info, char* data) {
+        const long width   = info.dim[0];
+        const long height  = (info.dimcount > 1) ? info.dim[1] : 1;
+        const long planes  = info.planecount;
+        const long rstride = info.dimstride[1];
+        const long cstride = info.dimstride[0];
+
+        double sum = 0.0;
+        for (long y = 0; y < height; ++y) {
+            char* row = data + y * rstride;
+            for (long x = 0; x < width; ++x) {
+                char* cell = row + x * cstride;
+                for (long p = 0; p < planes; ++p) {
+                    if (info.type == mx::gensym("char")) {
+                        sum += reinterpret_cast<unsigned char*>(cell)[p];
+                    }
+                    else if (info.type == mx::gensym("long")) {
+                        sum += reinterpret_cast<mx::t_int32*>(cell)[p];
+                    }
+                    else if (info.type == mx::gensym("float32")) {
+                        sum += reinterpret_cast<float*>(cell)[p];
+                    }
+                    else if (info.type == mx::gensym("float64")) {
+                        sum += reinterpret_cast<double*>(cell)[p];
+                    }
                 }
             }
         }
+        return sum;
     }
-    return sum;
-}
-}
-;
+};
 
 MIN_EXTERNAL(jit_sum);

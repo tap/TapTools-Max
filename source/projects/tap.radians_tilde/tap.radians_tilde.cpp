@@ -40,39 +40,32 @@ class radians : public object<radians>, public sample_operator<1, 1> {
                                     "3 = radians->degrees."}};
 
     argument<int> mode_arg{this, "mode", "Initial conversion mode (same as the mode attribute).",
-                           MIN_ARGUMENT_FUNCTION{mode = static_cast<int>(arg);
-}
-}
-;
+                           MIN_ARGUMENT_FUNCTION{ mode = static_cast<int>(arg); }};
 
-// Float input is converted and sent out the dedicated float outlet.
-message<> number{this, "number", "Convert a single value and output it as a float.",
-                 MIN_FUNCTION{m_out_float.send(convert(static_cast<double>(args[0])));
-return {};
-}
-}
-;
+    // Float input is converted and sent out the dedicated float outlet.
+    message<> number{this, "number", "Convert a single value and output it as a float.",
+                     MIN_FUNCTION{
+                         m_out_float.send(convert(static_cast<double>(args[0])));
+                         return {};
+                     }};
 
-sample operator()(sample x) {
-    return convert(x);
-}
+    sample operator()(sample x) { return convert(x); }
 
-private:
-double convert(double value) const {
-    const double sr = samplerate();
-    switch (mode) {
-    case rad_to_hz:
-        return (value * sr) / k_twopi;
-    case deg_to_rad:
-        return (value * k_pi) / 180.0;
-    case rad_to_deg:
-        return (value * 180.0) / k_pi;
-    case hz_to_rad:
-    default:
-        return value * (k_pi / (sr * 0.5));
+  private:
+    double convert(double value) const {
+        const double sr = samplerate();
+        switch (mode) {
+        case rad_to_hz:
+            return (value * sr) / k_twopi;
+        case deg_to_rad:
+            return (value * k_pi) / 180.0;
+        case rad_to_deg:
+            return (value * 180.0) / k_pi;
+        case hz_to_rad:
+        default:
+            return value * (k_pi / (sr * 0.5));
+        }
     }
-}
-}
-;
+};
 
 MIN_EXTERNAL(radians);

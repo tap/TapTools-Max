@@ -25,26 +25,22 @@ class sieve : public object<sieve> {
     attribute<int> value{this, "value", 0, description{"The value that input must match in order to pass through."}};
 
     argument<int> value_arg{this, "value", "Initial value to match (same as the value attribute).",
-                            MIN_ARGUMENT_FUNCTION{value = static_cast<int>(arg);
-}
-}
-;
+                            MIN_ARGUMENT_FUNCTION{ value = static_cast<int>(arg); }};
 
-message<> number{this, "int", "Left inlet: pass the value through if it matches. Right inlet: set the value to match.",
-                 MIN_FUNCTION{const int input = static_cast<int>(args[0]);
-if (inlet == 0) {
-    if (value == input) {
-        m_out.send(input);
-    }
-}
-else {
-    value = input;
-}
-return {};
-}
-}
-;
-}
-;
+    message<> number{this, "int",
+                     "Left inlet: pass the value through if it matches. Right inlet: set the value to match.",
+                     MIN_FUNCTION{
+                         const int input = static_cast<int>(args[0]);
+                         if (inlet == 0) {
+                             if (value == input) {
+                                 m_out.send(input);
+                             }
+                         }
+                         else {
+                             value = input;
+                         }
+                         return {};
+                     }};
+};
 
 MIN_EXTERNAL(sieve);

@@ -239,147 +239,138 @@ class sustain : public object<sustain>, public vector_operator<> {
     message<> bang{this, "bang",
                    "Capture the most recently recorded audio into a sustaining loop "
                    "(allocated round-robin across the voice bank).",
-                   MIN_FUNCTION{m_need_to_capture = true;
-    return {};
-}
-}
-;
+                   MIN_FUNCTION{
+                       m_need_to_capture = true;
+                       return {};
+                   }};
 
-message<> clear{this, "clear", "Erase all captured loops (all voices).",
-                MIN_FUNCTION{for (auto& voice
-                                  : m_voices){voice.clear();
-}
-m_next_voice = 0;
-return {};
-}
-}
-;
+    message<> clear{this, "clear", "Erase all captured loops (all voices).",
+                    MIN_FUNCTION{
+                        for (auto& voice : m_voices) {
+                            voice.clear();
+                        }
+                        m_next_voice = 0;
+                        return {};
+                    }};
 
-attribute<number> length{this, "length", 1000.0,
-                         description{"Maximum length of the captured loop, in milliseconds. (Changing this restarts "
-                                     "the recording buffer.)"}};
+    attribute<number> length{
+        this, "length", 1000.0,
+        description{"Maximum length of the captured loop, in milliseconds. (Changing this restarts "
+                    "the recording buffer.)"}};
 
-attribute<int> voices{this, "voices", k_max_voices,
-                      description{"Number of overlapping sustaining voices. Each bang captures into the next "
-                                  "voice round-robin, so up to this many loops can stack before the oldest is "
-                                  "recycled."},
-                      range{1, k_max_voices},
-                      setter{MIN_FUNCTION{int n = std::clamp(static_cast<int>(args[0]), 1, k_max_voices);
-if (n < m_next_voice) {
-    m_next_voice = 0; // keep the round-robin cursor inside the active range
-}
-return {n};
-}
-}
-}
-;
+    attribute<int> voices{this,
+                          "voices",
+                          k_max_voices,
+                          description{"Number of overlapping sustaining voices. Each bang captures into the next "
+                                      "voice round-robin, so up to this many loops can stack before the oldest is "
+                                      "recycled."},
+                          range{1, k_max_voices},
+                          setter{MIN_FUNCTION{
+                              int n = std::clamp(static_cast<int>(args[0]), 1, k_max_voices);
+                              if (n < m_next_voice) {
+                                  m_next_voice = 0; // keep the round-robin cursor inside the active range
+                              }
+                              return {n};
+                          }}};
 
-attribute<number> fade{this, "fade", 100.0,
-                       description{"Length of the crossfade across the loop points, in milliseconds."},
-                       setter{MIN_FUNCTION{number fadetime_in_samples = static_cast<number>(args[0]) * m_ms_samplerate;
-if (!m_voices.empty() && fadetime_in_samples != m_voices[0].fade()) {
-    for (auto& voice : m_voices) {
-        voice.fade(static_cast<int>(fadetime_in_samples));
-    }
-}
-return args;
-}
-}
-}
-;
+    attribute<number> fade{this, "fade", 100.0,
+                           description{"Length of the crossfade across the loop points, in milliseconds."},
+                           setter{MIN_FUNCTION{
+                               number fadetime_in_samples = static_cast<number>(args[0]) * m_ms_samplerate;
+                               if (!m_voices.empty() && fadetime_in_samples != m_voices[0].fade()) {
+                                   for (auto& voice : m_voices) {
+                                       voice.fade(static_cast<int>(fadetime_in_samples));
+                                   }
+                               }
+                               return args;
+                           }}};
 
-attribute<number> rise{this, "rise", 100.0,
-                       description{"Time over which each newly captured voice grows to full power, in milliseconds. "
-                                   "Applied independently per voice as a one-shot fade-in when it starts sustaining."},
-                       setter{MIN_FUNCTION{number rise_in_samples = static_cast<number>(args[0]) * m_ms_samplerate;
-if (!m_voices.empty() && rise_in_samples != m_voices[0].rise()) {
-    for (auto& voice : m_voices) {
-        voice.rise(static_cast<int>(rise_in_samples));
-    }
-}
-return args;
-}
-}
-}
-;
+    attribute<number> rise{
+        this, "rise", 100.0,
+        description{"Time over which each newly captured voice grows to full power, in milliseconds. "
+                    "Applied independently per voice as a one-shot fade-in when it starts sustaining."},
+        setter{MIN_FUNCTION{
+            number rise_in_samples = static_cast<number>(args[0]) * m_ms_samplerate;
+            if (!m_voices.empty() && rise_in_samples != m_voices[0].rise()) {
+                for (auto& voice : m_voices) {
+                    voice.rise(static_cast<int>(rise_in_samples));
+                }
+            }
+            return args;
+        }}};
 
-message<> dspsetup{this, "dspsetup", MIN_FUNCTION{update_samplerate();
-return {};
-}
-}
-;
+    message<> dspsetup{this, "dspsetup",
+                       MIN_FUNCTION{
+                           update_samplerate();
+                           return {};
+                       }};
 
-// Reachable state for unit testing.
-const vector<sustain_voice>& voice_bank() const {
-    return m_voices;
-}
-int next_voice() const {
-    return m_next_voice;
-}
+    // Reachable state for unit testing.
+    const vector<sustain_voice>& voice_bank() const { return m_voices; }
+    int                          next_voice() const { return m_next_voice; }
 
-void operator()(audio_bundle input_bundle, audio_bundle output) override {
-    auto in = input_bundle.samples(0);
+    void operator()(audio_bundle input_bundle, audio_bundle output) override {
+        auto in = input_bundle.samples(0);
 
-    // always recording into the master ring buffer
-    for (auto n = 0; n < output.frame_count(); ++n) {
-        m_buffer[m_record_head] = in[n];
-        ++m_record_head;
-        m_record_head &= m_buffer_sizemask;
-    }
+        // always recording into the master ring buffer
+        for (auto n = 0; n < output.frame_count(); ++n) {
+            m_buffer[m_record_head] = in[n];
+            ++m_record_head;
+            m_record_head &= m_buffer_sizemask;
+        }
 
-    if (m_need_to_capture) {
-        m_need_to_capture = false;
-        capture();
-    }
+        if (m_need_to_capture) {
+            m_need_to_capture = false;
+            capture();
+        }
 
-    // accumulate all of the active voices
-    output.clear();
-    const int n = std::min(static_cast<int>(voices), static_cast<int>(m_voices.size()));
-    for (auto i = 0; i < n; ++i) {
-        m_voices[i](output);
-    }
-}
-
-private:
-void update_samplerate() {
-    m_ms_samplerate     = samplerate() * 0.001;
-    m_ms_inv_samplerate = (1.0 / samplerate()) * 1000.0;
-    resize();
-    // re-derive the time-based envelopes for the (possibly new) sample rate
-    fade = static_cast<number>(fade);
-    rise = static_cast<number>(rise);
-}
-
-void resize() {
-    int  size_in_samples       = static_cast<int>(static_cast<number>(length) * m_ms_samplerate);
-    auto size_in_samples_voice = size_in_samples;
-
-    size_in_samples = limit_to_power_of_two(size_in_samples);
-    if (size_in_samples != static_cast<int>(m_buffer.size())) {
-        m_buffer.resize(size_in_samples);
-        m_buffer_sizemask = size_in_samples - 1;
-        m_record_head     = 0;
-        for (auto& voice : m_voices) {
-            voice.resize(size_in_samples_voice);
+        // accumulate all of the active voices
+        output.clear();
+        const int n = std::min(static_cast<int>(voices), static_cast<int>(m_voices.size()));
+        for (auto i = 0; i < n; ++i) {
+            m_voices[i](output);
         }
     }
-}
 
-// Round-robin voice allocation: each capture advances to the next slot (within the active
-// `voices` count) and overwrites it. Cycling through the bank means the oldest voice is the one
-// recycled — round-robin doubles as an oldest-first voice-stealing policy.
-void capture() {
-    const int n = std::min(static_cast<int>(voices), static_cast<int>(m_voices.size()));
-    if (n <= 0) {
-        return;
+  private:
+    void update_samplerate() {
+        m_ms_samplerate     = samplerate() * 0.001;
+        m_ms_inv_samplerate = (1.0 / samplerate()) * 1000.0;
+        resize();
+        // re-derive the time-based envelopes for the (possibly new) sample rate
+        fade = static_cast<number>(fade);
+        rise = static_cast<number>(rise);
     }
-    if (m_next_voice >= n) {
-        m_next_voice = 0;
+
+    void resize() {
+        int  size_in_samples       = static_cast<int>(static_cast<number>(length) * m_ms_samplerate);
+        auto size_in_samples_voice = size_in_samples;
+
+        size_in_samples = limit_to_power_of_two(size_in_samples);
+        if (size_in_samples != static_cast<int>(m_buffer.size())) {
+            m_buffer.resize(size_in_samples);
+            m_buffer_sizemask = size_in_samples - 1;
+            m_record_head     = 0;
+            for (auto& voice : m_voices) {
+                voice.resize(size_in_samples_voice);
+            }
+        }
     }
-    m_voices[m_next_voice].capture(m_buffer, m_record_head);
-    m_next_voice = (m_next_voice + 1) % n;
-}
-}
-;
+
+    // Round-robin voice allocation: each capture advances to the next slot (within the active
+    // `voices` count) and overwrites it. Cycling through the bank means the oldest voice is the one
+    // recycled — round-robin doubles as an oldest-first voice-stealing policy.
+    void capture() {
+        const int n = std::min(static_cast<int>(voices), static_cast<int>(m_voices.size()));
+        if (n <= 0) {
+            return;
+        }
+        if (m_next_voice >= n) {
+            m_next_voice = 0;
+        }
+        m_voices[m_next_voice].capture(m_buffer, m_record_head);
+        m_next_voice = (m_next_voice + 1) % n;
+    }
+};
 
 MIN_EXTERNAL(sustain);
