@@ -526,6 +526,32 @@ GitHub Actions CI.
   demos, lands in `tests/`). Compile/ctest-verified on Linux/GCC; **audio still needs
   runtime validation in Max.**
 
+- ✅ **`tap.spektral~` added (2026-07-11)** — third recreation, **net-new**: NI's **Spektral
+  Delay** (2001, discontinued). An STFT splits the signal into log-spaced bands (default
+  160, like the original; `bands` 8–512, FFT size as the first arg, default 2048); every
+  band has its own **level, delay (≤ 12 s, the original's max), and feedback**, set as
+  curves — lists of any length are resampled to the band count, `[band value]` pokes one
+  band. **Freeze** mutes the matrix input and recirculates losslessly (fb = exactly 1).
+  Frequency-domain Mod FX before the matrix: **rotate** (cyclic bin shift with fractional
+  accumulator) and **smear** (per-bin peak-hold amplitude diffusion, 20 ms–8 s tails);
+  an **LFO** assignable to bandshift/feedback/delayscale (one destination; the original
+  had three slots — noted as follow-up). Architecture milestone: **this object moves the
+  in-house STFT into the portable header-only kernel form** (`spektral.h`,
+  `taptools::spektral::spektral_engine`) — the radix-2 FFT / Hann / 4× overlap / COLA
+  machinery lifted from `tap.nr~`, per-band edits Hermitian-mirrored per `tap.spectra~`'s
+  template. The delay matrix is a single ring of complex spectra realizing
+  `y[t] = level·x[t−D] + fb·y[t−max(D,1)]` per bin (~18 MB at defaults for the 12 s
+  memory). Curve/scalar ramps tick at frame rate (overlap-add crossfades frames — click-
+  free by construction); `gain`/`mix` ramp per sample; the dry path is delayed one FFT
+  frame so the equal-power mix stays time-aligned; **presets snapshot the full curves**
+  and morph like the GRM objects. 11 Catch scenarios (perfect reconstruction < 1e-6 at
+  unity — the tap.nr~ gate —, latency-aligned dry path, band notch, per-band delay timing,
+  echo decay, lossless freeze, rotate sweep, smear tails, curve resampling, morph
+  continuity, wrapper defaults) plus `spektral_render` offline demos. Full slice shipped
+  (maxref, help patcher with multislider-driven curves, runtime maxtest). Flagged: the
+  naive complex FFT is the CPU optimization target (real-FFT split ≈ halves it);
+  compile/ctest-verified on Linux/GCC; **audio still needs runtime validation in Max.**
+
 ---
 
 ## 8. The `taptools-min` reconciliation (2026-06-17)

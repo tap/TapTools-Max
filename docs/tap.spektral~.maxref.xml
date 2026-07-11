@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.spektral~" module="msp" category="TapTools, MSP Processors">
+
+	<digest>
+		Spectral delay: per-band level, delay, and feedback across the spectrum
+	</digest>
+
+	<description>
+		The <o>tap.spektral~</o> object is a recreation of Native Instruments' Spektral Delay
+		(2001, discontinued). The signal is split by a short-time Fourier transform into log-spaced
+		frequency bands (default 160, like the original), and every band has its own level, delay
+		time (up to 12 seconds), and feedback amount — set by sending curves as lists of any length
+		(automatically resampled to the band count, so a multislider or function output drives them
+		directly) or by poking single bands. The freeze attribute mutes the matrix input and
+		recirculates the delay memory losslessly, looping its contents indefinitely — the
+		original's signature button. Two frequency-domain Mod FX process the spectrum before the
+		delay matrix: rotate cyclically shifts the bins over time, and smear diffuses the bin
+		amplitudes (the original's "reverb simulation by smearing the amplitude courses"). An LFO
+		can animate a band shift, the feedback master, or the delay scale. All parameters and
+		curves interpolate smoothly (curves at the frame rate, crossfaded by the overlap-add), and
+		sixteen preset slots — including the full curves — can be stored and morphed between over
+		a settable time. The STFT uses a Hann window at 4x overlap with exact reconstruction;
+		latency is one FFT frame, and the dry path is delayed to match so the mix stays
+		time-aligned. The first argument sets the FFT size (a power of two, 256-8192, default
+		2048). Single-channel: wrap in mc. for stereo (the original's independent left/right
+		curves are two instances).
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Processor</metadata>
+		<metadata name="tag">FFT</metadata>
+	</metadatalist>
+
+
+	<!--ARGUMENTS-->
+	<objarglist>
+		<objarg name="fftsize" type="int" optional="1">
+			<description>FFT size: a power of two, 256-8192 (default 2048). The hop is a quarter
+			of this; per-band delays quantize to the hop, and the latency is one FFT frame.</description>
+		</objarg>
+	</objarglist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="gains">
+			<arglist>
+				<arg name="curve-or-band-value" type="list" optional="0"/>
+			</arglist>
+			<description>
+				Set the per-band level curve (0-2). A list of any length is linearly resampled to
+				the band count; alternatively an integer band index followed by a value sets one
+				band (0-based).
+			</description>
+		</method>
+		<method name="delays">
+			<arglist>
+				<arg name="curve-or-band-value" type="list" optional="0"/>
+			</arglist>
+			<description>
+				Set the per-band delay curve in milliseconds (0-12000), same list/poke forms as
+				gains. Delays quantize to the STFT hop (fftsize/4 samples).
+			</description>
+		</method>
+		<method name="fbs">
+			<arglist>
+				<arg name="curve-or-band-value" type="list" optional="0"/>
+			</arglist>
+			<description>
+				Set the per-band feedback curve (0-0.99), same list/poke forms as gains.
+			</description>
+		</method>
+		<method name="store">
+			<arglist>
+				<arg name="slot" type="int" optional="0"/>
+			</arglist>
+			<description>Store the current parameters and all three curves in a preset slot (1-16).</description>
+		</method>
+		<method name="recall">
+			<arglist>
+				<arg name="slot" type="int" optional="0"/>
+				<arg name="time" type="float" optional="1"/>
+			</arglist>
+			<description>
+				Morph all parameters and curves to a stored preset (1-16). The optional second
+				argument overrides the morph time in milliseconds (default: the interp attribute).
+			</description>
+		</method>
+		<method name="clear">
+			<arglist/>
+			<description>Clear the delay matrix and all STFT state.</description>
+		</method>
+	</methodlist>
+
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="bands" get="1" set="1" type="int" size="1">
+			<description>Number of editable log-spaced bands (8-512, default 160). Curves keep
+			their indices when this changes; the band frequencies shift.</description>
+		</attribute>
+		<attribute name="level" get="1" set="1" type="float" size="1">
+			<description>Master multiplier (0-2) on the per-band level curve.</description>
+		</attribute>
+		<attribute name="fb" get="1" set="1" type="float" size="1">
+			<description>Master multiplier (0-2) on the per-band feedback curve (per-bin feedback
+			is capped at 0.99).</description>
+		</attribute>
+		<attribute name="delayscale" get="1" set="1" type="float" size="1">
+			<description>Master multiplier (0-2) on the per-band delay curve.</description>
+		</attribute>
+		<attribute name="freeze" get="1" set="1" type="int" size="1">
+			<description>Freeze: mute the matrix input and recirculate the delay memory losslessly —
+			the contents loop indefinitely until released.</description>
+		</attribute>
+		<attribute name="rotate" get="1" set="1" type="float" size="1">
+			<description>Cyclic spectral rotation in bins per second (-500..500). 0 is off.</description>
+		</attribute>
+		<attribute name="smear" get="1" set="1" type="float" size="1">
+			<description>Amplitude smear (0-100): per-bin peak-hold diffusion over time, from off
+			(0) through reverb-like (mid) to near-freezing (100).</description>
+		</attribute>
+		<attribute name="lforate" get="1" set="1" type="float" size="1">
+			<description>LFO rate in Hz (0-20).</description>
+		</attribute>
+		<attribute name="lfodepth" get="1" set="1" type="float" size="1">
+			<description>LFO depth (0-100): bins of shift for the bandshift destination; percent
+			for the feedback and delayscale destinations.</description>
+		</attribute>
+		<attribute name="lfodest" get="1" set="1" type="int" size="1">
+			<description>LFO destination: 0 = off, 1 = bandshift, 2 = feedback master,
+			3 = delay scale. (The original offered three simultaneous slots; one at a time here.)</description>
+		</attribute>
+		<attribute name="mix" get="1" set="1" type="float" size="1">
+			<description>Dry/wet crossfade (0 = dry, 100 = wet), equal-power. The dry path is
+			delayed by one FFT frame so it stays aligned with the wet path.</description>
+		</attribute>
+		<attribute name="gain" get="1" set="1" type="float" size="1">
+			<description>Output gain in dB.</description>
+		</attribute>
+		<attribute name="interp" get="1" set="1" type="float" size="1">
+			<description>Default preset-morph time in milliseconds used by the recall message.</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>Interpolation time in milliseconds applied to direct parameter and curve changes.</description>
+		</attribute>
+		<attribute name="bypass" get="1" set="1" type="int" size="1">
+			<description>Pass the input through unprocessed.</description>
+		</attribute>
+		<attribute name="mute" get="1" set="1" type="int" size="1">
+			<description>Silence the output.</description>
+		</attribute>
+	</attributelist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.nr~"/>
+		<seealso name="tap.spectra~"/>
+		<seealso name="tap.5comb~"/>
+		<seealso name="tap.pitchaccum~"/>
+		<seealso name="pfft~"/>
+	</seealsolist>
+
+
+</c74object>
