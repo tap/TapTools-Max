@@ -1,0 +1,5 @@
+# Dependencies for the verification notebooks (taptools_py.py additionally
+# needs cmake + a C++ compiler in PATH to build tools/capi on first import).
+numpy>=1.24
+matplotlib>=3.7
+jupyter

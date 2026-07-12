@@ -495,6 +495,20 @@ linear convolution.
     a real-input half-spectrum (N/2+1 bins) form would halve both CPU and memory. **Runtime
     validation in Max still pending** (like the rest of the DSP set) — feel, IR-swap smoothness,
     CPU with long IRs, and the buffer channel-mapping all want a live audition.
+  - **Vertical slice:** ships a maxref (`docs/tap.convolve~.maxref.xml`) and a help patcher
+    (`help/tap.convolve~.maxhelp`, authored headless from the autohelp template — **wants a first
+    open-in-Max check**, like the other new help patchers).
+  - **Verification notebook + C ABI (new tooling, modelled on AmbiTap's `tools/capi` + `notebooks/`).**
+    Because the portable engine is a Min-free header, a tiny **C ABI** (`tools/capi/taptools_capi.*`,
+    a standalone CMake that needs no min-api) wraps `conv_engine`, and a **ctypes bridge**
+    (`notebooks/taptools_py.py`, `Convolver` class + `PALETTE`, auto-builds the lib on first import)
+    lets a Jupyter notebook drive the **actual shipping DSP** — not a Python re-implementation. The
+    first notebook, `notebooks/convolution_reverb.ipynb`, machine-checks and plots five claims
+    against the real engine: exactness vs. direct convolution (<1e-9), one-block latency +
+    blocksize-invariance, the true-stereo 2×2 cross-feed, impulse→IR reconstruction with a Schroeder
+    RT60 read-back (0.60 s target, 0.599 s measured), and the atomic dropout-free IR swap converging
+    bit-identically to a from-scratch new-IR engine one block later. This is the first Python
+    verification tooling in TapTools and the template for future DSP notebooks.
 
 **Corpse pruned (step 5 done):** the dead trees have been removed now that all
 objects are migrated and the build is self-contained on `min-api` — gone are the
