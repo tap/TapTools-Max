@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.fourpole~" module="msp" category="TapTools, MSP Filters">
+
+	<digest>
+		4-pole ladder lowpass filter (linear)
+	</digest>
+
+	<description>
+		The <o>tap.fourpole~</o> object is a stereo 4-pole "Moog-style" ladder lowpass using the
+		classic linear Stilson/Smith approximation — light on the CPU, with the familiar ladder
+		character. For the virtual-analog model — nonlinear saturating stages, accurate tuning in
+		the top octaves, self-oscillation, drive, multimode outputs, and oversampling — see
+		<o>tap.ladder~</o>, this object's modern sibling.
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Filter</metadata>
+	</metadatalist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="clear">
+			<arglist/>
+			<description>Reset the filter state.</description>
+		</method>
+	</methodlist>
+
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="frequency" get="1" set="1" type="float" size="1">
+			<description>Cutoff frequency in Hz.</description>
+		</attribute>
+		<attribute name="q" get="1" set="1" type="float" size="1">
+			<description>Resonance (0-1). 0 is none; approaching 1 approaches self-oscillation.</description>
+		</attribute>
+	</attributelist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.ladder~"/>
+		<seealso name="tap.svf~"/>
+		<seealso name="tap.filter~"/>
+		<seealso name="lores~"/>
+	</seealsolist>
+
+
+</c74object>
