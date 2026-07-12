@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.5comb~" module="msp" category="TapTools, MSP Filters">
+
+	<digest>
+		Five parallel comb filters with master controls and preset morphing
+	</digest>
+
+	<description>
+		The <o>tap.5comb~</o> object is a bank of five parallel feedback comb filters modeled on the
+		GRM Tools Classic "Comb Filters" plugin. Each comb has a resonant frequency, a resonance
+		(ring time), and a lowpass filter inside its feedback loop; master multipliers scale the
+		frequencies, resonances, and lowpass cutoffs of all five at once. Every parameter is
+		interpolated per sample, so slider sweeps and preset recalls glide continuously with no
+		zipper noise — sweep the master frequency and the resonances slide like a Doppler shift.
+		Sixteen preset slots can be stored and morphed between over a settable interpolation time.
+		The warp and phase attributes add the modern GRM Comb's character controls: warp stretches
+		the resonance partials from purely harmonic toward inharmonic/metallic (an allpass inside
+		each feedback loop; the fundamental stays in tune), and phase moves the pickup point in the
+		loop so that at 100 only the odd harmonics ring. The delays are fractional (Hermite
+		interpolated), resonance maps to ring time on a logarithmic curve so the control is musical
+		across its whole range, and the feedback path is kept clean (no clipper; feedback capped
+		just below unity with DC control), so full resonance rings effectively forever without
+		distortion. Note: at extreme warp combined with very high tunings the loop cannot get
+		shorter than the allpass dispersion and the pitch flattens.
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Filter</metadata>
+	</metadatalist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="store">
+			<arglist>
+				<arg name="slot" type="int" optional="0"/>
+			</arglist>
+			<description>
+				Store the current parameters in a preset slot (1-16).
+			</description>
+		</method>
+		<method name="recall">
+			<arglist>
+				<arg name="slot" type="int" optional="0"/>
+				<arg name="time" type="float" optional="1"/>
+			</arglist>
+			<description>
+				Morph all parameters from their current values to a stored preset (1-16). The
+				optional second argument overrides the morph time in milliseconds; without it the
+				interp attribute is used. Recalling a new preset mid-morph re-targets smoothly, and
+				moving an individual parameter during a morph overrides the morph for that
+				parameter only.
+			</description>
+		</method>
+		<method name="clear">
+			<arglist/>
+			<description>
+				Clear the delay buffers and filter state of all five combs.
+			</description>
+		</method>
+	</methodlist>
+
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="freq1" get="1" set="1" type="float" size="1">
+			<description>Frequency of comb 1 in Hz (45-20000). Likewise freq2-freq5 for the other combs.</description>
+		</attribute>
+		<attribute name="freq2" get="1" set="1" type="float" size="1">
+			<description>Frequency of comb 2 in Hz (45-20000).</description>
+		</attribute>
+		<attribute name="freq3" get="1" set="1" type="float" size="1">
+			<description>Frequency of comb 3 in Hz (45-20000).</description>
+		</attribute>
+		<attribute name="freq4" get="1" set="1" type="float" size="1">
+			<description>Frequency of comb 4 in Hz (45-20000).</description>
+		</attribute>
+		<attribute name="freq5" get="1" set="1" type="float" size="1">
+			<description>Frequency of comb 5 in Hz (45-20000).</description>
+		</attribute>
+		<attribute name="res1" get="1" set="1" type="float" size="1">
+			<description>
+				Resonance of comb 1 (0-100). 0 is no resonance; 100 rings effectively forever.
+				Maps to ring time on a logarithmic curve, so the control is musical across its whole
+				travel and a comb keeps its ring time as its frequency sweeps. Likewise res2-res5.
+			</description>
+		</attribute>
+		<attribute name="res2" get="1" set="1" type="float" size="1">
+			<description>Resonance of comb 2 (0-100).</description>
+		</attribute>
+		<attribute name="res3" get="1" set="1" type="float" size="1">
+			<description>Resonance of comb 3 (0-100).</description>
+		</attribute>
+		<attribute name="res4" get="1" set="1" type="float" size="1">
+			<description>Resonance of comb 4 (0-100).</description>
+		</attribute>
+		<attribute name="res5" get="1" set="1" type="float" size="1">
+			<description>Resonance of comb 5 (0-100).</description>
+		</attribute>
+		<attribute name="lp1" get="1" set="1" type="float" size="1">
+			<description>
+				Cutoff frequency in Hz (0-20000) of the lowpass filter in comb 1's feedback loop.
+				High values keep the resonance bright and metallic; low values smooth and darken it.
+				Likewise lp2-lp5.
+			</description>
+		</attribute>
+		<attribute name="lp2" get="1" set="1" type="float" size="1">
+			<description>Cutoff (Hz) of the lowpass in comb 2's feedback loop (0-20000).</description>
+		</attribute>
+		<attribute name="lp3" get="1" set="1" type="float" size="1">
+			<description>Cutoff (Hz) of the lowpass in comb 3's feedback loop (0-20000).</description>
+		</attribute>
+		<attribute name="lp4" get="1" set="1" type="float" size="1">
+			<description>Cutoff (Hz) of the lowpass in comb 4's feedback loop (0-20000).</description>
+		</attribute>
+		<attribute name="lp5" get="1" set="1" type="float" size="1">
+			<description>Cutoff (Hz) of the lowpass in comb 5's feedback loop (0-20000).</description>
+		</attribute>
+		<attribute name="freq" get="1" set="1" type="float" size="1">
+			<description>
+				Master frequency multiplier (0-2) applied to freq1-freq5. 2 transposes all five
+				combs an octave up; 0 pins them at the 5 Hz floor.
+			</description>
+		</attribute>
+		<attribute name="res" get="1" set="1" type="float" size="1">
+			<description>Master resonance multiplier (0-2) applied to res1-res5.</description>
+		</attribute>
+		<attribute name="lp" get="1" set="1" type="float" size="1">
+			<description>Master lowpass multiplier (0-2) applied to lp1-lp5.</description>
+		</attribute>
+		<attribute name="mix" get="1" set="1" type="float" size="1">
+			<description>Dry/wet crossfade (0 = dry, 100 = wet), equal-power.</description>
+		</attribute>
+		<attribute name="gain" get="1" set="1" type="float" size="1">
+			<description>Output gain in dB.</description>
+		</attribute>
+		<attribute name="warp" get="1" set="1" type="float" size="1">
+			<description>
+				Partial warp (0-100): an allpass inside each feedback loop stretches the upper
+				resonance partials from purely harmonic (0) toward inharmonic and metallic (100),
+				like a stiffening string. The fundamental tuning is compensated. 0 matches the GRM
+				Classic behavior.
+			</description>
+		</attribute>
+		<attribute name="phase" get="1" set="1" type="float" size="1">
+			<description>
+				Pickup position (0-100): moves where the output is tapped from the delay loop. At
+				100, phase cancellations leave only the odd harmonics ringing. 0 matches the GRM
+				Classic behavior.
+			</description>
+		</attribute>
+		<attribute name="interp" get="1" set="1" type="float" size="1">
+			<description>Default preset-morph time in milliseconds used by the recall message.</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>
+				Anti-zipper interpolation time in milliseconds applied to direct parameter changes.
+			</description>
+		</attribute>
+		<attribute name="bypass" get="1" set="1" type="int" size="1">
+			<description>Pass the input through unprocessed.</description>
+		</attribute>
+		<attribute name="mute" get="1" set="1" type="int" size="1">
+			<description>Silence the output.</description>
+		</attribute>
+	</attributelist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.comb~"/>
+		<seealso name="tap.svf~"/>
+		<seealso name="tap.verb~"/>
+		<seealso name="comb~"/>
+	</seealsolist>
+
+
+</c74object>
