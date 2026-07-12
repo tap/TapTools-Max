@@ -495,6 +495,15 @@ GitHub Actions CI.
   plus `ladder_render` demos. Note in docs: exact unity gain is impossible in a
   saturating filter — the runtime maxtest uses a small signal with a loosened tolerance.
   Compile/ctest-verified on Linux/GCC; **audio still needs runtime validation in Max.**
+  **v1.1 (same day):** two upgrades from comparing the model against
+  Simper/Zavalishin/Arturia methodology — **`asym`** (0..1, morphable: a biased operating
+  point in every tanh stage models transistor mismatch and adds the even harmonics of real
+  hardware; 0 = symmetric, verified: 2nd harmonic < 1e-8 relative at 0, orders of
+  magnitude up when engaged) and **`solver`** (0 = fast one-pass default, 1 = **exact
+  Newton iteration to convergence** on the true nonlinear loop, seeded by the linear
+  prediction, clamped + fallback-guarded). Tests: solvers agree within 1e-2 at gentle
+  settings, exact stays finite at max drive + max res + full asym, and still
+  self-oscillates in tune.
 
 ---
 
