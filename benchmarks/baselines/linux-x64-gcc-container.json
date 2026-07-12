@@ -1,0 +1,18 @@
+{
+  "samplerate": 48000,
+  "cases": {
+    "clean.lp.o2.static": { "ns_per_sample": 12.611 },
+    "clean.lp.o4.static": { "ns_per_sample": 13.149 },
+    "clean.lp.o8.static": { "ns_per_sample": 22.602 },
+    "clean.morph.o4.static": { "ns_per_sample": 12.845 },
+    "clean.lp.o2.mod": { "ns_per_sample": 19.758 },
+    "clean.lp.o8.mod": { "ns_per_sample": 48.433 },
+    "clean.morph.o4.mod": { "ns_per_sample": 28.196 },
+    "driven.lp.o2.os1": { "ns_per_sample": 38.548 },
+    "driven.lp.o2.os2": { "ns_per_sample": 77.403 },
+    "driven.lp.o2.os4": { "ns_per_sample": 153.090 },
+    "driven.lp.o4.os2": { "ns_per_sample": 108.865 },
+    "driven.lp.o8.os2": { "ns_per_sample": 245.583 },
+    "driven.lp.o8.os2.mod": { "ns_per_sample": 273.738 }
+  }
+}

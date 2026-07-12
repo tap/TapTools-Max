@@ -91,7 +91,7 @@ Effort tiers below are a **first-pass estimate** pending per-object code review.
 ### Tier 3 — Complex DSP (heavier)
 | Object | What it does |
 |--------|--------------|
-| `tap.svf~` | State-variable filter w/ LFO modulation |
+| `tap.svf~` | State-variable filter w/ LFO modulation *(✅ 2026-07 redesigned: Simper/Cytomic morphing SVF; the Chamberlin+LFO port it replaces is in git history)* |
 | `tap.comb~` | Comb filter with filtered feedback |
 | `tap.fourpole~` | 4-pole ladder filter *(✅ re-cut standalone — the 2015 jamoma2 source was gone)* |
 | `tap.rotate` | (revived 2015) |
@@ -474,6 +474,44 @@ working tree now contains only the modern package: `CMakeLists.txt`, `source/min
 (submodule), `source/projects/`, `docs/`, `help/`, `package-info.json.in`, and the
 GitHub Actions CI.
 
+**`tap.svf~` redesigned as a Simper/Cytomic morphing SVF (2026-07-12):**
+- ✅ The Jamoma-faithful port (stereo Chamberlin + built-in LFO + portamento, batch above) is
+  **replaced**, not patched: the new object is Andy Simper's trapezoidal-integration
+  (zero-delay-feedback) SVF from his Cytomic papers — the design behind Ableton Live's
+  filters, including Auto Filter's Morph type. Deliberate behavior break: the LFO and
+  portamento are gone (patch a signal into the new right inlet for per-sample cutoff
+  modulation; `smooth` covers glide), and the object is now **single-channel** (mc.-friendly)
+  per house convention.
+- Architecture follows the `tap.ladder~` kernel pattern: all DSP in a portable header
+  (`svf.h`, `taptools::svf`, no Min dependency) under a thin wrapper. The kernel is
+  genuinely **multichannel** (shared coefficients per tick(), per-channel state via
+  `process(channel, x)`) for reuse outside Max; the Max object runs it with one channel.
+- Surface: discrete types (lowpass/highpass/bandpass/notch/peak/allpass), a **morph** type
+  sweeping continuously LP → BP → HP → notch → LP with corners bit-identical to the discrete
+  modes, and parametric-EQ types (**bell/lowshelf/highshelf**, ±24 dB gain, always
+  2nd-order) from Simper's coefficient tables. **Orders 2/4/8** (12/24/48 dB/oct) as a
+  Butterworth-spread cascade — resonance 0 is maximally flat at every order; resonance
+  (0..1) sharpens only the highest-Q section (a `q` message + kernel helpers convert
+  Q ↔ resonance). Two **circuits**: `clean` (pure linear, never oversampled) and `driven`
+  (drive dB into a tanh limiter on each section's band node, oversampled 1x/2x/4x, true
+  bounded self-oscillation at resonance 1 — tuned slightly past the threshold so it
+  actually sings).
+- Full vertical slice: rewritten maxref + help patcher, a `tap.svf~` runtime-test patcher
+  (`make_maxtest.py` gained a `numinlets` arg), and a 14-scenario Catch suite (Butterworth
+  −3 dB at fc for all orders, measured 12/24/48 dB/oct slopes, morph-corner identity,
+  bell/shelf gain targets, allpass unity, notch depth, self-oscillation frequency/bounds,
+  modulation-abuse stability, multichannel state independence). Suite green: **27/27**.
+  Runtime validation in Max still pending, as everywhere.
+- **Benchmarks + ratchet (`benchmarks/`).** `svf_bench` (kernel-only executable, config matrix,
+  best-of-N ns/sample) + `compare.py` gate per-machine baselines against >5% regressions.
+  First optimization pass landed: the coefficient update is split into a shape tier (damping /
+  output mix / EQ gains — refreshed only when those parameters actually change) and a cutoff
+  tier (tan + three solve constants per section, skipped when the cutoff is unchanged), and the
+  core is templated on the circuit. Signal-rate-modulated cases dropped 28–64% (e.g. modulated
+  2nd-order lowpass 36→19 ns/sample, modulated morph 77→28 on the Linux reference box) with
+  bit-identical output (the morph-corner identity tests pin this). The authoritative baseline
+  should be recorded on an arm64 Mac. Still open, by choice: fast-tanh for the driven circuit
+  and a polyphase halfband resampler — both change output microscopically, awaiting sign-off.
 - ✅ **`tap.vco~` added (2026-07-11)** — a **virtual-analog oscillator**, the source-side
   companion to `tap.ladder~` and the repo's first oscillator (`tap.noise~` was the only
   generator). Kernel (`source/projects/tap.vco_tilde/vco.h`, `taptools::vco::vco_osc`):
