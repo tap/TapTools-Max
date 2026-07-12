@@ -10,12 +10,15 @@
 ///               filter self-oscillates cleanly at the tuned frequency; the tanh stages bound the
 ///               amplitude, no clipper needed. (Give it a ping — an idle all-zero state is a fixed
 ///               point and produces no oscillation on its own.)
-///             - Nonlinear ZDF via the standard cheap-and-stable scheme: the linear ZDF closed
-///               form predicts the feedback value, then one corrective pass runs the four tanh
-///               stages (Huovilainen-flavored saturation without a full Newton solve). The default
-///               2x oversampling covers the residual linearization error and the tuning shift of
-///               the trapezoidal integrators near Nyquist. A full iterative solve is a possible
-///               future upgrade — flagged here, not needed at these oversampling factors.
+///             - Nonlinear ZDF, two solvers: `solver_fast` (default) predicts the feedback value
+///               with the linear ZDF closed form and runs one corrective pass through the tanh
+///               stages (Huovilainen-flavored); `solver_exact` iterates the true nonlinear loop
+///               to convergence with Newton's method (Simper-style circuit-sim accuracy) — the
+///               two are audibly identical until drive and resonance are both pushed hard.
+///             - Saturation asymmetry (`asym`, 0..1): a small bias in every tanh stage models
+///               transistor mismatch and adds the even harmonics of real hardware (symmetric at
+///               0; may produce slight signal-dependent DC when engaged — that too is authentic;
+///               follow with tap.dcblock~ if it matters downstream).
 ///             - drive is the input gain into the nonlinearity (the "hit it harder" control);
 ///               comp is the classic passband-loss compensation (0 = authentic passband droop as
 ///               resonance rises, 1 = fully compensated).
@@ -57,7 +60,14 @@ enum param_index : int {
     p_resonance,    // 0..1.1 (1.0 ~= edge of self-oscillation)
     p_drive,        // input gain into the nonlinearity, dB
     p_comp,         // 0..1 passband-loss compensation
+    p_asym,         // 0..1 saturation asymmetry (transistor mismatch -> even harmonics)
     k_num_params
+};
+
+enum solver_mode : int {
+    solver_fast = 0,   // linear ZDF prediction + one corrective nonlinear pass (default)
+    solver_exact,      // Newton iteration to convergence; audibly different only at extremes
+    k_num_solvers
 };
 
 enum filter_mode : int {
@@ -81,6 +91,7 @@ struct params {
         p.v[p_resonance] = 0.0;
         p.v[p_drive]     = 0.0;
         p.v[p_comp]      = 0.0;
+        p.v[p_asym]      = 0.0;
         return p;
     }
 };
@@ -93,6 +104,7 @@ inline double clamp_param(int index, double value) {
         case p_resonance: return std::clamp(value, 0.0, k_res_max);
         case p_drive:     return std::clamp(value, -k_drive_range_db, k_drive_range_db);
         case p_comp:      return std::clamp(value, 0.0, 1.0);
+        case p_asym:      return std::clamp(value, 0.0, 1.0);
         default:          return value;
     }
 }
@@ -168,6 +180,10 @@ public:
     void set_resonance(double r)   { set_param(p_resonance, r); }
     void set_drive(double db)      { set_param(p_drive, db); }
     void set_comp(double c)        { set_param(p_comp, c); }
+    void set_asym(double a)        { set_param(p_asym, a); }
+
+    void set_solver(int s) { m_solver = std::clamp(s, 0, k_num_solvers - 1); }
+    int  solver() const    { return m_solver; }
 
     // -- presets / morph -----------------------------------------------------------------------------
 
@@ -340,7 +356,15 @@ private:
         m_in_gain  = std::pow(10.0, m_ramp[p_drive].current * 0.05)
                      * (1.0 + m_ramp[p_comp].current * m_k);
         m_out_gain = std::pow(10.0, m_ramp[p_gain].current * 0.05);
+        m_sat_bias = 0.3 * m_ramp[p_asym].current;   // transistor-mismatch operating-point shift
+        m_sat_dc   = std::tanh(m_sat_bias);          // subtracted so sat(0) == 0 exactly
         m_derived_dirty = (m_ramps_active > 0);
+    }
+
+    // Biased saturator: symmetric tanh at asym 0; a shifted operating point (real ladders'
+    // transistor mismatch) adds even harmonics as asym rises.
+    double sat(double v) const {
+        return std::tanh(v + m_sat_bias) - m_sat_dc;
     }
 
     // One TPT one-pole step: y = G*(x - s) + s; s advances trapezoidally.
@@ -351,23 +375,58 @@ private:
         return y;
     }
 
-    // The nonlinear ladder core at the oversampled rate.
-    double core(double x) {
+    // Linear ZDF prediction of the feedback value (each linear stage: y = G*x + (1-G)*s).
+    double predict_linear(double L) const {
         const double G  = m_G;
-        const double L  = m_in_gain * x;
-
-        // linear ZDF prediction of the feedback value (each linear stage: y = G*x + (1-G)*s)
         const double G2 = G * G;
         const double B  = 1.0 - G;
         const double S  = G2 * G * B * m_s1 + G2 * B * m_s2 + G * B * m_s3 + B * m_s4;
-        const double y4_lin = (G2 * G2 * L + S) / (1.0 + m_k * G2 * G2);
+        return (G2 * G2 * L + S) / (1.0 + m_k * G2 * G2);
+    }
 
-        // corrective pass through the saturating stages
-        const double t0 = std::tanh(L - m_k * y4_lin);
+    // Trial evaluation of the saturating ladder for a guessed feedback value — no state mutation.
+    double y4_trial(double L, double guess) const {
+        const double G = m_G;
+        const double B = 1.0 - G;
+        const double u  = sat(L - m_k * guess);
+        const double y1 = G * u + B * m_s1;
+        const double y2 = G * sat(y1) + B * m_s2;
+        const double y3 = G * sat(y2) + B * m_s3;
+        return G * sat(y3) + B * m_s4;
+    }
+
+    // Newton iteration on F(g) = y4_trial(g) - g, seeded by the linear prediction. Falls back to
+    // the seed if the derivative degenerates; the tanh-bounded system keeps |g| small.
+    double solve_exact(double L) {
+        const double seed = predict_linear(L);
+        double g = std::clamp(seed, -3.0, 3.0);
+        for (int it = 0; it < 12; ++it) {
+            const double F = y4_trial(L, g) - g;
+            if (std::abs(F) < 1e-12)
+                break;
+            constexpr double eps = 1e-7;
+            const double dF = ((y4_trial(L, g + eps) - (g + eps)) - F) / eps;
+            if (std::abs(dF) < 1e-9)
+                return seed;
+            g = std::clamp(g - F / dF, -3.0, 3.0);
+        }
+        return g;
+    }
+
+    // The nonlinear ladder core at the oversampled rate.
+    double core(double x) {
+        const double G = m_G;
+        const double L = m_in_gain * x;
+
+        const double y4_est = (m_solver == solver_exact) ? solve_exact(L) : predict_linear(L);
+
+        // commit pass through the saturating stages (for solver_exact this reproduces the
+        // converged trial values while advancing the integrator states)
+        const double t0 = sat(L - m_k * y4_est);
         const double y1 = tpt(m_s1, t0, G);
-        const double y2 = tpt(m_s2, std::tanh(y1), G);
-        const double y3 = tpt(m_s3, std::tanh(y2), G);
-        const double y4 = tpt(m_s4, std::tanh(y3), G);
+        const double y2 = tpt(m_s2, sat(y1), G);
+        const double y3 = tpt(m_s3, sat(y2), G);
+        const double y4 = tpt(m_s4, sat(y3), G);
 
         // Xpander-style pole mixing over [t0, y1, y2, y3, y4]
         static constexpr double c_mix[k_num_modes][5] = {
@@ -403,6 +462,7 @@ private:
     double m_smooth_ms { k_default_smooth_ms };
     int    m_mode { mode_lp24 };
     int    m_os { 2 };
+    int    m_solver { solver_fast };
     bool   m_prepared { false };
 
     // parameters
@@ -416,6 +476,8 @@ private:
     double m_k { 0.0 };
     double m_in_gain { 1.0 };
     double m_out_gain { 1.0 };
+    double m_sat_bias { 0.0 };
+    double m_sat_dc { 0.0 };
 
     // state
     double m_s1 { 0.0 }, m_s2 { 0.0 }, m_s3 { 0.0 }, m_s4 { 0.0 };

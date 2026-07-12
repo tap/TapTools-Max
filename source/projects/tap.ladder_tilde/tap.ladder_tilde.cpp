@@ -65,10 +65,27 @@ public:
     TAP_LADDER_ATTR(comp, kernel::p_comp, 0.0,
         "Passband-loss compensation (0..1). 0 is the authentic ladder passband droop as resonance "
         "rises; 1 fully compensates.")
+    TAP_LADDER_ATTR(asym, kernel::p_asym, 0.0,
+        "Saturation asymmetry (0..1): a small operating-point shift in every ladder stage, "
+        "modeling transistor mismatch. 0 is perfectly symmetric (odd harmonics only); raising it "
+        "adds the even-harmonic warmth of real hardware. May produce slight signal-dependent DC "
+        "when engaged — follow with tap.dcblock~ if that matters downstream.")
     TAP_LADDER_ATTR(gain, kernel::p_gain, 0.0,
         "Output gain in dB.")
 
 #undef TAP_LADDER_ATTR
+
+    attribute<int> solver { this, "solver", kernel::solver_fast,
+        setter { MIN_FUNCTION {
+            const int v = std::clamp(static_cast<int>(args[0]), 0, kernel::k_num_solvers - 1);
+            m_filter.set_solver(v);
+            return { v };
+        }},
+        description { "Nonlinear feedback solver: 0 = fast (linear zero-delay prediction plus one "
+                      "corrective saturation pass — the default), 1 = exact (Newton iteration to "
+                      "convergence, circuit-simulation accuracy). The two are audibly identical "
+                      "until drive and resonance are both pushed hard; exact costs more CPU." }
+    };
 
     // Mode as an int attribute with named index constants — not attribute<enum class>, per the
     // tap.crossfade~/tap.pan~ GCC lesson (REVIVAL.md 9.5).

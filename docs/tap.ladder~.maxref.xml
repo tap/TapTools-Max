@@ -18,7 +18,10 @@
 		full growl, and comp restores the passband level that a real ladder loses as resonance
 		rises. A mode attribute selects lowpass, bandpass, and highpass responses by mixing the
 		ladder's stage taps (the Oberheim Xpander technique). A signal in the right inlet
-		modulates the cutoff with true per-sample resolution. All parameters glide smoothly, and
+		modulates the cutoff with true per-sample resolution. The asym attribute models
+		transistor mismatch (even-harmonic warmth; 0 = perfectly symmetric), and the solver
+		attribute chooses between the fast one-pass nonlinear scheme and an exact Newton
+		iteration with circuit-simulation accuracy. All parameters glide smoothly, and
 		sixteen preset slots can be stored and morphed between. For the simple linear
 		Stilson/Smith ladder, see <o>tap.fourpole~</o> — this object is its nonlinear sibling.
 		Note that exact unity gain is impossible in a saturating filter: large signals are gently
@@ -86,6 +89,16 @@
 		</attribute>
 		<attribute name="gain" get="1" set="1" type="float" size="1">
 			<description>Output gain in dB.</description>
+		</attribute>
+		<attribute name="asym" get="1" set="1" type="float" size="1">
+			<description>Saturation asymmetry (0-1): an operating-point shift in every stage,
+			modeling transistor mismatch. 0 is symmetric (odd harmonics only); raising it adds
+			even-harmonic warmth. May produce slight signal-dependent DC when engaged.</description>
+		</attribute>
+		<attribute name="solver" get="1" set="1" type="int" size="1">
+			<description>Nonlinear feedback solver: 0 = fast (linear zero-delay prediction plus one
+			corrective saturation pass, the default), 1 = exact (Newton iteration to convergence).
+			Audibly different only when drive and resonance are both pushed hard.</description>
 		</attribute>
 		<attribute name="mode" get="1" set="1" type="int" size="1">
 			<description>Filter response via pole mixing: 0 = lp24, 1 = lp12, 2 = bp12,

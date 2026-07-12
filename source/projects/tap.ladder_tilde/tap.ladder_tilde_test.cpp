@@ -336,3 +336,84 @@ SCENARIO("the Min wrapper instantiates with the documented defaults") {
         }
     }
 }
+
+
+SCENARIO("saturation asymmetry adds even harmonics") {
+    auto second_harmonic_ratio = [](double asym) {
+        auto f = make_filter();
+        f.set_frequency(5000.0);
+        f.set_drive(12.0);
+        f.set_asym(asym);
+        auto out = run_tone(f, 200.0, 0.5, 0.3);
+        const double fund = goertzel(out, at_s(0.25), at_s(0.5), 200.0);
+        const double h2   = goertzel(out, at_s(0.25), at_s(0.5), 400.0);
+        return h2 / (fund + 1e-30);
+    };
+    THEN("the symmetric model has essentially no 2nd harmonic") {
+        REQUIRE(second_harmonic_ratio(0.0) < 1e-8);
+    }
+    THEN("asym raises the 2nd harmonic by orders of magnitude") {
+        REQUIRE(second_harmonic_ratio(0.6) > 1000.0 * (second_harmonic_ratio(0.0) + 1e-12));
+        REQUIRE(second_harmonic_ratio(0.6) > 1e-6);
+    }
+}
+
+SCENARIO("the exact solver agrees with fast at gentle settings and stays sane at extremes") {
+    GIVEN("moderate drive and resonance") {
+        auto run_solver = [](int solver) {
+            auto f = make_filter();
+            f.set_solver(solver);
+            f.set_frequency(1200.0);
+            f.set_resonance(0.5);
+            f.set_drive(3.0);
+            return run_tone(f, 220.0, 0.3, 0.2);
+        };
+        auto fast  = run_solver(klf::solver_fast);
+        auto exact = run_solver(klf::solver_exact);
+        THEN("the two solvers are nearly indistinguishable") {
+            double maxdiff = 0.0;
+            for (size_t i = at_s(0.1); i < fast.size(); ++i)
+                maxdiff = std::max(maxdiff, std::abs(fast[i] - exact[i]));
+            REQUIRE(maxdiff < 0.01);
+        }
+    }
+    GIVEN("maximum drive, resonance, and asymmetry — the solver stress test") {
+        auto f = make_filter();
+        f.set_solver(klf::solver_exact);
+        f.set_frequency(3000.0);
+        f.set_resonance(klf::k_res_max);
+        f.set_drive(24.0);
+        f.set_asym(1.0);
+        auto out = run_tone(f, 110.0, 2.0, 0.9);
+        THEN("output stays finite and bounded") {
+            double peak = 0.0;
+            bool   finite = true;
+            for (double s : out) {
+                if (!std::isfinite(s))
+                    finite = false;
+                peak = std::max(peak, std::abs(s));
+            }
+            REQUIRE(finite);
+            REQUIRE(peak < 5.0);
+        }
+    }
+    GIVEN("self-oscillation under the exact solver") {
+        auto f = make_filter();
+        f.set_solver(klf::solver_exact);
+        f.set_frequency(1000.0);
+        f.set_resonance(1.05);
+        f.process(0.5);
+        std::vector<double> out(at_s(1.0));
+        for (size_t i = 0; i < out.size(); ++i)
+            out[i] = f.process(0.0);
+        size_t zc = 0;
+        for (size_t i = at_s(0.5) + 1; i < out.size(); ++i)
+            if ((out[i] >= 0.0) != (out[i - 1] >= 0.0))
+                ++zc;
+        const double freq = zc / (2.0 * 0.5);
+        THEN("it still tracks the tuned cutoff") {
+            REQUIRE(freq > 970.0);
+            REQUIRE(freq < 1030.0);
+        }
+    }
+}
