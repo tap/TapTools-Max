@@ -91,7 +91,7 @@ Effort tiers below are a **first-pass estimate** pending per-object code review.
 ### Tier 3 — Complex DSP (heavier)
 | Object | What it does |
 |--------|--------------|
-| `tap.svf~` | State-variable filter w/ LFO modulation |
+| `tap.svf~` | State-variable filter w/ LFO modulation *(✅ 2026-07 redesigned: Simper/Cytomic morphing SVF; the Chamberlin+LFO port it replaces is in git history)* |
 | `tap.comb~` | Comb filter with filtered feedback |
 | `tap.fourpole~` | 4-pole ladder filter *(✅ re-cut standalone — the 2015 jamoma2 source was gone)* |
 | `tap.rotate` | (revived 2015) |
@@ -136,12 +136,12 @@ source. Strong candidates to **resurrect from docs + git history** if still usef
 | `tap.vocoder~` | 24-band vocoder | ✅ **done** (reinvented standalone) |
 | `tap.spectra~` | Spectral remapping | ✅ **done** (reinvented standalone) |
 | `tap.nr~` | Spectral noise reduction | ✅ **done** (reinvented standalone) |
-| `tap.5comb~` | 5× comb filter | maybe |
+| `tap.5comb~` | 5× comb filter | ✅ **done** (recreated as a native external + portable kernel — see §7 2026-07-11) |
 | `tap.adapt~` | (audio processor) | review |
 | `tap.buffer.record2~` | Smooth buffer recording (v2) | merge into `tap.buffer.record~`? |
 | `tap.smooth` | Data-stream smoother | maybe (native alts exist) |
 | `tap.deviate` | Randomize & "prime" input | maybe |
-| `tap.semitone2ratio` | Semitones → frequency ratio | trivial; maybe fold in |
+| `tap.semitone2ratio` | Semitones → frequency ratio | ✅ **done** (native object; was an abstraction — see §7 2026-07-11) |
 | `tap.string.sub` | String substitution | maybe |
 | `tap.thru` / `tap.thru~` | Feedback utilities | maybe |
 | `tap.decay_calc` | Feedback coefficient calc | maybe (pair w/ `tap.biquadcalc`) |
@@ -521,6 +521,168 @@ working tree now contains only the modern package: `CMakeLists.txt`, `source/min
 (submodule), `source/projects/`, `docs/`, `help/`, `package-info.json.in`, and the
 GitHub Actions CI.
 
+**`tap.svf~` redesigned as a Simper/Cytomic morphing SVF (2026-07-12):**
+- ✅ The Jamoma-faithful port (stereo Chamberlin + built-in LFO + portamento, batch above) is
+  **replaced**, not patched: the new object is Andy Simper's trapezoidal-integration
+  (zero-delay-feedback) SVF from his Cytomic papers — the design behind Ableton Live's
+  filters, including Auto Filter's Morph type. Deliberate behavior break: the LFO and
+  portamento are gone (patch a signal into the new right inlet for per-sample cutoff
+  modulation; `smooth` covers glide), and the object is now **single-channel** (mc.-friendly)
+  per house convention.
+- Architecture follows the `tap.ladder~` kernel pattern: all DSP in a portable header
+  (`svf.h`, `taptools::svf`, no Min dependency) under a thin wrapper. The kernel is
+  genuinely **multichannel** (shared coefficients per tick(), per-channel state via
+  `process(channel, x)`) for reuse outside Max; the Max object runs it with one channel.
+- Surface: discrete types (lowpass/highpass/bandpass/notch/peak/allpass), a **morph** type
+  sweeping continuously LP → BP → HP → notch → LP with corners bit-identical to the discrete
+  modes, and parametric-EQ types (**bell/lowshelf/highshelf**, ±24 dB gain, always
+  2nd-order) from Simper's coefficient tables. **Orders 2/4/8** (12/24/48 dB/oct) as a
+  Butterworth-spread cascade — resonance 0 is maximally flat at every order; resonance
+  (0..1) sharpens only the highest-Q section (a `q` message + kernel helpers convert
+  Q ↔ resonance). Two **circuits**: `clean` (pure linear, never oversampled) and `driven`
+  (drive dB into a tanh limiter on each section's band node, oversampled 1x/2x/4x, true
+  bounded self-oscillation at resonance 1 — tuned slightly past the threshold so it
+  actually sings).
+- Full vertical slice: rewritten maxref + help patcher, a `tap.svf~` runtime-test patcher
+  (`make_maxtest.py` gained a `numinlets` arg), and a 14-scenario Catch suite (Butterworth
+  −3 dB at fc for all orders, measured 12/24/48 dB/oct slopes, morph-corner identity,
+  bell/shelf gain targets, allpass unity, notch depth, self-oscillation frequency/bounds,
+  modulation-abuse stability, multichannel state independence). Suite green: **27/27**.
+  Runtime validation in Max still pending, as everywhere.
+- **Benchmarks + ratchet (`benchmarks/`).** `svf_bench` (kernel-only executable, config matrix,
+  best-of-N ns/sample) + `compare.py` gate per-machine baselines against >5% regressions.
+  First optimization pass landed: the coefficient update is split into a shape tier (damping /
+  output mix / EQ gains — refreshed only when those parameters actually change) and a cutoff
+  tier (tan + three solve constants per section, skipped when the cutoff is unchanged), and the
+  core is templated on the circuit. Signal-rate-modulated cases dropped 28–64% (e.g. modulated
+  2nd-order lowpass 36→19 ns/sample, modulated morph 77→28 on the Linux reference box) with
+  bit-identical output (the morph-corner identity tests pin this). The authoritative baseline
+  should be recorded on an arm64 Mac. Still open, by choice: fast-tanh for the driven circuit
+  and a polyphase halfband resampler — both change output microscopically, awaiting sign-off.
+- ✅ **`tap.vco~` added (2026-07-11)** — a **virtual-analog oscillator**, the source-side
+  companion to `tap.ladder~` and the repo's first oscillator (`tap.noise~` was the only
+  generator). Kernel (`source/projects/tap.vco_tilde/vco.h`, `taptools::vco::vco_osc`):
+  **polyBLEP** alias-suppressed saw and pulse (PWM 1–99%), triangle via leaky integration
+  of the BLEP square, pure sine — all driven by one master phase and **morphed by a
+  continuous `shape` parameter (0 sine → 1 tri → 2 saw → 3 pulse)** that rides the
+  per-sample ramps, so shape sweeps and preset morphs glide through hybrid waveforms.
+  Full VCO tier: **hard sync** (rising-zero-cross reset with sub-sample accuracy and a
+  one-sided first-order step correction; minBLEP tables flagged as the upgrade path),
+  **through-zero linear FM** calibrated in Hz (negative effective frequency runs the
+  phase backward, tested bounded at depths far past the carrier), and an
+  **analog-character section** — slow random pitch drift (S&H ~2 Hz through a ~0.5 Hz
+  one-pole, depth in cents) plus static detune, **deterministic per `seed`** so renders
+  and tests reproduce and mc. instances decorrelate by seed. House ramps + 16-slot preset
+  morphing. Wrapper: 3 inlets (frequency signal/float — true per-sample; FM; sync),
+  `waveform sine|triangle|saw|pulse` snap message. 10 Catch scenarios (frequency
+  accuracy, **alias suppression > 35 dB at a folded 13th harmonic** — the VA proof —,
+  sine/triangle purity, PWM duty cycle, morph continuity, sync locking, TZFM sidebands +
+  boundedness, drift determinism/decorrelation, preset morph, wrapper defaults) plus
+  `vco_render` demos (PWM pad, sync sweep, TZFM growl, shape-morph tour, preset morph).
+  Compile/ctest-verified on Linux/GCC; **audio still needs runtime validation in Max.**
+- ✅ **`tap.ladder~` added (2026-07-11)** — a **virtual-analog transistor-ladder filter**,
+  the nonlinear sibling of `tap.fourpole~` (which stays as the cheap linear Stilson/Smith
+  ladder; the two maxrefs cross-reference, and fourpole~ finally *got* a maxref — it had
+  none). New ground for the repo: **nothing else here had tanh/nonlinear feedback or
+  filter oversampling**. Kernel (`source/projects/tap.ladder_tilde/ladder.h`,
+  `taptools::ladder::ladder_filter`): zero-delay-feedback TPT 4-stage ladder, prewarped
+  tuning, per-stage tanh via linear-ZDF prediction + one corrective nonlinear pass
+  (full Newton solve flagged in-file as a possible future upgrade — unnecessary at these
+  oversampling factors), `k = 4·resonance` up to 4.4 for clean bounded self-oscillation
+  (unit-tested: oscillation frequency within 3% at 1 kHz *and* 8 kHz — the top-octave
+  accuracy the Stilson/Smith model can't deliver), `drive` into the nonlinearity, `comp`
+  passband-loss compensation, **1/2/4× oversampling** (4th-order Butterworth anti-image/
+  anti-alias cascades, tap.verb~ pattern, default 2×), and **Xpander-style pole-mixing
+  multimode** (lp24/lp12/bp12/bp24/hp12/hp24). Wrapper: mono + a right inlet for **true
+  per-sample signal-rate cutoff** (one better than tap.filter~'s per-vector read), house
+  ramps + 16-slot preset morphing. 10 Catch scenarios (self-osc tuning/boundedness,
+  24 dB/oct slope, resonance monotonicity, drive THD, mode shapes, comp, oversampling
+  passband-consistency + alias reduction at a driven 5 kHz tone, morph/sweep continuity)
+  plus `ladder_render` demos. Note in docs: exact unity gain is impossible in a
+  saturating filter — the runtime maxtest uses a small signal with a loosened tolerance.
+  Compile/ctest-verified on Linux/GCC; **audio still needs runtime validation in Max.**
+  **v1.1 (same day):** two upgrades from comparing the model against
+  Simper/Zavalishin/Arturia methodology — **`asym`** (0..1, morphable: a biased operating
+  point in every tanh stage models transistor mismatch and adds the even harmonics of real
+  hardware; 0 = symmetric, verified: 2nd harmonic < 1e-8 relative at 0, orders of
+  magnitude up when engaged) and **`solver`** (0 = fast one-pass default, 1 = **exact
+  Newton iteration to convergence** on the true nonlinear loop, seeded by the linear
+  prediction, clamped + fallback-guarded). Tests: solvers agree within 1e-2 at gentle
+  settings, exact stays finite at max drive + max res + full asym, and still
+  self-oscillates in tune.
+- ✅ **`tap.shift~` engine modernized + `tap.semitone2ratio` resurrected (2026-07-11)** —
+  the author approved retiring tt_shift's implementation artifacts rather than preserving
+  them: the taps are now **Hermite-interpolated** (was linear with a constant one-sample
+  offset), the grain envelopes are an exact **complementary Hann pair summing to 1** at
+  every phase (replacing the 256-point padded-Welch table whose uneven sum imposed an
+  amplitude ripple at the grain rate — verified by a new DC-through-moving-taps test that
+  holds unity to 1e-9), and **ratio/window_size ride per-sample ramps** (new `smooth`
+  attribute, default 20 ms) so window changes no longer click. The **two float inlets of
+  the original (ratio, window ms) are restored** — the first Min port had dropped them
+  (the legacy wrapper's 3-inlet surface recovered from the `legacy` branch). Control
+  surface otherwise unchanged. Also fixed: the object had **no unit tests and no
+  `min-object-unittest` include in its CMakeLists** — both added (Goertzel transposition
+  checks at ±1 octave in normalized frequency, level-invariance, glide continuity,
+  clamping), plus runtime maxtest patchers for both objects. **`tap.semitone2ratio`**
+  (§3 candidate) is resurrected as a native object — the legacy version was a patcher
+  abstraction computing `mtof(60+st)/mtof(60)`, implemented directly as `2^(st/12)`
+  (numbers, lists, bang-to-repeat; unit-tested) — which un-breaks `tap.shift~`'s help
+  patcher, whose signal chain depends on it. Both maxrefs rewritten (the old shift maxref
+  documented a nonexistent `windowsize` attribute — it is `window_size`). Legacy help
+  patcher for `tap.semitone2ratio` ported as-is (valid modern JSON). Compile/ctest-verified
+  on Linux/GCC; **wants the usual open-in-Max audition.**
+- ✅ **`tap.5comb~` resurrected (2026-07-11)** — recreated as a native external modeled on
+  the **GRM Tools Classic "Comb Filters"** plugin, not ported from the legacy version: the
+  legacy `tap.5comb~` was a patcher *abstraction* over five `tap.comb~` objects (recovered
+  from git history at `b62bba8^`) and never matched the GRM sound — integer-sample delays
+  detuned the combs and killed the beating between them, control-rate stepping zippered on
+  sweeps, and the in-loop hard clipper distorted at high resonance. Only its 20-name
+  parameter surface (`freq`/`res`/`lp` masters, `freq1..5`/`res1..5`/`lp1..5`, `gain`,
+  `mix`) and 5 Hz frequency floor were kept. **All DSP lives in a portable, header-only,
+  Max-free kernel** (`source/projects/tap.5comb_tilde/grm_comb.h`,
+  `taptools::fivecomb::comb_bank`) — a first for the repo, per the "Min is a thin shim"
+  philosophy — with: fractional delays (4-point Hermite), every parameter on a per-sample
+  linear ramp, resonance mapped to ring time on a log curve (20 ms → 100 s; feedback derived
+  from the current delay, capped at 0.99999 — no clipper, DC blocker in the loop instead),
+  an exact one-pole feedback lowpass, and a **16-slot preset-morph engine** (GRM's hallmark:
+  `store`/`recall` interpolates everything over a settable time; grabbing one slider
+  mid-morph overrides just that parameter). New capabilities beyond the Classic: `warp`
+  (negative-coefficient in-loop allpass → stiff-string inharmonic partial stretch,
+  fundamental-compensated) and `phase` (half-loop pickup tap; 100 = odd harmonics only),
+  both neutral at 0. Ships the full slice: maxref, help patcher, two runtime maxtest
+  patchers, 11 Catch scenarios (echo spacing, RT60-vs-res, morph continuity, warp/phase
+  spectra via Goertzel, master math, mix law), and `grm_comb_render` — a kernel-only offline
+  WAV renderer (lands in `tests/`) proving the kernel runs outside Max and giving the
+  listening-check material. **Deliberate deviations flagged for audition:** 1/5 wet-sum
+  normalization (legacy summed raw and ran hot), res→ring-time map (legacy was linear
+  feedback), equal-power mix. Compile/ctest-verified on Linux/GCC; **audio still needs
+  runtime validation in Max.**
+
+- ✅ **`tap.pitchaccum~` added (2026-07-11)** — second GRM recreation, **net-new** (no legacy
+  TapTools ancestor): the GRM Tools Classic **"PitchAccum"** — two independent granular
+  transposers ("shadows"), each ±24 semitones with its own delay (≤ 3 s), feedback, and
+  gain, where the feedback **re-enters the transposer** so pitch accumulates pass after
+  pass (the shimmer/spiral the plugin is named for). Same architecture as `tap.5comb~`:
+  all DSP in a portable header-only kernel
+  (`source/projects/tap.pitchaccum_tilde/grm_pitchaccum.h`,
+  `taptools::pitchaccum::accum_bank`), 17 per-sample-ramped parameters, 16-slot
+  preset-morph engine, thin Min shim. The transposer is the `tap.shift~`/tt_shift engine
+  (phasor sweeping two taps half a cycle apart) modernized: Hermite fractional taps and a
+  **complementary cos²-flank envelope pair that sums exactly to 1** (constant level at any
+  `xfade`, vs tt_shift's fixed padded-Welch ripple), with the crossfade width exposed as
+  GRM's Cross-fade control. Global LFO (voice 2 phase-offset via `modphase`) + per-voice
+  deterministic random transposition modulation; DC blocker in each feedback loop, fb
+  capped at 0.99. Optional **pitch follower** (`follow`, default off): decimated
+  normalized autocorrelation, smallest-lag-near-max peak picking (global max picks
+  subharmonics — caught by the unit test), confidence-gated, window → ~2 detected periods.
+  GRM's stereo-width fader intentionally dropped (mono object; `mc.` for multichannel).
+  Full slice: maxref, help patcher, runtime maxtest, 10 Catch scenarios (Goertzel
+  transposition checks, the two-pass accumulation signature at +7→+14 st, delay timing,
+  modulation spread, bit-exact determinism, morph continuity, follower convergence and
+  noise fallback, 0.99-feedback boundedness), and `grm_pitchaccum_render` (offline WAV
+  demos, lands in `tests/`). Compile/ctest-verified on Linux/GCC; **audio still needs
+  runtime validation in Max.**
+
 ---
 
 ## 8. The `taptools-min` reconciliation (2026-06-17)
@@ -604,7 +766,8 @@ older `gain~`/`meter~` form, so it was rebuilt to spec: 2 L/R inlets, a horizont
 check). `demosound.maxpat` is a stock Max abstraction (fine).
 
 **3. Resurrection candidates still open** (§3, all "maybe/review"):
-`tap.5comb~`, `tap.adapt~`, `tap.buffer.record2~` (merge into `tap.buffer.record~`?),
+`tap.adapt~`, `tap.buffer.record2~` (merge into `tap.buffer.record~`?),
+`tap.smooth`, `tap.deviate`, `tap.string.sub`, `tap.thru`/`tap.thru~`,
 `tap.smooth`, `tap.deviate`, `tap.semitone2ratio`, `tap.string.sub`, `tap.thru`/`tap.thru~`,
 `tap.decay_calc`; and the retired **Jitter** ones (`tap.jit.delay`, `tap.jit.motion`/`+`/`2`,
 `tap.jit.grayscale`, `tap.jit.pan`, `tap.jit.getattributes`). None are committed to yet.

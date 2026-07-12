@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.semitone2ratio" module="max" category="TapTools, Notes">
+
+	<digest>
+		Convert units from semitones to a frequency ratio
+	</digest>
+
+	<description>
+		The <o>tap.semitone2ratio</o> object is a simple utility for converting units in the
+		frequency domain: ratio = 2^(semitones/12). Send a number or a list of numbers; a bang
+		re-outputs the last conversion. Useful for driving the ratio of <o>tap.shift~</o> or
+		the transposition-related controls of <o>tap.pitchaccum~</o> in musical units.
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Math</metadata>
+	</metadatalist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="float">
+			<arglist>
+				<arg name="input" type="float" optional="0" id="0" />
+			</arglist>
+			<description>Semitones to convert to a frequency ratio.</description>
+		</method>
+		<method name="int">
+			<arglist>
+				<arg name="input" type="int" optional="0" id="0" />
+			</arglist>
+			<description>Semitones to convert to a frequency ratio.</description>
+		</method>
+		<method name="list">
+			<arglist>
+				<arg name="inputs" type="list" optional="0" id="0" />
+			</arglist>
+			<description>A list of semitone values, converted element-wise to ratios.</description>
+		</method>
+		<method name="bang">
+			<arglist/>
+			<description>Re-output the last conversion.</description>
+		</method>
+	</methodlist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.shift~"/>
+		<seealso name="tap.pitchaccum~"/>
+		<seealso name="mtof"/>
+	</seealsolist>
+
+
+</c74object>

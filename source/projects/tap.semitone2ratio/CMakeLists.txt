@@ -1,4 +1,4 @@
-# Copyright 1999-2026 Timothy Place. Distributed under the New BSD License.
+# Copyright 2026 Timothy Place. Distributed under the New BSD License.
 
 cmake_minimum_required(VERSION 3.19)
 
@@ -13,7 +13,6 @@ include_directories("${C74_INCLUDES}")
 
 set(SOURCES
     ${PROJECT_NAME}.cpp
-    svf.h
 )
 
 add_library(
@@ -32,15 +31,3 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 # Catch-based unit tests (built when the _test.cpp is present; run via ctest).
 include(${C74_MIN_API_DIR}/test/min-object-unittest.cmake)
-
-#############################################################
-# CPU BENCHMARK (kernel-only, no Max dependency)
-#############################################################
-
-# Times the svf.h kernel over a config matrix; used by the benchmarks/ ratchet workflow.
-# Lands in the gitignored tests/ directory alongside the unit-test binaries.
-add_executable(svf_bench svf_bench.cpp)
-set_target_properties(svf_bench PROPERTIES
-    CXX_STANDARD 20
-    CXX_STANDARD_REQUIRED ON
-)
