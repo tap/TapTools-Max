@@ -13,6 +13,7 @@ include_directories("${C74_INCLUDES}")
 
 set(SOURCES
     ${PROJECT_NAME}.cpp
+    svf.h
 )
 
 add_library(
@@ -28,3 +29,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
 )
+
+# Catch-based unit tests (built when the _test.cpp is present; run via ctest).
+include(${C74_MIN_API_DIR}/test/min-object-unittest.cmake)

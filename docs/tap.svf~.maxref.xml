@@ -4,80 +4,129 @@
 <c74object name="tap.svf~" module="msp" category="TapTools, MSP Filters">
 
 	<digest>
-		State variable filter with LFO modulation
+		Morphing state-variable filter (Simper / zero-delay-feedback)
 	</digest>
 
 	<description>
-		The <o>tap.svf~</o> object is a state variable filter which provides a resonant bandpass, highpass, lowpass, 
-		and notch filter along with an integrated lfo modulator for the cutoff/center frequency.
+		The <o>tap.svf~</o> object is a state-variable filter built on Andy Simper's
+		trapezoidal-integration (zero-delay-feedback) SVF — the design behind the Cytomic filters
+		in Ableton Live. The prewarped tuning is exact into the top octaves at any sample rate,
+		and the filter stays stable under per-sample cutoff modulation (a signal in the right
+		inlet). Beyond the discrete responses (lowpass, highpass, bandpass, notch, peak, allpass)
+		there is a morph type that sweeps continuously around lowpass, bandpass, highpass, and
+		notch — like the Morph filter in Live's Auto Filter — and parametric-EQ types (bell, low
+		shelf, high shelf) with a boost/cut gain for building equalizers. The order attribute
+		selects 2nd-, 4th-, or 8th-order responses (12/24/48 dB per octave) as a cascade with the
+		Butterworth Q spread, so resonance 0 is maximally flat at every order and raising the
+		resonance (0 to 1) sharpens a single clean peak. Two circuits are available: clean is the
+		pure linear filter; driven adds an input drive into a tanh limiter on each section's band
+		node, runs oversampled, and self-oscillates at the cutoff when resonance reaches 1 (give
+		it a ping to start — a perfectly silent filter is a fixed point). All parameters glide
+		smoothly. Single-channel: wrap in mc. for multichannel.
 	</description>
 
-	
+
 	<!--METADATA-->
 	<metadatalist>
 		<metadata name="author">74 Objects</metadata>
 		<metadata name="tag">TapTools</metadata>
 		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Filter</metadata>
 	</metadatalist>
 
-	
+
 	<!--MESSAGES-->
 	<methodlist>
-		
-		<method name="symbol">
+		<method name="float">
 			<arglist>
-				<arg name="clear" type="symbol" optional="0" id="0" />
+				<arg name="input" type="float" optional="0" id="0" />
 			</arglist>
-			<description>Reset internal feedback history in the event that something blows up. </description>
+			<description>In the right inlet, sets the cutoff frequency in Hz.</description>
 		</method>
-	
+		<method name="q">
+			<arglist>
+				<arg name="q" type="float" optional="1"/>
+			</arglist>
+			<description>
+				Set the resonance attribute from a Q value (the Q of the resonant section; the
+				Butterworth base Q of the current order is the minimum). Without an argument,
+				posts the current equivalent Q to the Max console.
+			</description>
+		</method>
+		<method name="clear">
+			<arglist/>
+			<description>Reset the filter state (this also stops self-oscillation).</description>
+		</method>
 	</methodlist>
-	
-	
+
+
 	<!--ATTRIBUTES-->
 	<attributelist>
 		<attribute name="type" get="1" set="1" type="symbol" size="1">
-			<description>Select the filter shape you would like.</description>
+			<description>Filter response: lowpass, highpass, bandpass, notch, peak, allpass,
+			morph (continuous sweep positioned by the morph attribute), or the parametric-EQ
+			types bell, lowshelf, and highshelf (boost/cut set by the gain attribute; the EQ
+			types always run 2nd-order).</description>
 		</attribute>
-		<attribute name="frequency" get="1" set="1" type="symbol" size="1">
-			<description>Set the center/cutoff frequency for the filter.</description>
+		<attribute name="frequency" get="1" set="1" type="float" size="1">
+			<description>Cutoff / center frequency in Hz (1-20000). A signal in the right inlet
+			overrides this with per-sample resolution.</description>
 		</attribute>
-		<attribute name="resonance" get="1" set="1" type="symbol" size="1">
-			<description>Adjust the resonance/steepness of the filter.</description>
+		<attribute name="resonance" get="1" set="1" type="float" size="1">
+			<description>Resonance (0-1). 0 is maximally flat (Butterworth); rising values sharpen
+			a single resonant peak. At 1 the clean circuit reaches a very high finite Q; the
+			driven circuit self-oscillates at the cutoff. Use the q message to set this from a Q
+			value.</description>
 		</attribute>
-		<attribute name="portamento_time" get="1" set="1" type="symbol" size="1">
-			<description>Set a time in milliseconds over which to ramp to any new frequencies that are sent to the object.</description>
+		<attribute name="morph" get="1" set="1" type="float" size="1">
+			<description>Position around the response circle when type is morph: 0 = lowpass,
+			0.25 = bandpass, 0.5 = highpass, 0.75 = notch, 1 wraps back to lowpass. The corners
+			are identical to the discrete types.</description>
 		</attribute>
-		<attribute name="lfo.freq.shape" get="1" set="1" type="symbol" size="1">
-			<description>Choose the waveform of the internal LFO. The internal LFO modulates the frequency of the filter.</description>
+		<attribute name="gain" get="1" set="1" type="float" size="1">
+			<description>Boost/cut in dB (-24..24) for the parametric-EQ types (bell, lowshelf,
+			highshelf); ignored by the other types.</description>
 		</attribute>
-		<attribute name="lfo.freq.speed" get="1" set="1" type="symbol" size="1">
-			<description>Set the speed/frequency of the LFO.</description>
+		<attribute name="drive" get="1" set="1" type="float" size="1">
+			<description>Input drive in dB (-24..24) into the driven circuit's saturation;
+			ignored by the clean circuit.</description>
 		</attribute>
-		<attribute name="lfo.freq.depth" get="1" set="1" type="symbol" size="1">
-			<description>Adjust the depth of the internal LFO (i.e. the number of hertz either side of the center frequency to modulate between).</description>
+		<attribute name="circuit" get="1" set="1" type="symbol" size="1">
+			<description>clean: the pure linear SVF (transparent, cheap, no oversampling).
+			driven: adds drive into a tanh limiter on each section's band node — saturation
+			color, bounded resonance, true self-oscillation at resonance 1 — and runs
+			oversampled.</description>
 		</attribute>
-		<attribute name="lfo.freq.toggle" get="1" set="1" type="symbol" size="1">
-			<description>Turn the LFO on/off.</description>
+		<attribute name="order" get="1" set="1" type="int" size="1">
+			<description>Filter order: 2, 4, or 8 (12/24/48 dB per octave), as a cascade with the
+			Butterworth Q spread — resonance 0 stays maximally flat at every order. The EQ types
+			always run 2nd-order.</description>
+		</attribute>
+		<attribute name="oversample" get="1" set="1" type="int" size="1">
+			<description>Internal oversampling factor for the driven circuit (1, 2, or 4; default
+			2). Reduces aliasing from the saturation. The clean circuit is linear and always runs
+			1x.</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>Anti-zipper interpolation time in milliseconds applied to parameter changes.</description>
+		</attribute>
+		<attribute name="bypass" get="1" set="1" type="int" size="1">
+			<description>Pass the input through unprocessed.</description>
+		</attribute>
+		<attribute name="mute" get="1" set="1" type="int" size="1">
+			<description>Silence the output.</description>
 		</attribute>
 	</attributelist>
 
 
 	<!--SEEALSO-->
 	<seealsolist>
+		<seealso name="tap.ladder~"/>
+		<seealso name="tap.fourpole~"/>
 		<seealso name="tap.filter~"/>
-		<seealso name="tap.allpass~"/>
-		<seealso name="tap.allpole~"/>
-		<seealso name="tap.comb~"/>
-		<seealso name="tap.smooth"/>
-		<seealso name="tap.svf~"/>
+		<seealso name="svf~"/>
 		<seealso name="biquad~"/>
-		<seealso name="cascade~"/>
-		<seealso name="comb~"/>
-		<seealso name="onepole~"/>
-		<seealso name="reson~"/>
-		<seealso name="teeth~"/>
 	</seealsolist>
 
-	
+
 </c74object>
