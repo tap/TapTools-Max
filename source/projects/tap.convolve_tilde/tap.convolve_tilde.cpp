@@ -9,8 +9,8 @@
 ///             linear convolution.
 ///
 ///             **True stereo.** Four IR paths describe the full 2×2 response:
-///                 outL = inL ∗ h_LL + inR ∗ h_RL
-///                 outR = inL ∗ h_LR + inR ∗ h_RR
+///                 out_l = in_l ∗ h_LL + in_r ∗ h_RL
+///                 out_r = in_l ∗ h_LR + in_r ∗ h_RR
 ///             The two input channels are transformed once per block and shared across the four paths.
 ///             How the four paths are pulled from the bound `buffer~` depends on its channel count:
 ///               • 4+ channels → true stereo: ch1=LL, ch2=LR, ch3=RL, ch4=RR
@@ -38,7 +38,6 @@
 #include <vector>
 
 #include "c74_min.h"
-
 #include "conv_engine.h" // the Min-free, unit-tested DSP core (see the header for the algorithm)
 
 using namespace c74::min;
@@ -62,45 +61,44 @@ class convolve : public object<convolve>, public vector_operator<> {
 
     // Rebuilds the IR whenever the bound buffer~ is (re)set or its contents change. The callback may
     // arrive on any thread, so it only flags a deferred rebuild.
-    buffer_reference m_buffer{this, MIN_FUNCTION{
-                                        m_rebuild.set();
-                                        return {};
-                                    }};
+    buffer_reference m_buffer{this,
+                              MIN_FUNCTION{
+                                  m_rebuild.set();
+                                  return {};
+                              }};
 
     convolve(const atoms& args = {}) {
-        if (!args.empty())
+        if (!args.empty()) {
             m_buffer.set(args[0]);
+        }
         if (args.size() > 1) {
             const int b = static_cast<int>(args[1]);
-            if (is_power_of_two(b))
+            if (is_power_of_two(b)) {
                 m_blocksize_pending = b;
+            }
         }
     }
 
     argument<symbol> name_arg{this, "buffer", "Name of the buffer~ holding the impulse response."};
     argument<int>    block_arg{this, "blocksize", "FFT partition size in samples (power of two)."};
 
-    attribute<number> mix{this, "mix", 100.0,
-                          setter{MIN_FUNCTION{
+    attribute<number> mix{this, "mix", 100.0, setter{MIN_FUNCTION{
                               return {std::clamp(static_cast<double>(args[0]), 0.0, 100.0)};
                           }},
                           description{"Dry/wet mix as a percentage (0 = dry, 100 = fully wet convolution)."}};
 
-    attribute<number> gain{this, "gain", 0.0,
-                           setter{MIN_FUNCTION{
+    attribute<number> gain{this, "gain", 0.0, setter{MIN_FUNCTION{
                                m_gain_lin = std::pow(10.0, static_cast<double>(args[0]) / 20.0);
                                return {args[0]};
                            }},
                            description{"Output gain in dB, applied to the wet+dry mix."}};
 
-    attribute<number> predelay{this, "predelay", 0.0,
-                               setter{MIN_FUNCTION{
+    attribute<number> predelay{this, "predelay", 0.0, setter{MIN_FUNCTION{
                                    return {std::clamp(static_cast<double>(args[0]), 0.0, k_max_predelay_ms)};
                                }},
                                description{"Pre-delay in milliseconds applied to the wet signal (0–2000)."}};
 
-    attribute<bool> normalize{this, "normalize", true,
-                              setter{MIN_FUNCTION{
+    attribute<bool> normalize{this, "normalize", true, setter{MIN_FUNCTION{
                                   const bool v = args[0];
                                   m_rebuild.set(); // re-derive the IR scale
                                   return {v};
@@ -108,11 +106,11 @@ class convolve : public object<convolve>, public vector_operator<> {
                               description{"Energy-normalise the impulse response so its overall level is "
                                           "consistent regardless of the IR's loudness or length."}};
 
-    attribute<int> blocksize{this, "blocksize", 512,
-                             setter{MIN_FUNCTION{
+    attribute<int> blocksize{this, "blocksize", 512, setter{MIN_FUNCTION{
                                  int b = static_cast<int>(args[0]);
-                                 if (!is_power_of_two(b))
+                                 if (!is_power_of_two(b)) {
                                      b = next_power_of_two(b);
+                                 }
                                  b                   = std::clamp(b, 16, 8192);
                                  m_blocksize_pending = b;
                                  return {b};
@@ -121,9 +119,8 @@ class convolve : public object<convolve>, public vector_operator<> {
                                          "processing latency. Changes take effect when the DSP chain is next "
                                          "started."}};
 
-    attribute<int> maxsize{this, "maxsize", 131072,
-                           setter{MIN_FUNCTION{
-                               int m           = std::max(static_cast<int>(args[0]), 256);
+    attribute<int> maxsize{this, "maxsize", 131072, setter{MIN_FUNCTION{
+                               int m             = std::max(static_cast<int>(args[0]), 256);
                                m_maxsize_pending = m;
                                return {m};
                            }},
@@ -137,8 +134,9 @@ class convolve : public object<convolve>, public vector_operator<> {
     message<> clear{this, "clear", "Flush the reverb tail (clears the input history and pending output).",
                     MIN_FUNCTION{
                         m_engine.clear();
-                        for (auto& r : m_pd_ring)
+                        for (auto& r : m_pd_ring) {
                             std::fill(r.begin(), r.end(), 0.0);
+                        }
                         m_pd_w = 0;
                         return {};
                     }};
@@ -153,8 +151,9 @@ class convolve : public object<convolve>, public vector_operator<> {
                            m_engine.configure(B, Pmax);
 
                            m_pd_len = static_cast<int>(k_max_predelay_ms * 0.001 * m_sr) + 2;
-                           for (auto& r : m_pd_ring)
+                           for (auto& r : m_pd_ring) {
                                r.assign(m_pd_len, 0.0);
+                           }
                            m_pd_w = 0;
 
                            m_gain_lin = std::pow(10.0, static_cast<double>(gain) / 20.0);
@@ -163,53 +162,53 @@ class convolve : public object<convolve>, public vector_operator<> {
                        }};
 
     void operator()(audio_bundle input, audio_bundle output) override {
-        const long    n    = input.frame_count();
-        const double* inL  = input.samples(0);
-        const double* inR  = input.samples(1);
-        double*       outL = output.samples(0);
-        double*       outR = output.samples(1);
+        const long    n     = input.frame_count();
+        const double* in_l  = input.samples(0);
+        const double* in_r  = input.samples(1);
+        double*       out_l = output.samples(0);
+        double*       out_r = output.samples(1);
 
         if (mute || !m_engine.configured()) {
             for (long i = 0; i < n; ++i) {
-                outL[i] = 0.0;
-                outR[i] = 0.0;
+                out_l[i] = 0.0;
+                out_r[i] = 0.0;
             }
             return;
         }
         if (bypass) {
             for (long i = 0; i < n; ++i) {
-                outL[i] = inL[i];
-                outR[i] = inR[i];
+                out_l[i] = in_l[i];
+                out_r[i] = in_r[i];
             }
             return;
         }
 
         // Wet convolution written in place to the output buffers.
-        m_engine.process(inL, inR, outL, outR, n);
+        m_engine.process(in_l, in_r, out_l, out_r, n);
 
         const double wet = static_cast<double>(mix) * 0.01;
         const double dry = 1.0 - wet;
         const double g   = m_gain_lin;
-        const int    D   = std::min(m_pd_len - 1,
-                                    static_cast<int>(static_cast<double>(predelay) * 0.001 * m_sr + 0.5));
+        const int    D   = std::min(m_pd_len - 1, static_cast<int>(static_cast<double>(predelay) * 0.001 * m_sr + 0.5));
 
         for (long i = 0; i < n; ++i) {
-            double wl = outL[i];
-            double wr = outR[i];
+            double wl = out_l[i];
+            double wr = out_r[i];
 
             if (D > 0 && m_pd_len > 0) {
                 m_pd_ring[0][m_pd_w] = wl;
                 m_pd_ring[1][m_pd_w] = wr;
                 int rd               = m_pd_w - D;
-                if (rd < 0)
+                if (rd < 0) {
                     rd += m_pd_len;
+                }
                 wl     = m_pd_ring[0][rd];
                 wr     = m_pd_ring[1][rd];
                 m_pd_w = (m_pd_w + 1) % m_pd_len;
             }
 
-            outL[i] = (dry * inL[i] + wet * wl) * g;
-            outR[i] = (dry * inR[i] + wet * wr) * g;
+            out_l[i] = (dry * in_l[i] + wet * wl) * g;
+            out_r[i] = (dry * in_r[i] + wet * wr) * g;
         }
     }
 
@@ -219,20 +218,23 @@ class convolve : public object<convolve>, public vector_operator<> {
     static bool is_power_of_two(int v) { return v > 0 && (v & (v - 1)) == 0; }
     static int  next_power_of_two(int v) {
         int p = 1;
-        while (p < v)
+        while (p < v) {
             p <<= 1;
+        }
         return p;
     }
 
     // Deferred (main-thread) IR (re)build from the bound buffer~.
-    queue<> m_rebuild{this, MIN_FUNCTION{
-                                rebuild_ir();
-                                return {};
-                            }};
+    queue<> m_rebuild{this,
+                      MIN_FUNCTION{
+                          rebuild_ir();
+                          return {};
+                      }};
 
     void rebuild_ir() {
-        if (!m_engine.configured())
+        if (!m_engine.configured()) {
             return;
+        }
 
         buffer_lock<> b(m_buffer);
         if (!b.valid()) {
@@ -243,29 +245,40 @@ class convolve : public object<convolve>, public vector_operator<> {
         const int nc     = static_cast<int>(b.channel_count());
         const int cap    = m_engine.max_partitions() * m_engine.block_size();
         const int L      = std::min(frames, cap);
-        if (L <= 0)
+        if (L <= 0) {
             return;
+        }
 
         // Map buffer channels to the four IR paths (LL, LR, RL, RR); -1 = silent path.
         int srcch[conv_engine::k_paths];
         if (nc >= 4) {
-            srcch[0] = 0; srcch[1] = 1; srcch[2] = 2; srcch[3] = 3; // true stereo
+            srcch[0] = 0;
+            srcch[1] = 1;
+            srcch[2] = 2;
+            srcch[3] = 3; // true stereo
         }
         else if (nc >= 2) {
-            srcch[0] = 0; srcch[1] = -1; srcch[2] = -1; srcch[3] = 1; // stereo IR, no cross-feed
+            srcch[0] = 0;
+            srcch[1] = -1;
+            srcch[2] = -1;
+            srcch[3] = 1; // stereo IR, no cross-feed
         }
         else {
-            srcch[0] = 0; srcch[1] = -1; srcch[2] = -1; srcch[3] = 0; // mono IR on both diagonals
+            srcch[0] = 0;
+            srcch[1] = -1;
+            srcch[2] = -1;
+            srcch[3] = 0; // mono IR on both diagonals
         }
 
         // Deinterleave the needed channels into contiguous float buffers.
         std::array<std::vector<float>, conv_engine::k_paths> data;
-        const float*                                         ptrs[conv_engine::k_paths] = {nullptr, nullptr, nullptr, nullptr};
-        double                                               energy = 0.0;
+        const float* ptrs[conv_engine::k_paths] = {nullptr, nullptr, nullptr, nullptr};
+        double       energy                     = 0.0;
         for (int path = 0; path < conv_engine::k_paths; ++path) {
             const int ch = srcch[path];
-            if (ch < 0 || ch >= nc)
+            if (ch < 0 || ch >= nc) {
                 continue;
+            }
             data[path].resize(L);
             for (int j = 0; j < L; ++j) {
                 const float s = b.lookup(static_cast<size_t>(j), static_cast<size_t>(ch));
@@ -276,8 +289,9 @@ class convolve : public object<convolve>, public vector_operator<> {
         }
 
         double scale = 1.0;
-        if (normalize && energy > 0.0)
+        if (normalize && energy > 0.0) {
             scale = 1.0 / std::sqrt(energy);
+        }
 
         m_engine.load_ir(ptrs, L, scale);
     }

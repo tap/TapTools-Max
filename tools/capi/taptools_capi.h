@@ -34,16 +34,16 @@ TAPTOOLS_API int taptools_conv_configure(taptools_conv engine, int blocksize, in
 /// Load the four true-stereo IR paths (LL, LR, RL, RR) of `length` samples into the engine and
 /// publish them atomically. Any of the four pointers may be NULL for a silent path; `scale` is
 /// applied to every sample. Returns 0, or -1 on a bad/unconfigured handle.
-TAPTOOLS_API int taptools_conv_load_ir(taptools_conv engine, const float* ll, const float* lr,
-                                       const float* rl, const float* rr, int length, double scale);
+TAPTOOLS_API int taptools_conv_load_ir(taptools_conv engine, const float* ll, const float* lr, const float* rl,
+                                       const float* rr, int length, double scale);
 
 /// Flush the running state (input history + pending output); keeps the loaded IR. Returns 0/-1.
 TAPTOOLS_API int taptools_conv_clear(taptools_conv engine);
 
 /// Process n stereo samples. Wet (fully convolved) output is written to outL/outR (double).
 /// Input and output buffers must not alias. Returns 0, or -1 on a bad handle.
-TAPTOOLS_API int taptools_conv_process(taptools_conv engine, const double* inL, const double* inR,
-                                       double* outL, double* outR, int n);
+TAPTOOLS_API int taptools_conv_process(taptools_conv engine, const double* inL, const double* inR, double* outL,
+                                       double* outR, int n);
 
 /// Introspection.
 TAPTOOLS_API int taptools_conv_block_size(taptools_conv engine);     // partition size (= latency)
