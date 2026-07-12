@@ -6,95 +6,103 @@
 /// @author     Timothy Place
 /// @copyright  Copyright 2026 Timothy Place. Distributed under the New BSD License.
 
-#include "c74_min_unittest.h"
-#include "tap.spektral_tilde.cpp"
-
 #include <cmath>
 #include <cstddef>
 #include <vector>
+
+#include "c74_min_unittest.h"
+#include "tap.spektral_tilde.cpp"
 
 namespace ksp = taptools::spektral;
 
 namespace {
 
-constexpr double c_sr = 48000.0;
-constexpr int    c_N  = ksp::k_default_fftsize;   // 2048 -> hop 512, latency 2048
+    constexpr double k_c_sr = 48000.0;
+    constexpr int    k_c_n  = ksp::k_default_fftsize; // 2048 -> hop 512, latency 2048
 
-ksp::spektral_engine make_engine() {
-    ksp::spektral_engine e;
-    e.prepare(c_sr);
-    e.set_smooth_ms(0.0);
-    e.set_mix(100.0);   // wet only unless a test says otherwise
-    return e;
-}
-
-std::vector<double> sine(double freq, double seconds, double amp = 0.5) {
-    std::vector<double> s(static_cast<size_t>(seconds * c_sr));
-    for (size_t i = 0; i < s.size(); ++i)
-        s[i] = amp * std::sin(2.0 * ksp::k_pi * freq * i / c_sr);
-    return s;
-}
-
-std::vector<double> run(ksp::spektral_engine& e, const std::vector<double>& in) {
-    std::vector<double> out(in.size());
-    e.process(in.data(), out.data(), in.size());
-    return out;
-}
-
-double goertzel(const std::vector<double>& x, size_t lo, size_t hi, double freq_hz) {
-    const double w    = 2.0 * ksp::k_pi * freq_hz / c_sr;
-    const double coef = 2.0 * std::cos(w);
-    double s1 = 0.0, s2 = 0.0;
-    for (size_t i = lo; i < hi && i < x.size(); ++i) {
-        const double s = x[i] + coef * s1 - s2;
-        s2 = s1;
-        s1 = s;
+    ksp::spektral_engine make_engine() {
+        ksp::spektral_engine e;
+        e.prepare(k_c_sr);
+        e.set_smooth_ms(0.0);
+        e.set_mix(100.0); // wet only unless a test says otherwise
+        return e;
     }
-    return s1 * s1 + s2 * s2 - coef * s1 * s2;
-}
 
-double energy(const std::vector<double>& x, size_t lo, size_t hi) {
-    double acc = 0.0;
-    for (size_t i = lo; i < hi && i < x.size(); ++i)
-        acc += x[i] * x[i];
-    return acc;
-}
+    std::vector<double> sine(double freq, double seconds, double amp = 0.5) {
+        std::vector<double> s(static_cast<size_t>(seconds * k_c_sr));
+        for (size_t i = 0; i < s.size(); ++i) {
+            s[i] = amp * std::sin(2.0 * ksp::k_pi * freq * i / k_c_sr);
+        }
+        return s;
+    }
 
-size_t zero_crossings(const std::vector<double>& x, size_t lo, size_t hi) {
-    size_t n = 0;
-    for (size_t i = std::max(lo, size_t(1)); i < hi && i < x.size(); ++i)
-        if ((x[i] >= 0.0) != (x[i - 1] >= 0.0))
-            ++n;
-    return n;
-}
+    std::vector<double> run(ksp::spektral_engine& e, const std::vector<double>& in) {
+        std::vector<double> out(in.size());
+        e.process(in.data(), out.data(), in.size());
+        return out;
+    }
 
-size_t at_s(double seconds) { return static_cast<size_t>(seconds * c_sr); }
+    double goertzel(const std::vector<double>& x, size_t lo, size_t hi, double freq_hz) {
+        const double w    = 2.0 * ksp::k_pi * freq_hz / k_c_sr;
+        const double coef = 2.0 * std::cos(w);
+        double       s1 = 0.0, s2 = 0.0;
+        for (size_t i = lo; i < hi && i < x.size(); ++i) {
+            const double s = x[i] + coef * s1 - s2;
+            s2             = s1;
+            s1             = s;
+        }
+        return s1 * s1 + s2 * s2 - coef * s1 * s2;
+    }
 
-// Zero the curve around a band (the Hann mainlobe leaks into neighbors).
-void notch_band(ksp::spektral_engine& e, double freq, int halfwidth = 2) {
-    const int b = e.band_of_freq(freq);
-    for (int d = -halfwidth; d <= halfwidth; ++d)
-        e.set_curve_point(ksp::curve_level, b + d, 0.0);
-}
+    double energy(const std::vector<double>& x, size_t lo, size_t hi) {
+        double acc = 0.0;
+        for (size_t i = lo; i < hi && i < x.size(); ++i) {
+            acc += x[i] * x[i];
+        }
+        return acc;
+    }
 
-void set_band(ksp::spektral_engine& e, int which, double freq, double value, int halfwidth = 2) {
-    const int b = e.band_of_freq(freq);
-    for (int d = -halfwidth; d <= halfwidth; ++d)
-        e.set_curve_point(which, b + d, value);
-}
+    size_t zero_crossings(const std::vector<double>& x, size_t lo, size_t hi) {
+        size_t n = 0;
+        for (size_t i = std::max(lo, size_t(1)); i < hi && i < x.size(); ++i) {
+            if ((x[i] >= 0.0) != (x[i - 1] >= 0.0)) {
+                ++n;
+            }
+        }
+        return n;
+    }
 
-}  // namespace
+    size_t at_s(double seconds) {
+        return static_cast<size_t>(seconds * k_c_sr);
+    }
 
+    // Zero the curve around a band (the Hann mainlobe leaks into neighbors).
+    void notch_band(ksp::spektral_engine& e, double freq, int halfwidth = 2) {
+        const int b = e.band_of_freq(freq);
+        for (int d = -halfwidth; d <= halfwidth; ++d) {
+            e.set_curve_point(ksp::curve_level, b + d, 0.0);
+        }
+    }
+
+    void set_band(ksp::spektral_engine& e, int which, double freq, double value, int halfwidth = 2) {
+        const int b = e.band_of_freq(freq);
+        for (int d = -halfwidth; d <= halfwidth; ++d) {
+            e.set_curve_point(which, b + d, value);
+        }
+    }
+
+} // namespace
 
 SCENARIO("unity settings reconstruct the input at one frame of latency") {
-    auto e  = make_engine();
-    auto in = sine(1000.0, 0.5);
+    auto e   = make_engine();
+    auto in  = sine(1000.0, 0.5);
     auto out = run(e, in);
 
     THEN("out[i] equals in[i - N] to near machine precision") {
         double max_err = 0.0;
-        for (size_t i = c_N + 4 * 512; i < out.size(); ++i)
-            max_err = std::max(max_err, std::abs(out[i] - in[i - c_N]));
+        for (size_t i = k_c_n + 4 * 512; i < out.size(); ++i) {
+            max_err = std::max(max_err, std::abs(out[i] - in[i - k_c_n]));
+        }
         REQUIRE(max_err < 1e-6);
     }
 }
@@ -102,15 +110,16 @@ SCENARIO("unity settings reconstruct the input at one frame of latency") {
 SCENARIO("mix 0 is an exact latency-aligned dry passthrough") {
     auto e = make_engine();
     e.set_mix(0.0);
-    e.set_smear(80.0);          // wet machinery churning must not leak
+    e.set_smear(80.0); // wet machinery churning must not leak
     e.set_rotate(200.0);
-    auto in = sine(440.0, 0.4);
+    auto in  = sine(440.0, 0.4);
     auto out = run(e, in);
 
     THEN("output equals the input delayed by the FFT size") {
         double max_err = 0.0;
-        for (size_t i = c_N; i < out.size(); ++i)
-            max_err = std::max(max_err, std::abs(out[i] - in[i - c_N]));
+        for (size_t i = k_c_n; i < out.size(); ++i) {
+            max_err = std::max(max_err, std::abs(out[i] - in[i - k_c_n]));
+        }
         REQUIRE(max_err < 1e-9);
     }
 }
@@ -121,8 +130,9 @@ SCENARIO("the level curve notches a band") {
     notch_band(notched, 1000.0);
 
     auto in = sine(1000.0, 0.5, 0.4);
-    for (size_t i = 0; i < in.size(); ++i)
-        in[i] += 0.4 * std::sin(2.0 * ksp::k_pi * 250.0 * i / c_sr);
+    for (size_t i = 0; i < in.size(); ++i) {
+        in[i] += 0.4 * std::sin(2.0 * ksp::k_pi * 250.0 * i / k_c_sr);
+    }
 
     auto out_flat  = run(flat, in);
     auto out_notch = run(notched, in);
@@ -140,7 +150,7 @@ SCENARIO("the level curve notches a band") {
 
 SCENARIO("the delay curve positions a band in time") {
     auto e = make_engine();
-    set_band(e, ksp::curve_delay, 1000.0, 500.0);   // 500 ms on the 1 kHz band
+    set_band(e, ksp::curve_delay, 1000.0, 500.0); // 500 ms on the 1 kHz band
 
     auto in = sine(1000.0, 0.1, 0.5);
     in.resize(at_s(1.0), 0.0);
@@ -186,7 +196,7 @@ SCENARIO("per-band feedback produces decaying echoes") {
 }
 
 SCENARIO("freeze recirculates losslessly until released") {
-    auto e = make_engine();
+    auto                e  = make_engine();
     std::vector<double> in = sine(1000.0, 0.5, 0.5);
     in.resize(at_s(4.0), 0.0);
 
@@ -213,9 +223,9 @@ SCENARIO("freeze recirculates losslessly until released") {
 SCENARIO("rotate sweeps energy upward through the spectrum") {
     auto still   = make_engine();
     auto rotated = make_engine();
-    rotated.set_rotate(100.0);   // bins per second
+    rotated.set_rotate(100.0); // bins per second
 
-    auto in = sine(500.0, 1.6, 0.5);
+    auto in        = sine(500.0, 1.6, 0.5);
     auto out_still = run(still, in);
     auto out_rot   = run(rotated, in);
 
@@ -251,16 +261,16 @@ SCENARIO("smear diffuses a click into a tail") {
 }
 
 SCENARIO("curve lists resample to the band count") {
-    auto e = make_engine();
-    const double pts[4] = { 0.0, 1.0, 0.5, 1.0 };
+    auto         e      = make_engine();
+    const double pts[4] = {0.0, 1.0, 0.5, 1.0};
     e.set_curve(ksp::curve_level, pts, 4);
 
     THEN("endpoints and interior interpolate piecewise-linearly") {
         REQUIRE(e.curve_value(ksp::curve_level, 0) == 0.0);
-        REQUIRE(std::abs(e.curve_value(ksp::curve_level, 53) - 1.0) < 0.02);    // x == 1.0
-        REQUIRE(std::abs(e.curve_value(ksp::curve_level, 106) - 0.5) < 0.02);   // x == 2.0
+        REQUIRE(std::abs(e.curve_value(ksp::curve_level, 53) - 1.0) < 0.02);  // x == 1.0
+        REQUIRE(std::abs(e.curve_value(ksp::curve_level, 106) - 0.5) < 0.02); // x == 2.0
         REQUIRE(e.curve_value(ksp::curve_level, 159) == 1.0);
-        REQUIRE(std::abs(e.curve_value(ksp::curve_level, 27) - 0.509) < 0.03);  // mid-segment
+        REQUIRE(std::abs(e.curve_value(ksp::curve_level, 27) - 0.509) < 0.03); // mid-segment
     }
     THEN("a single [band value] poke touches only that band") {
         e.set_curve_point(ksp::curve_level, 80, 0.25);
@@ -272,31 +282,32 @@ SCENARIO("curve lists resample to the band count") {
 SCENARIO("preset recall morphs curves and scalars without discontinuities") {
     auto e = make_engine();
     e.set_mix(70.0);
-    const double flat[1] = { 1.0 };
+    const double flat[1] = {1.0};
     e.set_curve(ksp::curve_level, flat, 1);
     e.store_preset(0);
 
     // radically different state
-    const double ramp_pts[2] = { 0.0, 2.0 };
+    const double ramp_pts[2] = {0.0, 2.0};
     e.set_curve(ksp::curve_level, ramp_pts, 2);
-    const double dly[3] = { 0.0, 800.0, 100.0 };
+    const double dly[3] = {0.0, 800.0, 100.0};
     e.set_curve(ksp::curve_delay, dly, 3);
     e.set_mix(20.0);
 
-    auto sig = [](size_t i) { return 0.3 * std::sin(2.0 * ksp::k_pi * 330.0 * i / c_sr); };
-    size_t i = 0;
-    for (; i < at_s(0.3); ++i)
+    auto   sig = [](size_t i) { return 0.3 * std::sin(2.0 * ksp::k_pi * 330.0 * i / k_c_sr); };
+    size_t i   = 0;
+    for (; i < at_s(0.3); ++i) {
         e.process(sig(i));
+    }
 
     REQUIRE(e.recall_preset(0, 0.1));
     REQUIRE(e.morphing());
 
-    double prev = e.process(sig(i++));
+    double prev    = e.process(sig(i++));
     double maxjump = 0.0;
     for (; i < at_s(0.3) + at_s(0.4); ++i) {
         const double y = e.process(sig(i));
-        maxjump = std::max(maxjump, std::abs(y - prev));
-        prev = y;
+        maxjump        = std::max(maxjump, std::abs(y - prev));
+        prev           = y;
     }
     THEN("no sample-to-sample click during the morph") {
         REQUIRE(maxjump < 0.25);
@@ -328,18 +339,18 @@ SCENARIO("the Min wrapper instantiates with the documented defaults") {
             REQUIRE(my_object.engine().latency() == 2048);
         }
         THEN("curve and preset messages are callable") {
-            my_object.gains(atoms { 0.0, 1.0, 0.5 });
-            my_object.delays(atoms { 100.0, 200.0 });
-            my_object.fbs(atoms { 0, 0.5 });   // [band value] poke
-            my_object.store(atoms { 1 });
-            my_object.recall(atoms { 1 });
-            my_object.clear(atoms {});
+            my_object.gains(atoms{0.0, 1.0, 0.5});
+            my_object.delays(atoms{100.0, 200.0});
+            my_object.fbs(atoms{0, 0.5}); // [band value] poke
+            my_object.store(atoms{1});
+            my_object.recall(atoms{1});
+            my_object.clear(atoms{});
             REQUIRE(my_object.engine().curve_value(ksp::curve_fb, 0) == 0.5);
         }
         THEN("a non-power-of-two fftsize request falls back to the default") {
             ksp::spektral_engine odd(1000);
             REQUIRE(odd.fftsize() == 2048);
-            ksp::spektral_engine tiny_engine(512);   // "small" is a macro (char) in Windows rpcndr.h
+            ksp::spektral_engine tiny_engine(512); // "small" is a macro (char) in Windows rpcndr.h
             REQUIRE(tiny_engine.fftsize() == 512);
         }
     }
