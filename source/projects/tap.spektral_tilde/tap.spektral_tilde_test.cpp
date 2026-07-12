@@ -339,8 +339,8 @@ SCENARIO("the Min wrapper instantiates with the documented defaults") {
         THEN("a non-power-of-two fftsize request falls back to the default") {
             ksp::spektral_engine odd(1000);
             REQUIRE(odd.fftsize() == 2048);
-            ksp::spektral_engine small(512);
-            REQUIRE(small.fftsize() == 512);
+            ksp::spektral_engine tiny_engine(512);   // "small" is a macro (char) in Windows rpcndr.h
+            REQUIRE(tiny_engine.fftsize() == 512);
         }
     }
 }
