@@ -502,6 +502,16 @@ GitHub Actions CI.
   bell/shelf gain targets, allpass unity, notch depth, self-oscillation frequency/bounds,
   modulation-abuse stability, multichannel state independence). Suite green: **27/27**.
   Runtime validation in Max still pending, as everywhere.
+- **Benchmarks + ratchet (`benchmarks/`).** `svf_bench` (kernel-only executable, config matrix,
+  best-of-N ns/sample) + `compare.py` gate per-machine baselines against >5% regressions.
+  First optimization pass landed: the coefficient update is split into a shape tier (damping /
+  output mix / EQ gains — refreshed only when those parameters actually change) and a cutoff
+  tier (tan + three solve constants per section, skipped when the cutoff is unchanged), and the
+  core is templated on the circuit. Signal-rate-modulated cases dropped 28–64% (e.g. modulated
+  2nd-order lowpass 36→19 ns/sample, modulated morph 77→28 on the Linux reference box) with
+  bit-identical output (the morph-corner identity tests pin this). The authoritative baseline
+  should be recorded on an arm64 Mac. Still open, by choice: fast-tanh for the driven circuit
+  and a polyphase halfband resampler — both change output microscopically, awaiting sign-off.
 
 ---
 

@@ -184,8 +184,8 @@ public:
             r.inc       = 0.0;
             r.remaining = 0;
         }
-        m_ramps_active  = 0;
-        m_derived_dirty = true;
+        m_ramps_active = 0;
+        m_shape_dirty  = true;
     }
 
     int    channels() const   { return m_channels; }
@@ -195,20 +195,20 @@ public:
 
     void set_mode(int mode) {
         m_mode = std::clamp(mode, 0, k_num_modes - 1);
-        m_derived_dirty = true;
+        m_shape_dirty = true;
     }
     int mode() const { return m_mode; }
 
     /// Filter order: 2, 4, or 8 (12/24/48 dB per octave). Other values snap down.
     void set_order(int order) {
         m_order = (order >= 8) ? 8 : (order >= 4) ? 4 : 2;
-        m_derived_dirty = true;
+        m_shape_dirty = true;
     }
     int order() const { return m_order; }
 
     void set_circuit(int circuit) {
         m_circuit = std::clamp(circuit, 0, k_num_circuits - 1);
-        m_derived_dirty = true;
+        m_shape_dirty = true;   // the effective rate (oversampling) hangs off the circuit
     }
     int circuit() const { return m_circuit; }
 
@@ -223,7 +223,7 @@ public:
                 c.up.reset();
                 c.down.reset();
             }
-            m_derived_dirty = true;
+            m_shape_dirty = true;
         }
     }
     int oversample() const { return m_os; }
@@ -256,30 +256,40 @@ public:
     // channel. The mono conveniences below fold the two together.
 
     /// Advance ramps and refresh coefficients from the (ramped) frequency parameter.
+    /// The update is split in two tiers so per-sample cutoff modulation stays cheap: the "shape"
+    /// (damping, output mix, drive/EQ gains — everything the cutoff does not touch) is refreshed
+    /// only when a non-frequency parameter or a mode actually changed; the cutoff tier (tan and
+    /// the three solve constants per section) is refreshed only when the cutoff value differs
+    /// from the cached one.
     void tick() {
         tick_ramps();
-        if (m_derived_dirty)
-            update_derived(m_ramp[p_frequency].current);
+        if (m_shape_dirty)
+            update_shape();
+        update_cutoff(m_ramp[p_frequency].current);
     }
 
     /// Advance ramps and refresh coefficients with a signal-rate cutoff override (Hz). The
     /// frequency parameter/ramp is left untouched.
     void tick(double cutoff_hz) {
         tick_ramps();
-        update_derived(clamp_param(p_frequency, cutoff_hz));
-        m_derived_dirty = true;   // the cached coefficients belong to the override
+        if (m_shape_dirty)
+            update_shape();
+        update_cutoff(clamp_param(p_frequency, cutoff_hz));
     }
 
     /// Process one sample of one channel using the coefficients computed by the last tick().
+    /// Precondition: 0 <= channel < channels().
     double process(int channel, double x) {
-        channel_state& c = m_state[static_cast<size_t>(std::clamp(channel, 0, m_channels - 1))];
-        if (m_circuit == circuit_clean || m_os == 1)
-            return core(c, x);
+        channel_state& c = m_state[static_cast<size_t>(channel)];
+        if (m_circuit == circuit_clean)
+            return core<false>(c, x);
+        if (m_os == 1)
+            return core<true>(c, x);
         // zero-stuff + anti-image filter up, core at the high rate, anti-alias + decimate down
         double y = 0.0;
         for (int j = 0; j < m_os; ++j) {
             const double up = c.up.tick(j == 0 ? x * m_os : 0.0);
-            y = c.down.tick(core(c, up));
+            y = c.down.tick(core<true>(c, up));
         }
         return y;
     }
@@ -389,22 +399,25 @@ private:
             r.remaining = nsamples;
         }
         m_ramps_active += static_cast<int>(r.remaining > 0) - static_cast<int>(was);
-        m_derived_dirty = true;
+        if (index != p_frequency)
+            m_shape_dirty = true;   // frequency changes are caught by the cutoff cache instead
     }
 
     void tick_ramps() {
         if (m_ramps_active <= 0)
             return;
-        for (auto& r : m_ramp) {
+        for (int i = 0; i < k_num_params; ++i) {
+            ramp& r = m_ramp[static_cast<size_t>(i)];
             if (r.remaining > 0) {
                 r.current += r.inc;
                 if (--r.remaining == 0) {
                     r.current = r.target;
                     --m_ramps_active;
                 }
+                if (i != p_frequency)
+                    m_shape_dirty = true;
             }
         }
-        m_derived_dirty = true;
     }
 
     void configure_resampler() {
@@ -431,10 +444,10 @@ private:
         m_active = n;
     }
 
-    // Recompute all section coefficients from the (smoothed) parameters for a given cutoff.
-    void update_derived(double cutoff_hz) {
-        const double fs  = m_sr * os_active();
-        const double fc  = std::min(std::max(cutoff_hz, k_freq_min), 0.49 * fs);
+    // Shape tier: everything the cutoff does not touch — active section count, per-section
+    // damping k, output mix, drive/EQ gains, and the shelf tuning scale. Runs only when a
+    // non-frequency parameter ramps or a mode/order/circuit/oversample change lands.
+    void update_shape() {
         const double res = m_ramp[p_resonance].current;
         const double A   = std::pow(10.0, m_ramp[p_gain].current / 40.0);   // Simper's EQ amplitude
 
@@ -444,11 +457,9 @@ private:
 
         set_active_sections(is_eq_mode(m_mode) ? 1 : sections_for_order(m_order));
 
-        double g = std::tan(k_pi * fc / fs);
-        if (m_mode == mode_lowshelf)
-            g /= std::sqrt(A);
-        else if (m_mode == mode_highshelf)
-            g *= std::sqrt(A);
+        m_g_scale = (m_mode == mode_lowshelf)  ? 1.0 / std::sqrt(A)
+                  : (m_mode == mode_highshelf) ? std::sqrt(A)
+                                               : 1.0;
 
         const double* qt = butterworth_q(m_order);
 
@@ -476,11 +487,7 @@ private:
                 }
             }
 
-            c.g  = g;
-            c.k  = k;
-            c.a1 = 1.0 / (1.0 + g * (g + k));
-            c.a2 = g * c.a1;
-            c.a3 = g * c.a2;
+            c.k = k;
 
             switch (m_mode) {
                 case mode_lowpass:   c.m0 = 0.0;   c.m1 = 0.0;               c.m2 = 1.0;       break;
@@ -497,7 +504,27 @@ private:
             }
         }
 
-        m_derived_dirty = (m_ramps_active > 0);
+        m_shape_dirty = false;
+        m_cur_fc      = -1.0;   // the solve constants depend on k and m_g_scale — force a refresh
+    }
+
+    // Cutoff tier: the prewarped tan and the three solve constants per section. This is the only
+    // work that runs per sample under cutoff modulation, and it is skipped entirely when the
+    // requested cutoff matches the cached one.
+    void update_cutoff(double fc) {
+        if (fc == m_cur_fc)
+            return;
+        m_cur_fc = fc;
+        const double fs = m_sr * os_active();
+        const double f  = std::min(std::max(fc, k_freq_min), 0.49 * fs);
+        const double g  = std::tan(k_pi * f / fs) * m_g_scale;
+        for (int i = 0; i < m_active; ++i) {
+            section_coeffs& c = m_coef[static_cast<size_t>(i)];
+            c.g  = g;
+            c.a1 = 1.0 / (1.0 + g * (g + c.k));
+            c.a2 = g * c.a1;
+            c.a3 = g * c.a2;
+        }
     }
 
     // Continuous output-mix interpolation around the circle LP -> BP -> HP -> notch -> LP.
@@ -523,15 +550,16 @@ private:
     // Per section (Simper's optimised form): v3 = v0 - ic2; v1 = a1*ic1 + a2*v3; v2 = ic2 + g*v1;
     // then the trapezoidal state advance. The driven circuit commits tanh(v1) — a one-pass
     // corrective solve of the band-node limiter seeded by the linear zero-delay prediction.
+    // Templated on the circuit so the per-section branch is resolved at compile time.
+    template <bool k_driven>
     double core(channel_state& ch, double x) {
         double v0 = m_in_gain * x;
-        const bool driven = (m_circuit == circuit_driven);
         for (int i = 0; i < m_active; ++i) {
             const section_coeffs& q = m_coef[static_cast<size_t>(i)];
             section_state&        s = ch.s[static_cast<size_t>(i)];
             const double v3 = v0 - s.ic2;
             double v1 = q.a1 * s.ic1 + q.a2 * v3;
-            if (driven)
+            if (k_driven)
                 v1 = std::tanh(v1);
             const double v2 = s.ic2 + q.g * v1;
             s.ic1 = anti_denormal(2.0 * v1 - s.ic1);
@@ -553,12 +581,14 @@ private:
     // parameters
     std::array<ramp, k_num_params> m_ramp;
     int  m_ramps_active { 0 };
-    bool m_derived_dirty { true };
+    bool m_shape_dirty { true };
 
     // derived
     std::array<section_coeffs, k_max_sections> m_coef;
     int    m_active { 1 };
     double m_in_gain { 1.0 };
+    double m_g_scale { 1.0 };   // shelf tuning scale (sqrt(A) up or down)
+    double m_cur_fc { -1.0 };   // cutoff the solve constants were computed for (-1 = stale)
 
     // per-channel state
     std::vector<channel_state> m_state;
