@@ -6,67 +6,70 @@
 /// @author     Timothy Place
 /// @copyright  Copyright 2026 Timothy Place. Distributed under the New BSD License.
 
-#include "c74_min_unittest.h"
-#include "tap.pitchaccum_tilde.cpp"
-
 #include <cmath>
 #include <cstddef>
 #include <vector>
+
+#include "c74_min_unittest.h"
+#include "tap.pitchaccum_tilde.cpp"
 
 namespace kpa = taptools::pitchaccum;
 
 namespace {
 
-constexpr double c_sr = 48000.0;
+    constexpr double k_c_sr = 48000.0;
 
-// Fresh bank at 48 kHz, instant parameter application, wet-only through voice 1.
-kpa::accum_bank make_solo_bank() {
-    kpa::accum_bank bank;
-    bank.prepare(c_sr);
-    bank.set_smooth_ms(0.0);
-    bank.set_mix(100.0);
-    bank.set_voice_gain(0, 100.0);
-    bank.set_voice_gain(1, 0.0);
-    return bank;
-}
-
-std::vector<double> sine(double freq, double seconds, double amp = 0.5) {
-    std::vector<double> s(static_cast<size_t>(seconds * c_sr));
-    for (size_t i = 0; i < s.size(); ++i)
-        s[i] = amp * std::sin(2.0 * kpa::k_pi * freq * i / c_sr);
-    return s;
-}
-
-std::vector<double> run(kpa::accum_bank& bank, const std::vector<double>& in) {
-    std::vector<double> out(in.size());
-    bank.process(in.data(), out.data(), in.size());
-    return out;
-}
-
-double energy(const std::vector<double>& x, size_t lo, size_t hi) {
-    double acc = 0.0;
-    for (size_t i = lo; i < hi && i < x.size(); ++i)
-        acc += x[i] * x[i];
-    return acc;
-}
-
-// Goertzel power of one bin over [lo, hi).
-double goertzel(const std::vector<double>& x, size_t lo, size_t hi, double freq_hz) {
-    const double w    = 2.0 * kpa::k_pi * freq_hz / c_sr;
-    const double coef = 2.0 * std::cos(w);
-    double s1 = 0.0, s2 = 0.0;
-    for (size_t i = lo; i < hi && i < x.size(); ++i) {
-        const double s = x[i] + coef * s1 - s2;
-        s2 = s1;
-        s1 = s;
+    // Fresh bank at 48 kHz, instant parameter application, wet-only through voice 1.
+    kpa::accum_bank make_solo_bank() {
+        kpa::accum_bank bank;
+        bank.prepare(k_c_sr);
+        bank.set_smooth_ms(0.0);
+        bank.set_mix(100.0);
+        bank.set_voice_gain(0, 100.0);
+        bank.set_voice_gain(1, 0.0);
+        return bank;
     }
-    return s1 * s1 + s2 * s2 - coef * s1 * s2;
-}
 
-size_t at_s(double seconds) { return static_cast<size_t>(seconds * c_sr); }
+    std::vector<double> sine(double freq, double seconds, double amp = 0.5) {
+        std::vector<double> s(static_cast<size_t>(seconds * k_c_sr));
+        for (size_t i = 0; i < s.size(); ++i) {
+            s[i] = amp * std::sin(2.0 * kpa::k_pi * freq * i / k_c_sr);
+        }
+        return s;
+    }
 
-}  // namespace
+    std::vector<double> run(kpa::accum_bank& bank, const std::vector<double>& in) {
+        std::vector<double> out(in.size());
+        bank.process(in.data(), out.data(), in.size());
+        return out;
+    }
 
+    double energy(const std::vector<double>& x, size_t lo, size_t hi) {
+        double acc = 0.0;
+        for (size_t i = lo; i < hi && i < x.size(); ++i) {
+            acc += x[i] * x[i];
+        }
+        return acc;
+    }
+
+    // Goertzel power of one bin over [lo, hi).
+    double goertzel(const std::vector<double>& x, size_t lo, size_t hi, double freq_hz) {
+        const double w    = 2.0 * kpa::k_pi * freq_hz / k_c_sr;
+        const double coef = 2.0 * std::cos(w);
+        double       s1 = 0.0, s2 = 0.0;
+        for (size_t i = lo; i < hi && i < x.size(); ++i) {
+            const double s = x[i] + coef * s1 - s2;
+            s2             = s1;
+            s1             = s;
+        }
+        return s1 * s1 + s2 * s2 - coef * s1 * s2;
+    }
+
+    size_t at_s(double seconds) {
+        return static_cast<size_t>(seconds * k_c_sr);
+    }
+
+} // namespace
 
 SCENARIO("transposition lands on the expected pitch") {
     GIVEN("+12 semitones") {
@@ -91,7 +94,7 @@ SCENARIO("transposition lands on the expected pitch") {
     }
     GIVEN("0 semitones") {
         auto bank = make_solo_bank();
-        auto out = run(bank, sine(440.0, 1.0));
+        auto out  = run(bank, sine(440.0, 1.0));
         THEN("the input frequency passes untransposed") {
             const double e440 = goertzel(out, at_s(0.4), at_s(0.9), 440.0);
             const double e660 = goertzel(out, at_s(0.4), at_s(0.9), 660.0);
@@ -104,8 +107,9 @@ SCENARIO("the voice delay positions the wet signal in time") {
     auto bank = make_solo_bank();
     bank.set_delay(0, 500.0);
     std::vector<double> in(at_s(1.0), 0.0);
-    for (size_t i = 0; i < at_s(0.01); ++i)  // 10 ms noise burst at t=0
+    for (size_t i = 0; i < at_s(0.01); ++i) { // 10 ms noise burst at t=0
         in[i] = ((i * 2654435761u) % 2000) / 1000.0 - 1.0;
+    }
     auto out = run(bank, in);
 
     THEN("nothing arrives before the delay") {
@@ -118,15 +122,15 @@ SCENARIO("the voice delay positions the wet signal in time") {
 
 SCENARIO("feedback accumulates the transposition pass after pass") {
     auto bank = make_solo_bank();
-    bank.set_trans(0, 7.0);      // +7 st per pass
+    bank.set_trans(0, 7.0); // +7 st per pass
     bank.set_delay(0, 300.0);
     bank.set_fb(0, 70.0);
     auto in = sine(440.0, 0.2, 0.5);
     in.resize(at_s(1.2), 0.0);
     auto out = run(bank, in);
 
-    const double f1 = 440.0 * std::exp2(7.0 / 12.0);    // 659.26 Hz after one pass
-    const double f2 = 440.0 * std::exp2(14.0 / 12.0);   // 987.77 Hz after two passes
+    const double f1 = 440.0 * std::exp2(7.0 / 12.0);  // 659.26 Hz after one pass
+    const double f2 = 440.0 * std::exp2(14.0 / 12.0); // 987.77 Hz after two passes
 
     THEN("the first pass rings at +7 semitones") {
         const double target = goertzel(out, at_s(0.32), at_s(0.55), f1);
@@ -141,7 +145,7 @@ SCENARIO("feedback accumulates the transposition pass after pass") {
 }
 
 SCENARIO("periodic modulation spreads the spectrum") {
-    auto steady = make_solo_bank();
+    auto steady     = make_solo_bank();
     auto out_steady = run(steady, sine(440.0, 1.0));
 
     auto modded = make_solo_bank();
@@ -164,16 +168,17 @@ SCENARIO("random modulation is deterministic across instances") {
         bank.set_randrate(8.0);
         return bank;
     };
-    auto a = make();
-    auto b = make();
+    auto       a  = make();
+    auto       b  = make();
     const auto in = sine(330.0, 0.5);
     const auto oa = run(a, in);
     const auto ob = run(b, in);
 
     THEN("two identically configured banks render identical output") {
         double maxdiff = 0.0;
-        for (size_t i = 0; i < oa.size(); ++i)
+        for (size_t i = 0; i < oa.size(); ++i) {
             maxdiff = std::max(maxdiff, std::abs(oa[i] - ob[i]));
+        }
         REQUIRE(maxdiff == 0.0);
     }
 }
@@ -189,10 +194,11 @@ SCENARIO("preset recall morphs without discontinuities") {
     bank.set_delay(0, 900.0);
     bank.set_mix(30.0);
 
-    auto sig = [](size_t i) { return 0.3 * std::sin(2.0 * kpa::k_pi * 220.0 * i / c_sr); };
-    size_t i = 0;
-    for (; i < 4000; ++i)
+    auto   sig = [](size_t i) { return 0.3 * std::sin(2.0 * kpa::k_pi * 220.0 * i / k_c_sr); };
+    size_t i   = 0;
+    for (; i < 4000; ++i) {
         bank.process(sig(i));
+    }
 
     REQUIRE(bank.recall_preset(0, 0.08));
     REQUIRE(bank.morphing());
@@ -201,8 +207,8 @@ SCENARIO("preset recall morphs without discontinuities") {
     double maxjump = 0.0;
     for (; i < 4000 + at_s(0.3); ++i) {
         const double y = bank.process(sig(i));
-        maxjump = std::max(maxjump, std::abs(y - prev));
-        prev    = y;
+        maxjump        = std::max(maxjump, std::abs(y - prev));
+        prev           = y;
     }
     THEN("no sample-to-sample click during the morph") {
         REQUIRE(maxjump < 0.3);
@@ -211,23 +217,24 @@ SCENARIO("preset recall morphs without discontinuities") {
         REQUIRE(!bank.morphing());
         const auto cur = bank.snap_current();
         const auto pre = bank.preset(0);
-        for (int p = 0; p < kpa::k_num_params; ++p)
+        for (int p = 0; p < kpa::k_num_params; ++p) {
             REQUIRE(std::abs(cur.v[p] - pre.v[p]) < 1e-9);
+        }
     }
 }
 
 SCENARIO("mix 0 is an exact passthrough") {
     kpa::accum_bank bank;
-    bank.prepare(c_sr);
+    bank.prepare(k_c_sr);
     bank.set_smooth_ms(0.0);
     bank.set_mix(0.0);
-    bank.set_fb(0, 90.0);  // feedback churning inside must not leak
+    bank.set_fb(0, 90.0); // feedback churning inside must not leak
     bank.set_trans(0, 12.0);
 
     double maxdiff = 0.0;
     for (int i = 0; i < 2048; ++i) {
         const double x = std::sin(0.11 * i) * 0.7;
-        maxdiff = std::max(maxdiff, std::abs(bank.process(x) - x));
+        maxdiff        = std::max(maxdiff, std::abs(bank.process(x) - x));
     }
     THEN("output equals input") {
         REQUIRE(maxdiff < 1e-9);
@@ -249,10 +256,10 @@ SCENARIO("the pitch follower adapts the window to the input period") {
         auto bank = make_solo_bank();
         bank.set_follow(true);
         std::vector<double> noise(at_s(1.0));
-        uint32_t rng = 22222u;
+        uint32_t            rng = 22222u;
         for (auto& s : noise) {
             rng = rng * 1664525u + 1013904223u;
-            s = 0.4 * ((rng / 2147483648.0) - 1.0);
+            s   = 0.4 * ((rng / 2147483648.0) - 1.0);
         }
         run(bank, noise);
         THEN("the window stays at the manual setting") {
@@ -278,11 +285,12 @@ SCENARIO("maximum feedback stays bounded") {
     auto out = run(bank, in);
 
     THEN("five seconds of 0.99 feedback never blows up") {
-        double peak = 0.0;
+        double peak   = 0.0;
         bool   finite = true;
         for (double s : out) {
-            if (!std::isfinite(s))
+            if (!std::isfinite(s)) {
                 finite = false;
+            }
             peak = std::max(peak, std::abs(s));
         }
         REQUIRE(finite);
@@ -316,10 +324,10 @@ SCENARIO("the Min wrapper instantiates with the documented defaults") {
             REQUIRE(static_cast<double>(my_object.window) == 5.0);
         }
         THEN("preset and clear messages are callable") {
-            my_object.store(atoms { 1 });
-            my_object.recall(atoms { 1 });
-            my_object.recall(atoms { 1, 250.0 });
-            my_object.clear(atoms {});
+            my_object.store(atoms{1});
+            my_object.recall(atoms{1});
+            my_object.recall(atoms{1, 250.0});
+            my_object.clear(atoms{});
             REQUIRE(true);
         }
     }
