@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.pitchaccum~" module="msp" category="TapTools, MSP Processors">
+
+	<digest>
+		Dual pitch transposer with accumulating feedback and preset morphing
+	</digest>
+
+	<description>
+		The <o>tap.pitchaccum~</o> object is a recreation of the GRM Tools Classic "PitchAccum"
+		plugin: two independent granular transposers ("shadows"), each shifting the input up or
+		down by up to two octaves, with its own delay of up to three seconds, feedback, and gain.
+		The feedback re-enters the transposer, so every pass through the loop is transposed again —
+		the pitch accumulates, spiraling upward or downward pass after pass. A global LFO modulates
+		the transposition of both voices (voice 2 at a settable phase offset) and independent
+		random generators add aperiodic motion. The window and xfade attributes expose the grain
+		engine (a phasor sweeping two crossfaded taps, as in <o>tap.shift~</o>, with a
+		constant-amplitude complementary envelope pair). An optional pitch follower adapts the
+		grain window to the detected period of the input. Every parameter is interpolated per
+		sample, and sixteen preset slots can be stored and morphed between over a settable
+		interpolation time. The object is single-channel; wrap it in mc. for multichannel (the
+		original plugin's stereo-width control is intentionally omitted).
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Processor</metadata>
+	</metadatalist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="store">
+			<arglist>
+				<arg name="slot" type="int" optional="0"/>
+			</arglist>
+			<description>
+				Store the current parameters in a preset slot (1-16).
+			</description>
+		</method>
+		<method name="recall">
+			<arglist>
+				<arg name="slot" type="int" optional="0"/>
+				<arg name="time" type="float" optional="1"/>
+			</arglist>
+			<description>
+				Morph all parameters from their current values to a stored preset (1-16). The
+				optional second argument overrides the morph time in milliseconds; without it the
+				interp attribute is used. Moving an individual parameter during a morph overrides
+				the morph for that parameter only.
+			</description>
+		</method>
+		<method name="clear">
+			<arglist/>
+			<description>
+				Clear the delay buffers and feedback state of both transposers.
+			</description>
+		</method>
+	</methodlist>
+
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="trans1" get="1" set="1" type="float" size="1">
+			<description>Transposition of voice 1 in semitones (-24..24, fractional values allowed). Likewise trans2.</description>
+		</attribute>
+		<attribute name="trans2" get="1" set="1" type="float" size="1">
+			<description>Transposition of voice 2 in semitones (-24..24).</description>
+		</attribute>
+		<attribute name="delay1" get="1" set="1" type="float" size="1">
+			<description>Delay of voice 1 in milliseconds (0..3000). Likewise delay2.</description>
+		</attribute>
+		<attribute name="delay2" get="1" set="1" type="float" size="1">
+			<description>Delay of voice 2 in milliseconds (0..3000).</description>
+		</attribute>
+		<attribute name="fb1" get="1" set="1" type="float" size="1">
+			<description>
+				Feedback of voice 1 (0..99). The fed-back signal re-enters the transposer, so each
+				pass is transposed again and the pitch accumulates. Likewise fb2.
+			</description>
+		</attribute>
+		<attribute name="fb2" get="1" set="1" type="float" size="1">
+			<description>Feedback of voice 2 (0..99).</description>
+		</attribute>
+		<attribute name="gain1" get="1" set="1" type="float" size="1">
+			<description>Gain of voice 1 (0..100, linear). Likewise gain2.</description>
+		</attribute>
+		<attribute name="gain2" get="1" set="1" type="float" size="1">
+			<description>Gain of voice 2 (0..100, linear).</description>
+		</attribute>
+		<attribute name="window" get="1" set="1" type="float" size="1">
+			<description>
+				Grain window in milliseconds (5..200). Small windows smear transients less but add
+				more modulation artifact; large windows are smoother but blur attacks. When the
+				pitch follower is enabled it overrides this with a window derived from the detected
+				period of the input.
+			</description>
+		</attribute>
+		<attribute name="xfade" get="1" set="1" type="float" size="1">
+			<description>
+				Crossfade between the two grain taps as a percentage (1..100). 100 is a full
+				raised-cosine overlap; smaller values give longer single-tap plateaus. The
+				envelope pair sums to exactly one, so the output level is constant at any setting.
+			</description>
+		</attribute>
+		<attribute name="modfreq" get="1" set="1" type="float" size="1">
+			<description>Periodic (LFO) modulation frequency in Hz (0..20).</description>
+		</attribute>
+		<attribute name="moddepth" get="1" set="1" type="float" size="1">
+			<description>Periodic modulation depth in semitones (0..24).</description>
+		</attribute>
+		<attribute name="modphase" get="1" set="1" type="float" size="1">
+			<description>LFO phase offset between the two voices in degrees (0..360).</description>
+		</attribute>
+		<attribute name="randdepth" get="1" set="1" type="float" size="1">
+			<description>Random modulation depth in semitones (0..24). Each voice has an independent generator.</description>
+		</attribute>
+		<attribute name="randrate" get="1" set="1" type="float" size="1">
+			<description>Random modulation rate in Hz (0..50).</description>
+		</attribute>
+		<attribute name="follow" get="1" set="1" type="int" size="1">
+			<description>
+				Enable the pitch follower: the grain window adapts to roughly two periods of the
+				detected input pitch (autocorrelation, 50-800 Hz search range) and falls back to
+				the window attribute when the input is unpitched. Off by default.
+			</description>
+		</attribute>
+		<attribute name="mix" get="1" set="1" type="float" size="1">
+			<description>Dry/wet crossfade (0 = dry, 100 = wet), equal-power.</description>
+		</attribute>
+		<attribute name="gain" get="1" set="1" type="float" size="1">
+			<description>Output gain in dB.</description>
+		</attribute>
+		<attribute name="interp" get="1" set="1" type="float" size="1">
+			<description>Default preset-morph time in milliseconds used by the recall message.</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>Anti-zipper interpolation time in milliseconds applied to direct parameter changes.</description>
+		</attribute>
+		<attribute name="bypass" get="1" set="1" type="int" size="1">
+			<description>Pass the input through unprocessed.</description>
+		</attribute>
+		<attribute name="mute" get="1" set="1" type="int" size="1">
+			<description>Silence the output.</description>
+		</attribute>
+	</attributelist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.shift~"/>
+		<seealso name="tap.5comb~"/>
+		<seealso name="gizmo~"/>
+		<seealso name="pitchshift~"/>
+	</seealsolist>
+
+
+</c74object>

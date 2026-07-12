@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
- 
+
 <c74object name="tap.shift~" module="msp" category="TapTools, MSP Modifiers">
 
 	<digest>
@@ -8,12 +8,18 @@
 	</digest>
 
 	<description>
-		The <o>tap.shift~</o> object 
-		is an efficient pitch-shifter for audio signals.
-		The algorithm is similar to the well known harmv~ pitch shifter from IRCAM's Jimmies.
+		The <o>tap.shift~</o> object is an efficient pitch-shifter for audio signals: a phasor
+		sweeps two windowed delay taps across a window of the recent input, transposing it by the
+		given ratio. The algorithm is similar to the well-known harmv~ pitch shifter from IRCAM's
+		Jimmies. The 2026 engine keeps the original's control surface but modernizes the internals:
+		the taps are Hermite-interpolated, the two grain envelopes sum to exactly one (so the
+		output level is steady at any ratio), and ratio and window changes glide over the smooth
+		time instead of stepping. The middle inlet sets the ratio and the right inlet sets the
+		window size, as in the original. For dual-voice shifting with delay, feedback, and
+		modulation, see <o>tap.pitchaccum~</o>.
 	</description>
 
-	
+
 	<!--METADATA-->
 	<metadatalist>
 		<metadata name="author">74 Objects</metadata>
@@ -22,23 +28,48 @@
 		<metadata name="tag">Effect</metadata>
 	</metadatalist>
 
-	
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="float">
+			<arglist>
+				<arg name="input" type="float" optional="0" id="0" />
+			</arglist>
+			<description>
+				In the middle inlet, sets the pitch-shift ratio; in the right inlet, sets the
+				window size in milliseconds.
+			</description>
+		</method>
+		<method name="clear">
+			<arglist/>
+			<description>Clear the delay buffer.</description>
+		</method>
+	</methodlist>
+
+
 	<!--ATTRIBUTES-->
 	<attributelist>
 		<attribute name="ratio" get="1" set="1" type="float" size="1">
-			<description>Set the ratio of the desired pitch to the original pitch.</description>
+			<description>The ratio of the desired pitch to the original pitch (1 = no shift,
+			2 = up an octave, 0.5 = down an octave).</description>
 		</attribute>
-		<attribute name="windowsize" get="1" set="1" type="float" size="1">
-			<description>Set the size of the sound fragments used in the pitch-shifter (in milliseconds).</description>
+		<attribute name="window_size" get="1" set="1" type="float" size="1">
+			<description>The size of the sound fragments used in the pitch-shifter, in
+			milliseconds (1..194).</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>Interpolation time in ms applied to ratio and window_size changes
+			(0 = immediate; default 20).</description>
 		</attribute>
 	</attributelist>
-	
 
 
 	<!--SEEALSO-->
 	<seealsolist>
+		<seealso name="tap.pitchaccum~"/>
+		<seealso name="tap.semitone2ratio"/>
 		<seealso name="tap.verb~"/>
 	</seealsolist>
 
-	
+
 </c74object>
