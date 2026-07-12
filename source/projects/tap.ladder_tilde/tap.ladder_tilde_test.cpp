@@ -5,83 +5,89 @@
 /// @author     Timothy Place
 /// @copyright  Copyright 2026 Timothy Place. Distributed under the New BSD License.
 
-#include "c74_min_unittest.h"
-#include "tap.ladder_tilde.cpp"
-
 #include <cmath>
 #include <cstddef>
 #include <vector>
+
+#include "c74_min_unittest.h"
+#include "tap.ladder_tilde.cpp"
 
 namespace klf = taptools::ladder;
 
 namespace {
 
-constexpr double c_sr = 48000.0;
+    constexpr double k_c_sr = 48000.0;
 
-klf::ladder_filter make_filter() {
-    klf::ladder_filter f;
-    f.prepare(c_sr);
-    f.set_smooth_ms(0.0);
-    return f;
-}
-
-std::vector<double> run_tone(klf::ladder_filter& f, double freq, double seconds, double amp) {
-    std::vector<double> out(static_cast<size_t>(seconds * c_sr));
-    for (size_t i = 0; i < out.size(); ++i)
-        out[i] = f.process(amp * std::sin(2.0 * klf::k_pi * freq * i / c_sr));
-    return out;
-}
-
-double goertzel(const std::vector<double>& x, size_t lo, size_t hi, double freq_hz) {
-    const double w    = 2.0 * klf::k_pi * freq_hz / c_sr;
-    const double coef = 2.0 * std::cos(w);
-    double s1 = 0.0, s2 = 0.0;
-    for (size_t i = lo; i < hi && i < x.size(); ++i) {
-        const double s = x[i] + coef * s1 - s2;
-        s2 = s1;
-        s1 = s;
+    klf::ladder_filter make_filter() {
+        klf::ladder_filter f;
+        f.prepare(k_c_sr);
+        f.set_smooth_ms(0.0);
+        return f;
     }
-    return s1 * s1 + s2 * s2 - coef * s1 * s2;
-}
 
-double rms(const std::vector<double>& x, size_t lo, size_t hi) {
-    double acc = 0.0;
-    size_t n   = 0;
-    for (size_t i = lo; i < hi && i < x.size(); ++i, ++n)
-        acc += x[i] * x[i];
-    return n ? std::sqrt(acc / n) : 0.0;
-}
+    std::vector<double> run_tone(klf::ladder_filter& f, double freq, double seconds, double amp) {
+        std::vector<double> out(static_cast<size_t>(seconds * k_c_sr));
+        for (size_t i = 0; i < out.size(); ++i) {
+            out[i] = f.process(amp * std::sin(2.0 * klf::k_pi * freq * i / k_c_sr));
+        }
+        return out;
+    }
 
-size_t at_s(double seconds) { return static_cast<size_t>(seconds * c_sr); }
+    double goertzel(const std::vector<double>& x, size_t lo, size_t hi, double freq_hz) {
+        const double w    = 2.0 * klf::k_pi * freq_hz / k_c_sr;
+        const double coef = 2.0 * std::cos(w);
+        double       s1 = 0.0, s2 = 0.0;
+        for (size_t i = lo; i < hi && i < x.size(); ++i) {
+            const double s = x[i] + coef * s1 - s2;
+            s2             = s1;
+            s1             = s;
+        }
+        return s1 * s1 + s2 * s2 - coef * s1 * s2;
+    }
 
-// Steady-state response (power) of a fresh filter configured by `setup` to a tone at `freq`.
-template <typename Setup>
-double tone_response(Setup setup, double freq, double amp = 0.05) {
-    auto f = make_filter();
-    setup(f);
-    auto out = run_tone(f, freq, 0.5, amp);
-    return goertzel(out, at_s(0.25), at_s(0.5), freq);
-}
+    double rms(const std::vector<double>& x, size_t lo, size_t hi) {
+        double acc = 0.0;
+        size_t n   = 0;
+        for (size_t i = lo; i < hi && i < x.size(); ++i, ++n) {
+            acc += x[i] * x[i];
+        }
+        return n ? std::sqrt(acc / n) : 0.0;
+    }
 
-// Self-oscillation frequency: ping, let it settle, count zero crossings.
-double self_osc_freq(double cutoff_hz) {
-    auto f = make_filter();
-    f.set_frequency(cutoff_hz);
-    f.set_resonance(1.05);
-    f.process(0.5);   // the ping — an all-zero state is a fixed point
-    const size_t n = at_s(1.0);
-    std::vector<double> out(n);
-    for (size_t i = 0; i < n; ++i)
-        out[i] = f.process(0.0);
-    size_t zc = 0;
-    for (size_t i = at_s(0.5) + 1; i < n; ++i)
-        if ((out[i] >= 0.0) != (out[i - 1] >= 0.0))
-            ++zc;
-    return zc / (2.0 * 0.5);   // crossings per second / 2
-}
+    size_t at_s(double seconds) {
+        return static_cast<size_t>(seconds * k_c_sr);
+    }
 
-}  // namespace
+    // Steady-state response (power) of a fresh filter configured by `setup` to a tone at `freq`.
+    template <typename Setup>
+    double tone_response(Setup setup, double freq, double amp = 0.05) {
+        auto f = make_filter();
+        setup(f);
+        auto out = run_tone(f, freq, 0.5, amp);
+        return goertzel(out, at_s(0.25), at_s(0.5), freq);
+    }
 
+    // Self-oscillation frequency: ping, let it settle, count zero crossings.
+    double self_osc_freq(double cutoff_hz) {
+        auto f = make_filter();
+        f.set_frequency(cutoff_hz);
+        f.set_resonance(1.05);
+        f.process(0.5); // the ping — an all-zero state is a fixed point
+        const size_t        n = at_s(1.0);
+        std::vector<double> out(n);
+        for (size_t i = 0; i < n; ++i) {
+            out[i] = f.process(0.0);
+        }
+        size_t zc = 0;
+        for (size_t i = at_s(0.5) + 1; i < n; ++i) {
+            if ((out[i] >= 0.0) != (out[i - 1] >= 0.0)) {
+                ++zc;
+            }
+        }
+        return zc / (2.0 * 0.5); // crossings per second / 2
+    }
+
+} // namespace
 
 SCENARIO("self-oscillation tracks the tuned cutoff — the virtual-analog proof") {
     GIVEN("resonance past the oscillation threshold") {
@@ -103,17 +109,19 @@ SCENARIO("self-oscillation is bounded and steady") {
     f.set_frequency(700.0);
     f.set_resonance(klf::k_res_max);
     f.process(0.5);
-    const size_t n = at_s(5.0);
+    const size_t        n = at_s(5.0);
     std::vector<double> out(n);
-    for (size_t i = 0; i < n; ++i)
+    for (size_t i = 0; i < n; ++i) {
         out[i] = f.process(0.0);
+    }
 
     THEN("the tanh stages limit the amplitude — no blow-up, no decay") {
-        double peak = 0.0;
+        double peak   = 0.0;
         bool   finite = true;
         for (double s : out) {
-            if (!std::isfinite(s))
+            if (!std::isfinite(s)) {
                 finite = false;
+            }
             peak = std::max(peak, std::abs(s));
         }
         REQUIRE(finite);
@@ -127,28 +135,31 @@ SCENARIO("self-oscillation is bounded and steady") {
     THEN("clear() stops it") {
         f.clear();
         double acc = 0.0;
-        for (int i = 0; i < 4800; ++i)
+        for (int i = 0; i < 4800; ++i) {
             acc += std::abs(f.process(0.0));
+        }
         REQUIRE(acc == 0.0);
     }
 }
 
 SCENARIO("the lowpass rolls off at 24 dB per octave") {
-    auto lp = [](klf::ladder_filter& f) { f.set_frequency(500.0); };
-    const double below = tone_response(lp, 125.0);    // fc/4
-    const double above = tone_response(lp, 2000.0);   // 4*fc
+    auto         lp    = [](klf::ladder_filter& f) { f.set_frequency(500.0); };
+    const double below = tone_response(lp, 125.0);  // fc/4
+    const double above = tone_response(lp, 2000.0); // 4*fc
 
     THEN("two octaves above cutoff sits far below the passband") {
-        REQUIRE(above < 0.001 * below);   // > 30 dB
+        REQUIRE(above < 0.001 * below); // > 30 dB
     }
 }
 
 SCENARIO("resonance peaks the response at the cutoff") {
     auto at_res = [](double r) {
-        return tone_response([r](klf::ladder_filter& f) {
-            f.set_frequency(1000.0);
-            f.set_resonance(r);
-        }, 1000.0, 0.02);
+        return tone_response(
+            [r](klf::ladder_filter& f) {
+                f.set_frequency(1000.0);
+                f.set_resonance(r);
+            },
+            1000.0, 0.02);
     };
     const double r0 = at_res(0.0);
     const double r5 = at_res(0.5);
@@ -163,9 +174,9 @@ SCENARIO("resonance peaks the response at the cutoff") {
 SCENARIO("drive adds harmonic saturation") {
     auto driven = [](double drive_db) {
         auto f = make_filter();
-        f.set_frequency(5000.0);   // fundamental and 3rd harmonic both in the passband
+        f.set_frequency(5000.0); // fundamental and 3rd harmonic both in the passband
         f.set_drive(drive_db);
-        auto out = run_tone(f, 200.0, 0.5, 0.3);
+        auto         out  = run_tone(f, 200.0, 0.5, 0.3);
         const double fund = goertzel(out, at_s(0.25), at_s(0.5), 200.0);
         const double h3   = goertzel(out, at_s(0.25), at_s(0.5), 600.0);
         return h3 / (fund + 1e-30);
@@ -202,10 +213,12 @@ SCENARIO("pole-mixed modes have the right shapes") {
     }
     GIVEN("lp12 vs lp24 at 4x cutoff") {
         auto resp = [](int mode) {
-            return tone_response([mode](klf::ladder_filter& f) {
-                f.set_frequency(500.0);
-                f.set_mode(mode);
-            }, 2000.0);
+            return tone_response(
+                [mode](klf::ladder_filter& f) {
+                    f.set_frequency(500.0);
+                    f.set_mode(mode);
+                },
+                2000.0);
         };
         THEN("the 12 dB slope attenuates less than the 24 dB slope") {
             REQUIRE(resp(klf::mode_lp12) > 4.0 * resp(klf::mode_lp24));
@@ -215,11 +228,13 @@ SCENARIO("pole-mixed modes have the right shapes") {
 
 SCENARIO("comp restores the passband at high resonance") {
     auto passband = [](double comp) {
-        return tone_response([comp](klf::ladder_filter& f) {
-            f.set_frequency(1000.0);
-            f.set_resonance(0.9);
-            f.set_comp(comp);
-        }, 100.0, 0.02);
+        return tone_response(
+            [comp](klf::ladder_filter& f) {
+                f.set_frequency(1000.0);
+                f.set_resonance(0.9);
+                f.set_comp(comp);
+            },
+            100.0, 0.02);
     };
     THEN("comp 1 is at least 3 dB louder than comp 0") {
         REQUIRE(passband(1.0) > 2.0 * passband(0.0));
@@ -229,11 +244,13 @@ SCENARIO("comp restores the passband at high resonance") {
 SCENARIO("oversampling: consistent passband, less aliasing") {
     GIVEN("a low tone in the passband") {
         auto resp_at_os = [](int os) {
-            return tone_response([os](klf::ladder_filter& f) {
-                f.set_oversample(os);
-                f.set_frequency(2000.0);
-                f.set_resonance(0.3);
-            }, 200.0);
+            return tone_response(
+                [os](klf::ladder_filter& f) {
+                    f.set_oversample(os);
+                    f.set_frequency(2000.0);
+                    f.set_resonance(0.3);
+                },
+                200.0);
         };
         THEN("1x and 2x match within ~1.5 dB") {
             const double r1 = resp_at_os(1);
@@ -267,19 +284,20 @@ SCENARIO("parameter morphs and signal-rate cutoff are click-free") {
     f.set_resonance(0.2);
     f.set_drive(12.0);
 
-    auto sig = [](size_t i) { return 0.3 * std::sin(2.0 * klf::k_pi * 220.0 * i / c_sr); };
-    size_t i = 0;
-    for (; i < at_s(0.2); ++i)
+    auto   sig = [](size_t i) { return 0.3 * std::sin(2.0 * klf::k_pi * 220.0 * i / k_c_sr); };
+    size_t i   = 0;
+    for (; i < at_s(0.2); ++i) {
         f.process(sig(i));
+    }
 
     GIVEN("a 100 ms preset recall under a running tone") {
         REQUIRE(f.recall_preset(0, 0.1));
-        double prev = f.process(sig(i++));
+        double prev    = f.process(sig(i++));
         double maxjump = 0.0;
         for (; i < at_s(0.6); ++i) {
             const double y = f.process(sig(i));
-            maxjump = std::max(maxjump, std::abs(y - prev));
-            prev = y;
+            maxjump        = std::max(maxjump, std::abs(y - prev));
+            prev           = y;
         }
         THEN("no sample-to-sample click; parameters land") {
             REQUIRE(maxjump < 0.25);
@@ -290,13 +308,13 @@ SCENARIO("parameter morphs and signal-rate cutoff are click-free") {
     GIVEN("a per-sample signal-rate cutoff sweep") {
         auto f2 = make_filter();
         f2.set_resonance(0.9);
-        double prev = 0.0, maxjump = 0.0;
+        double       prev = 0.0, maxjump = 0.0;
         const size_t n = at_s(0.3);
         for (size_t j = 0; j < n; ++j) {
             const double hz = 500.0 + 5500.0 * j / n;
             const double y  = f2.process(sig(j), hz);
-            maxjump = std::max(maxjump, std::abs(y - prev));
-            prev = y;
+            maxjump         = std::max(maxjump, std::abs(y - prev));
+            prev            = y;
         }
         THEN("the sweep stays continuous") {
             REQUIRE(maxjump < 0.3);
@@ -328,15 +346,14 @@ SCENARIO("the Min wrapper instantiates with the documented defaults") {
             REQUIRE(static_cast<int>(my_object.oversample) == 2);
         }
         THEN("preset and clear messages are callable") {
-            my_object.store(atoms { 1 });
-            my_object.recall(atoms { 1 });
-            my_object.recall(atoms { 1, 250.0 });
-            my_object.clear(atoms {});
+            my_object.store(atoms{1});
+            my_object.recall(atoms{1});
+            my_object.recall(atoms{1, 250.0});
+            my_object.clear(atoms{});
             REQUIRE(true);
         }
     }
 }
-
 
 SCENARIO("saturation asymmetry adds even harmonics") {
     auto second_harmonic_ratio = [](double asym) {
@@ -344,7 +361,7 @@ SCENARIO("saturation asymmetry adds even harmonics") {
         f.set_frequency(5000.0);
         f.set_drive(12.0);
         f.set_asym(asym);
-        auto out = run_tone(f, 200.0, 0.5, 0.3);
+        auto         out  = run_tone(f, 200.0, 0.5, 0.3);
         const double fund = goertzel(out, at_s(0.25), at_s(0.5), 200.0);
         const double h2   = goertzel(out, at_s(0.25), at_s(0.5), 400.0);
         return h2 / (fund + 1e-30);
@@ -372,8 +389,9 @@ SCENARIO("the exact solver agrees with fast at gentle settings and stays sane at
         auto exact = run_solver(klf::solver_exact);
         THEN("the two solvers are nearly indistinguishable") {
             double maxdiff = 0.0;
-            for (size_t i = at_s(0.1); i < fast.size(); ++i)
+            for (size_t i = at_s(0.1); i < fast.size(); ++i) {
                 maxdiff = std::max(maxdiff, std::abs(fast[i] - exact[i]));
+            }
             REQUIRE(maxdiff < 0.01);
         }
     }
@@ -386,11 +404,12 @@ SCENARIO("the exact solver agrees with fast at gentle settings and stays sane at
         f.set_asym(1.0);
         auto out = run_tone(f, 110.0, 2.0, 0.9);
         THEN("output stays finite and bounded") {
-            double peak = 0.0;
+            double peak   = 0.0;
             bool   finite = true;
             for (double s : out) {
-                if (!std::isfinite(s))
+                if (!std::isfinite(s)) {
                     finite = false;
+                }
                 peak = std::max(peak, std::abs(s));
             }
             REQUIRE(finite);
@@ -404,12 +423,15 @@ SCENARIO("the exact solver agrees with fast at gentle settings and stays sane at
         f.set_resonance(1.05);
         f.process(0.5);
         std::vector<double> out(at_s(1.0));
-        for (size_t i = 0; i < out.size(); ++i)
+        for (size_t i = 0; i < out.size(); ++i) {
             out[i] = f.process(0.0);
+        }
         size_t zc = 0;
-        for (size_t i = at_s(0.5) + 1; i < out.size(); ++i)
-            if ((out[i] >= 0.0) != (out[i - 1] >= 0.0))
+        for (size_t i = at_s(0.5) + 1; i < out.size(); ++i) {
+            if ((out[i] >= 0.0) != (out[i - 1] >= 0.0)) {
                 ++zc;
+            }
+        }
         const double freq = zc / (2.0 * 0.5);
         THEN("it still tracks the tuned cutoff") {
             REQUIRE(freq > 970.0);
