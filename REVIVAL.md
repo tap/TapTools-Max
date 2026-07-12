@@ -141,7 +141,7 @@ source. Strong candidates to **resurrect from docs + git history** if still usef
 | `tap.buffer.record2~` | Smooth buffer recording (v2) | merge into `tap.buffer.record~`? |
 | `tap.smooth` | Data-stream smoother | maybe (native alts exist) |
 | `tap.deviate` | Randomize & "prime" input | maybe |
-| `tap.semitone2ratio` | Semitones → frequency ratio | trivial; maybe fold in |
+| `tap.semitone2ratio` | Semitones → frequency ratio | ✅ **done** (native object; was an abstraction — see §7 2026-07-11) |
 | `tap.string.sub` | String substitution | maybe |
 | `tap.thru` / `tap.thru~` | Feedback utilities | maybe |
 | `tap.decay_calc` | Feedback coefficient calc | maybe (pair w/ `tap.biquadcalc`) |
@@ -474,6 +474,27 @@ working tree now contains only the modern package: `CMakeLists.txt`, `source/min
 (submodule), `source/projects/`, `docs/`, `help/`, `package-info.json.in`, and the
 GitHub Actions CI.
 
+- ✅ **`tap.shift~` engine modernized + `tap.semitone2ratio` resurrected (2026-07-11)** —
+  the author approved retiring tt_shift's implementation artifacts rather than preserving
+  them: the taps are now **Hermite-interpolated** (was linear with a constant one-sample
+  offset), the grain envelopes are an exact **complementary Hann pair summing to 1** at
+  every phase (replacing the 256-point padded-Welch table whose uneven sum imposed an
+  amplitude ripple at the grain rate — verified by a new DC-through-moving-taps test that
+  holds unity to 1e-9), and **ratio/window_size ride per-sample ramps** (new `smooth`
+  attribute, default 20 ms) so window changes no longer click. The **two float inlets of
+  the original (ratio, window ms) are restored** — the first Min port had dropped them
+  (the legacy wrapper's 3-inlet surface recovered from the `legacy` branch). Control
+  surface otherwise unchanged. Also fixed: the object had **no unit tests and no
+  `min-object-unittest` include in its CMakeLists** — both added (Goertzel transposition
+  checks at ±1 octave in normalized frequency, level-invariance, glide continuity,
+  clamping), plus runtime maxtest patchers for both objects. **`tap.semitone2ratio`**
+  (§3 candidate) is resurrected as a native object — the legacy version was a patcher
+  abstraction computing `mtof(60+st)/mtof(60)`, implemented directly as `2^(st/12)`
+  (numbers, lists, bang-to-repeat; unit-tested) — which un-breaks `tap.shift~`'s help
+  patcher, whose signal chain depends on it. Both maxrefs rewritten (the old shift maxref
+  documented a nonexistent `windowsize` attribute — it is `window_size`). Legacy help
+  patcher for `tap.semitone2ratio` ported as-is (valid modern JSON). Compile/ctest-verified
+  on Linux/GCC; **wants the usual open-in-Max audition.**
 - ✅ **`tap.5comb~` resurrected (2026-07-11)** — recreated as a native external modeled on
   the **GRM Tools Classic "Comb Filters"** plugin, not ported from the legacy version: the
   legacy `tap.5comb~` was a patcher *abstraction* over five `tap.comb~` objects (recovered
@@ -610,6 +631,7 @@ check). `demosound.maxpat` is a stock Max abstraction (fine).
 
 **3. Resurrection candidates still open** (§3, all "maybe/review"):
 `tap.adapt~`, `tap.buffer.record2~` (merge into `tap.buffer.record~`?),
+`tap.smooth`, `tap.deviate`, `tap.string.sub`, `tap.thru`/`tap.thru~`,
 `tap.smooth`, `tap.deviate`, `tap.semitone2ratio`, `tap.string.sub`, `tap.thru`/`tap.thru~`,
 `tap.decay_calc`; and the retired **Jitter** ones (`tap.jit.delay`, `tap.jit.motion`/`+`/`2`,
 `tap.jit.grayscale`, `tap.jit.pan`, `tap.jit.getattributes`). None are committed to yet.
