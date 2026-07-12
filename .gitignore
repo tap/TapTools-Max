@@ -24,3 +24,8 @@ xcuserdata
 #support/
 # local out-of-source test build
 build_test/
+
+# Python (verification notebooks)
+__pycache__/
+*.pyc
+.ipynb_checkpoints/

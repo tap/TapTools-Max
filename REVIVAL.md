@@ -463,6 +463,53 @@ applies to every remaining tilde object (`tap.noise~`, `tap.svf~`, …).
   self-hosted macOS runner (gated by Max's GUI/activation, not by licensing). The example
   patchers, generated headless, want a first open-in-Max verification.
 
+**New object — `tap.convolve~` (2026-07-12): a true-stereo convolution reverb.** The first
+*net-new* DSP object of the revival (not a Jamoma port or a doc resurrection) — the only prior
+art was the source-less `tap.selfconvolve~` help-patcher prototype on the `taptools-min` archive.
+It convolves a stereo input with an impulse response held in a `buffer~` using **uniformly-
+partitioned overlap-save (UPOLS)** FFT convolution (the standard convolution-reverb engine): the
+IR is split into `blocksize`-sample partitions, each transformed once with the same in-house
+radix-2 FFT as `tap.nr~`, and the output is a frequency-domain multiply-accumulate over a
+frequency-domain delay line of past input spectra. Latency = one `blocksize`; otherwise it's exact
+linear convolution.
+  - **True stereo** — four IR paths (LL/LR/RL/RR) form the full 2×2 response; the two input
+    channels are FFT'd once per block and shared across the paths. Paths are read from the bound
+    `buffer~` by channel count: 4+ → true stereo, 2 → stereo (no cross-feed), 1 → mono on both
+    diagonals.
+  - **Click-free IR swaps** — the IR is (re)analysed off the audio thread in a deferred `queue`
+    into an inactive double-buffered slot, then published with a single atomic (slot + partition
+    count kept consistent), so loading a new IR while audio runs never reallocates or tears the
+    table the perform loop reads. Engine geometry (`blocksize`/`maxsize`) is only (re)allocated in
+    `dspsetup`, where perform is guaranteed idle — runtime changes to those two apply on the next
+    DSP restart (documented in-attribute).
+  - **Surface:** `mix` / `gain` / `predelay` / `normalize` (energy) / `blocksize` / `maxsize` /
+    `bypass` / `mute`, mirroring `tap.verb~` conventions so the two reverbs read as siblings.
+  - **Architecture:** the DSP core is a Min-free header (`conv_engine.h`) so it can be unit-tested
+    directly — buffer~-backed objects can't link the mock kernel (which is why no `tap.buffer.*`
+    object ships a test), so the portable engine is factored out and the `.cpp` is a thin Min shim.
+    New **Catch unit test** (4 cases / 7 assertions, **green**) checks the engine against a direct
+    time-domain convolution: true-stereo path correctness, one-block latency, delta⇒pure-delay,
+    silent-when-no-IR, and a lock-free hot IR swap settling to the new response. Compile-verified
+    against the Min/Max SDK toolchain (compiles *and* links the external on Linux/GCC).
+  - **Deferred optimisation (noted in-file):** the MAC and IR tables use the full complex spectrum;
+    a real-input half-spectrum (N/2+1 bins) form would halve both CPU and memory. **Runtime
+    validation in Max still pending** (like the rest of the DSP set) — feel, IR-swap smoothness,
+    CPU with long IRs, and the buffer channel-mapping all want a live audition.
+  - **Vertical slice:** ships a maxref (`docs/tap.convolve~.maxref.xml`) and a help patcher
+    (`help/tap.convolve~.maxhelp`, authored headless from the autohelp template — **wants a first
+    open-in-Max check**, like the other new help patchers).
+  - **Verification notebook + C ABI (new tooling, modelled on AmbiTap's `tools/capi` + `notebooks/`).**
+    Because the portable engine is a Min-free header, a tiny **C ABI** (`tools/capi/taptools_capi.*`,
+    a standalone CMake that needs no min-api) wraps `conv_engine`, and a **ctypes bridge**
+    (`notebooks/taptools_py.py`, `Convolver` class + `PALETTE`, auto-builds the lib on first import)
+    lets a Jupyter notebook drive the **actual shipping DSP** — not a Python re-implementation. The
+    first notebook, `notebooks/convolution_reverb.ipynb`, machine-checks and plots five claims
+    against the real engine: exactness vs. direct convolution (<1e-9), one-block latency +
+    blocksize-invariance, the true-stereo 2×2 cross-feed, impulse→IR reconstruction with a Schroeder
+    RT60 read-back (0.60 s target, 0.599 s measured), and the atomic dropout-free IR swap converging
+    bit-identically to a from-scratch new-IR engine one block later. This is the first Python
+    verification tooling in TapTools and the template for future DSP notebooks.
+
 **Corpse pruned (step 5 done):** the dead trees have been removed now that all
 objects are migrated and the build is self-contained on `min-api` — gone are the
 old Jamoma `Core/`, the legacy `TapTools/` package (its docs/help were already

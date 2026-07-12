@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.convolve~" module="msp" category="TapTools, MSP Modifiers">
+
+	<digest>
+		True-stereo convolution reverb / impulse-response processor
+	</digest>
+
+	<description>
+		The <o>tap.convolve~</o> object convolves a stereo signal with an impulse response (IR) stored
+		in a <o>buffer~</o>. Because the IR can be as long as a reverb tail, it uses uniformly-partitioned
+		overlap-save (UPOLS) FFT convolution: the IR is split into equal partitions, each transformed once,
+		and the output is formed by a frequency-domain multiply-accumulate over a delay line of past input
+		spectra. It is fully self-contained — no <o>pfft~</o> host is required. Latency equals one
+		<m>blocksize</m>.
+		<br/><br/>
+		It is <b>true stereo</b>: four IR paths describe the full 2×2 response (outL = inL∗h_LL + inR∗h_RL,
+		outR = inL∗h_LR + inR∗h_RR). How the four paths are read from the bound <o>buffer~</o> depends on
+		its channel count — 4+ channels give a full true-stereo IR (ch1=LL, ch2=LR, ch3=RL, ch4=RR), 2
+		channels a plain stereo IR with no cross-feed (ch1=LL, ch2=RR), and 1 channel a mono IR on both
+		diagonals (the stereo image is preserved). Send a <m>set</m> message to bind a different
+		<o>buffer~</o>; the IR is (re)analysed off the audio thread and swapped in without dropping out.
+	</description>
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">Timothy Place</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Effect</metadata>
+	</metadatalist>
+
+	<!--ARGUMENTS-->
+	<objarglist>
+		<objarg name="buffer" optional="1" type="symbol">
+			<description>Name of the <o>buffer~</o> holding the impulse response.</description>
+		</objarg>
+		<objarg name="blocksize" optional="1" type="int">
+			<description>FFT partition size in samples (a power of two). This is also the processing latency [default: 512].</description>
+		</objarg>
+	</objarglist>
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<arg name="input" optional="0" type="signal" />
+			<description>The left and right input signals to be convolved with the impulse response (left and right inlets).</description>
+		</method>
+		<method name="set">
+			<arg name="buffer-name" optional="0" type="symbol" />
+			<description>Bind the object to a named <o>buffer~</o> and (re)load its contents as the impulse response.</description>
+		</method>
+		<method name="clear">
+			<description>Flush the reverb tail — clears the internal input history and any pending output. The loaded IR is kept.</description>
+		</method>
+	</methodlist>
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="mix" get="1" set="1" type="float">
+			<description>Dry/wet mix as a percentage: 0 = dry input only, 100 = fully wet convolution [default: 100].</description>
+		</attribute>
+		<attribute name="gain" get="1" set="1" type="float">
+			<description>Output gain in dB, applied to the wet+dry mix [default: 0 dB].</description>
+		</attribute>
+		<attribute name="predelay" get="1" set="1" type="float">
+			<description>Pre-delay in milliseconds applied to the wet (convolved) signal, delaying the onset of the reverb relative to the dry signal (0–2000) [default: 0 ms].</description>
+		</attribute>
+		<attribute name="normalize" get="1" set="1" type="int">
+			<description>When on, energy-normalises the impulse response so its overall level is consistent regardless of the IR's loudness or length [default: 1 (on)].</description>
+		</attribute>
+		<attribute name="blocksize" get="1" set="1" type="int">
+			<description>FFT partition size in samples (a power of two, 16–8192). This is also the processing latency; larger values are more efficient for long IRs. Changes take effect when the DSP chain is next started [default: 512].</description>
+		</attribute>
+		<attribute name="maxsize" get="1" set="1" type="int">
+			<description>Maximum impulse-response length in samples that can be loaded; longer IRs are truncated. Changes take effect when the DSP chain is next started, and larger values use more memory [default: 131072].</description>
+		</attribute>
+		<attribute name="bypass" get="1" set="1" type="int">
+			<description>Pass the input through unprocessed [default: 0].</description>
+		</attribute>
+		<attribute name="mute" get="1" set="1" type="int">
+			<description>Silence the output [default: 0].</description>
+		</attribute>
+	</attributelist>
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.verb~"/>
+		<seealso name="buffer~"/>
+		<seealso name="pfft~"/>
+		<seealso name="tap.comb~"/>
+	</seealsolist>
+
+</c74object>
