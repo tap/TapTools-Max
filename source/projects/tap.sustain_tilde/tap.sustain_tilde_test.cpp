@@ -1,11 +1,12 @@
 /// @file
 /// @brief      Unit tests for tap.sustain~ (defaults, multi-voice allocation, rise).
-/// @copyright  Copyright 2019-2026 Timothy Place. Distributed under the New BSD License.
-
-#include "c74_min_unittest.h"        // required unit-test header (defines main via Catch)
-#include "tap.sustain_tilde.cpp"     // include the object source so we can instantiate it
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright 2019-2026 Timothy Place.
 
 #include <cmath>
+
+#include "c74_min_unittest.h"    // required unit-test header (defines main via Catch)
+#include "tap.sustain_tilde.cpp" // include the object source so we can instantiate it
 
 namespace {
 
@@ -17,28 +18,30 @@ namespace {
     void feed_sine(sustain& obj, int samples, double freq_hz = 220.0, double sr = 44100.0) {
         static double phase = 0.0;
         const double  inc   = 2.0 * k_pi * freq_hz / sr;
-        auto& vop = static_cast<c74::min::vector_operator<>&>(obj);    // reach the single-sample helper
+        auto&         vop   = static_cast<c74::min::vector_operator<>&>(obj); // reach the single-sample helper
         for (int i = 0; i < samples; ++i) {
             vop(static_cast<c74::min::sample>(std::sin(phase)));
             phase += inc;
-            if (phase > 2.0 * k_pi)
+            if (phase > 2.0 * k_pi) {
                 phase -= 2.0 * k_pi;
+            }
         }
     }
 
     int count_active(const sustain& obj) {
         int n = 0;
-        for (const auto& v : obj.voice_bank())
-            if (v.active())
+        for (const auto& v : obj.voice_bank()) {
+            if (v.active()) {
                 ++n;
+            }
+        }
         return n;
     }
 
 } // anonymous namespace
 
-
 SCENARIO("tap.sustain~ instantiates with the expected defaults") {
-    ext_main(nullptr);    // configure the class (required once per test executable)
+    ext_main(nullptr); // configure the class (required once per test executable)
 
     GIVEN("a default instance") {
         test_wrapper<sustain> an_instance;
@@ -66,7 +69,6 @@ SCENARIO("tap.sustain~ instantiates with the expected defaults") {
     }
 }
 
-
 SCENARIO("multiple bangs engage multiple voices round-robin") {
     ext_main(nullptr);
 
@@ -79,7 +81,7 @@ SCENARIO("multiple bangs engage multiple voices round-robin") {
 
         WHEN("a single bang is captured") {
             my_object.bang();
-            feed_sine(my_object, 64);    // one audio block services the pending capture
+            feed_sine(my_object, 64); // one audio block services the pending capture
 
             THEN("exactly one voice becomes active") {
                 REQUIRE(count_active(my_object) == 1);
@@ -104,7 +106,7 @@ SCENARIO("multiple bangs engage multiple voices round-robin") {
         }
 
         WHEN("more bangs than voices are captured") {
-            for (int b = 0; b < 7; ++b) {    // 7 bangs into a 5-voice bank
+            for (int b = 0; b < 7; ++b) { // 7 bangs into a 5-voice bank
                 my_object.bang();
                 feed_sine(my_object, 64);
             }
@@ -130,7 +132,6 @@ SCENARIO("multiple bangs engage multiple voices round-robin") {
     }
 }
 
-
 SCENARIO("rise applies a one-shot per-voice fade-in") {
     ext_main(nullptr);
 
@@ -138,17 +139,18 @@ SCENARIO("rise applies a one-shot per-voice fade-in") {
         test_wrapper<sustain> an_instance;
         sustain&              my_object = an_instance;
 
-        my_object.rise = 50.0;    // 50 ms @ 44.1 kHz = 2205 samples
+        my_object.rise = 50.0; // 50 ms @ 44.1 kHz = 2205 samples
         feed_sine(my_object, 40000);
 
         THEN("the rise attribute propagated to every voice in samples") {
-            for (const auto& v : my_object.voice_bank())
+            for (const auto& v : my_object.voice_bank()) {
                 REQUIRE(v.rise() == 2205);
+            }
         }
 
         WHEN("a voice is captured and then played for fewer samples than the rise length") {
             my_object.bang();
-            feed_sine(my_object, 64);    // services the capture; voice begins at rise_pos 0
+            feed_sine(my_object, 64); // services the capture; voice begins at rise_pos 0
             const auto& v = my_object.voice_bank()[0];
 
             // capture() arms rise_pos to 0; only the first audio block (64 frames) has elapsed.
@@ -158,7 +160,7 @@ SCENARIO("rise applies a one-shot per-voice fade-in") {
             }
 
             AND_WHEN("it is played long enough to finish rising") {
-                feed_sine(my_object, 4000);    // well past 2205 samples
+                feed_sine(my_object, 4000); // well past 2205 samples
                 THEN("the rise envelope has reached full power") {
                     REQUIRE(v.rise_position() == v.rise());
                 }

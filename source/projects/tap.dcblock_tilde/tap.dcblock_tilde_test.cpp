@@ -1,9 +1,10 @@
 /// @file
 /// @brief      Unit tests for tap.dcblock~.
-/// @copyright  Copyright 2008-2026 Timothy Place. Distributed under the New BSD License.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright 2008-2026 Timothy Place.
 
-#include "c74_min_unittest.h"        // required unit-test header (defines main via Catch)
-#include "tap.dcblock_tilde.cpp"     // include the object source so we can instantiate it
+#include "c74_min_unittest.h"    // required unit-test header (defines main via Catch)
+#include "tap.dcblock_tilde.cpp" // include the object source so we can instantiate it
 
 SCENARIO("tap.dcblock~ instantiates with the expected defaults") {
     ext_main(nullptr);
@@ -41,8 +42,8 @@ SCENARIO("tap.dcblock~ filters a DC offset") {
             double x1 = 0.0, y1 = 0.0;
             for (int n = 0; n < 5; ++n) {
                 const double expected = 1.0 - x1 + R * y1;
-                x1 = 1.0;
-                y1 = expected;
+                x1                    = 1.0;
+                y1                    = expected;
                 REQUIRE(static_cast<double>(my_object(1.0)) == APPROX(expected));
             }
             // The output must already be shrinking away from the initial 1.0 toward 0.
@@ -58,7 +59,7 @@ SCENARIO("tap.dcblock~ bypass and mute behave as documented") {
     GIVEN("an instance with bypass enabled") {
         test_wrapper<dcblock> an_instance;
         dcblock&              my_object = an_instance;
-        my_object.bypass = true;
+        my_object.bypass                = true;
 
         THEN("the input passes through untouched") {
             REQUIRE(static_cast<double>(my_object(0.5)) == APPROX(0.5));
@@ -69,7 +70,7 @@ SCENARIO("tap.dcblock~ bypass and mute behave as documented") {
     GIVEN("an instance with mute enabled") {
         test_wrapper<dcblock> an_instance;
         dcblock&              my_object = an_instance;
-        my_object.mute = true;
+        my_object.mute                  = true;
 
         THEN("the output is silent") {
             REQUIRE(static_cast<double>(my_object(1.0)) == APPROX(0.0));

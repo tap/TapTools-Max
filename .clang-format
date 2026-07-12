@@ -1,0 +1,74 @@
+# Tap House Rules — the Tap family house style. Copy verbatim into every *Tap repo.
+# 4-space indent (incl. namespaces), aligned declaration/assignment columns,
+# attached braces (else/catch break), comma-first ctor initializers,
+# left-bound pointers, 120-column limit. Layout only — naming and mandatory
+# braces are enforced separately by .clang-tidy (clang-format cannot check
+# identifier names, and its brace insertion is not semantically aware).
+Language: Cpp
+BasedOnStyle: LLVM
+Standard: c++20
+
+ColumnLimit: 120
+IndentWidth: 4
+AccessModifierOffset: -2
+NamespaceIndentation: All
+
+PointerAlignment: Left
+DerivePointerAlignment: false
+BreakBeforeBinaryOperators: NonAssignment
+SpaceBeforeCpp11BracedList: false
+AlwaysBreakTemplateDeclarations: Yes
+
+# Braces attach everywhere (including functions); only else/catch break.
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterFunction: false
+  AfterClass: false
+  AfterStruct: false
+  AfterNamespace: false
+  AfterControlStatement: Never
+  BeforeElse: true
+  BeforeCatch: true
+BreakConstructorInitializers: BeforeComma
+PackConstructorInitializers: Never
+
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignTrailingComments: true
+
+# Short accessor functions and lambdas may stay inline, but control-flow
+# statements never do: every if/for/while is braced AND expanded (see
+# .clang-tidy readability-braces-around-statements).
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortLambdasOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+
+BreakStringLiterals: false
+KeepEmptyLinesAtTheStartOfBlocks: false
+InsertNewlineAtEOF: true
+
+# Include ordering: main header (auto, priority 0) -> C++ standard ->
+# third-party -> this project. Regroup enforces it; blank lines between groups.
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  # C++ standard library: <angle> with no '/' and no '.' (e.g. <vector>)
+  - Regex: '^<[[:alnum:]_]+>$'
+    Priority: 2
+  # Other angle-bracket headers (third-party, e.g. <gtest/gtest.h>)
+  - Regex: '^<.*>$'
+    Priority: 3
+  # This project: quoted includes
+  - Regex: '^".*"$'
+    Priority: 4
+
+# Min-DevKit declarative DSL (Max/Min externals: TapTools, AmbiTap-Max, ...).
+# MIN_FUNCTION / MIN_ARGUMENT_FUNCTION expand to a lambda; teach clang-format
+# their shape so attribute/message/argument setter bodies format as lambda
+# blocks instead of being shredded. Completely inert for repos that don't use
+# these macros (the pure-C++ libraries). Requires clang-format >= 15.
+Macros:
+  - 'MIN_FUNCTION=[](const atoms& args, int inlet) -> atoms'
+  - 'MIN_ARGUMENT_FUNCTION=[](const atom& arg, int index) -> void'

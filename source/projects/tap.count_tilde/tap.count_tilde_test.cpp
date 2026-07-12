@@ -1,9 +1,10 @@
 /// @file
 /// @brief      Unit tests for tap.count~.
-/// @copyright  Copyright 2003-2026 Timothy Place. Distributed under the New BSD License.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright 2003-2026 Timothy Place.
 
-#include "c74_min_unittest.h"        // required unit-test header (defines main via Catch)
-#include "tap.count_tilde.cpp"       // include the object source so we can instantiate it
+#include "c74_min_unittest.h"  // required unit-test header (defines main via Catch)
+#include "tap.count_tilde.cpp" // include the object source so we can instantiate it
 
 SCENARIO("tap.count~ instantiates with the documented defaults") {
     ext_main(nullptr);
@@ -48,12 +49,12 @@ SCENARIO("tap.count~ pauses while the input is zero and restarts from low_bound"
     GIVEN("an instance with low_bound 10") {
         test_wrapper<count> an_instance;
         count&              my_object = an_instance;
-        my_object.low_bound = 10;
+        my_object.low_bound           = 10;
 
         THEN("a zero deactivates, then the next non-zero restarts from low_bound") {
-            my_object(1.0);                 // active, m_value -> 1
-            my_object(1.0);                 // m_value -> 2
-            const double paused = my_object(0.0);   // zero -> inactive, no increment, value stays 2
+            my_object(1.0);                       // active, m_value -> 1
+            my_object(1.0);                       // m_value -> 2
+            const double paused = my_object(0.0); // zero -> inactive, no increment, value stays 2
             REQUIRE(paused == 2.0);
             // Next non-zero: was inactive, so reset to low_bound (10), become active, then ++ -> 11.
             REQUIRE(static_cast<double>(my_object(1.0)) == 11.0);
@@ -68,7 +69,7 @@ SCENARIO("tap.count~ loop on stops counting at high_bound") {
     GIVEN("an instance with high_bound 3 and loop on (default)") {
         test_wrapper<count> an_instance;
         count&              my_object = an_instance;
-        my_object.high_bound = 3;
+        my_object.high_bound          = 3;
 
         THEN("the count climbs to high_bound, deactivates, then a held input restarts from low_bound") {
             REQUIRE(static_cast<double>(my_object(1.0)) == 1.0);
@@ -89,8 +90,8 @@ SCENARIO("tap.count~ loop off clamps at high_bound") {
     GIVEN("an instance with high_bound 3 and loop off") {
         test_wrapper<count> an_instance;
         count&              my_object = an_instance;
-        my_object.high_bound = 3;
-        my_object.loop       = false;
+        my_object.high_bound          = 3;
+        my_object.loop                = false;
 
         THEN("the count clamps to high_bound and stays active there") {
             REQUIRE(static_cast<double>(my_object(1.0)) == 1.0);
@@ -109,10 +110,10 @@ SCENARIO("tap.count~ reset returns the count to low_bound") {
     GIVEN("an instance with low_bound 5 that has counted up") {
         test_wrapper<count> an_instance;
         count&              my_object = an_instance;
-        my_object.low_bound = 5;
+        my_object.low_bound           = 5;
 
-        my_object(1.0);   // 1
-        my_object(1.0);   // 2
+        my_object(1.0); // 1
+        my_object(1.0); // 2
 
         WHEN("reset is sent") {
             my_object.reset();

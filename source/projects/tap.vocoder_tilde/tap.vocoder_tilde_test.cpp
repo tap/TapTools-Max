@@ -1,11 +1,12 @@
 /// @file
 /// @brief      Unit tests for tap.vocoder~.
-/// @copyright  Copyright 2001-2026 Timothy Place. Distributed under the New BSD License.
-
-#include "c74_min_unittest.h"        // required unit-test header (defines main via Catch)
-#include "tap.vocoder_tilde.cpp"     // include the object source so we can instantiate it
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright 2001-2026 Timothy Place.
 
 #include <cmath>
+
+#include "c74_min_unittest.h"    // required unit-test header (defines main via Catch)
+#include "tap.vocoder_tilde.cpp" // include the object source so we can instantiate it
 
 SCENARIO("tap.vocoder~ has the documented defaults") {
     ext_main(nullptr);
@@ -32,9 +33,10 @@ SCENARIO("tap.vocoder~ produces no output without a modulator") {
         double peak = 0.0;
         for (int n = 0; n < 4000; ++n) {
             const double carrier = std::sin(2.0 * M_PI * 1000.0 * n / 44100.0);
-            const double out     = my_object(0.0, carrier);   // modulator silent
-            if (n > 2000)
+            const double out     = my_object(0.0, carrier); // modulator silent
+            if (n > 2000) {
                 peak = std::max(peak, std::fabs(out));
+            }
         }
 
         THEN("the output stays effectively silent (envelopes never open)") {
@@ -54,8 +56,9 @@ SCENARIO("tap.vocoder~ passes the carrier where the modulator has energy") {
         for (int n = 0; n < 8000; ++n) {
             const double tone = std::sin(2.0 * M_PI * 1000.0 * n / 44100.0);
             const double out  = my_object(tone, tone);
-            if (n > 4000)                                       // after the envelopes settle
+            if (n > 4000) { // after the envelopes settle
                 peak = std::max(peak, std::fabs(out));
+            }
         }
 
         THEN("the matching band opens and a non-trivial signal passes") {

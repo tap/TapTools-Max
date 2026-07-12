@@ -13,9 +13,8 @@
 ///
 ///             Usage: svf_bench [--json] [--seconds N]
 /// @author     Timothy Place
-/// @copyright  Copyright 2026 Timothy Place. Distributed under the New BSD License.
-
-#include "svf.h"
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright 2026 Timothy Place.
 
 #include <chrono>
 #include <cmath>
@@ -25,88 +24,94 @@
 #include <string>
 #include <vector>
 
+#include "svf.h"
+
 namespace ksv = taptools::svf;
 
 namespace {
 
-constexpr double c_sr = 48000.0;
+    constexpr double k_sr = 48000.0;
 
-struct bench_case {
-    std::string name;
-    std::function<void(ksv::svf_filter&)> setup;
-    bool modulated;   // true: per-sample tick(cutoff) — the signal-rate-cutoff path
-};
+    struct bench_case {
+        std::string                           name;
+        std::function<void(ksv::svf_filter&)> setup;
+        bool modulated; // true: per-sample tick(cutoff) — the signal-rate-cutoff path
+    };
 
-// Deterministic LCG noise in [-0.25, 0.25].
-struct noise {
-    unsigned s { 22222u };
-    double next() {
-        s = s * 1664525u + 1013904223u;
-        return (static_cast<double>(s) / 2147483648.0 - 1.0) * 0.25;
-    }
-};
-
-struct result {
-    std::string name;
-    double ns_per_sample;
-    double checksum;
-};
-
-result run_case(const bench_case& bc, double seconds, int reps) {
-    const size_t n = static_cast<size_t>(seconds * c_sr);
-
-    // Pre-generate input (and the modulation ramp) so we time the filter, not the generator.
-    std::vector<double> in(n), cf(n);
-    noise ng;
-    for (size_t i = 0; i < n; ++i) {
-        in[i] = ng.next();
-        // 20 Hz exponential cutoff sweep 200..8000 Hz — a demanding but musical modulator
-        const double ph = std::fmod(20.0 * i / c_sr, 1.0);
-        cf[i] = 200.0 * std::pow(40.0, ph < 0.5 ? 2.0 * ph : 2.0 - 2.0 * ph);
-    }
-
-    double best = 1e30;
-    double checksum = 0.0;
-    for (int r = 0; r < reps; ++r) {
-        ksv::svf_filter f;
-        f.prepare(c_sr, 1);
-        f.set_smooth_ms(0.0);
-        bc.setup(f);
-
-        double acc = 0.0;
-        const auto t0 = std::chrono::steady_clock::now();
-        if (bc.modulated) {
-            for (size_t i = 0; i < n; ++i)
-                acc += f.process(in[i], cf[i]);
+    // Deterministic LCG noise in [-0.25, 0.25].
+    struct noise {
+        unsigned s{22222u};
+        double   next() {
+            s = s * 1664525u + 1013904223u;
+            return (static_cast<double>(s) / 2147483648.0 - 1.0) * 0.25;
         }
-        else {
-            for (size_t i = 0; i < n; ++i)
-                acc += f.process(in[i]);
+    };
+
+    struct result {
+        std::string name;
+        double      ns_per_sample;
+        double      checksum;
+    };
+
+    result run_case(const bench_case& bc, double seconds, int reps) {
+        const size_t n = static_cast<size_t>(seconds * k_sr);
+
+        // Pre-generate input (and the modulation ramp) so we time the filter, not the generator.
+        std::vector<double> in(n), cf(n);
+        noise               ng;
+        for (size_t i = 0; i < n; ++i) {
+            in[i] = ng.next();
+            // 20 Hz exponential cutoff sweep 200..8000 Hz — a demanding but musical modulator
+            const double ph = std::fmod(20.0 * i / k_sr, 1.0);
+            cf[i]           = 200.0 * std::pow(40.0, ph < 0.5 ? 2.0 * ph : 2.0 - 2.0 * ph);
         }
-        const auto t1 = std::chrono::steady_clock::now();
-        checksum = acc;
-        const double ns = std::chrono::duration<double, std::nano>(t1 - t0).count()
-                          / static_cast<double>(n);
-        if (ns < best)
-            best = ns;
+
+        double best     = 1e30;
+        double checksum = 0.0;
+        for (int r = 0; r < reps; ++r) {
+            ksv::svf_filter f;
+            f.prepare(k_sr, 1);
+            f.set_smooth_ms(0.0);
+            bc.setup(f);
+
+            double     acc = 0.0;
+            const auto t0  = std::chrono::steady_clock::now();
+            if (bc.modulated) {
+                for (size_t i = 0; i < n; ++i) {
+                    acc += f.process(in[i], cf[i]);
+                }
+            }
+            else {
+                for (size_t i = 0; i < n; ++i) {
+                    acc += f.process(in[i]);
+                }
+            }
+            const auto t1   = std::chrono::steady_clock::now();
+            checksum        = acc;
+            const double ns = std::chrono::duration<double, std::nano>(t1 - t0).count() / static_cast<double>(n);
+            if (ns < best) {
+                best = ns;
+            }
+        }
+        return {bc.name, best, checksum};
     }
-    return { bc.name, best, checksum };
-}
 
-}  // namespace
-
+} // namespace
 
 int main(int argc, char** argv) {
     bool   json    = false;
     double seconds = 4.0;
     int    reps    = 5;
     for (int i = 1; i < argc; ++i) {
-        if (!std::strcmp(argv[i], "--json"))
+        if (!std::strcmp(argv[i], "--json")) {
             json = true;
-        else if (!std::strcmp(argv[i], "--seconds") && i + 1 < argc)
+        }
+        else if (!std::strcmp(argv[i], "--seconds") && i + 1 < argc) {
             seconds = std::atof(argv[++i]);
-        else if (!std::strcmp(argv[i], "--reps") && i + 1 < argc)
+        }
+        else if (!std::strcmp(argv[i], "--reps") && i + 1 < argc) {
             reps = std::atoi(argv[++i]);
+        }
     }
 
     auto cfg = [](int mode, int order, int circuit, int os, double res) {
@@ -123,38 +128,39 @@ int main(int argc, char** argv) {
     };
 
     const std::vector<bench_case> cases = {
-        { "clean.lp.o2.static",    cfg(ksv::mode_lowpass, 2, ksv::circuit_clean, 1, 0.5), false },
-        { "clean.lp.o4.static",    cfg(ksv::mode_lowpass, 4, ksv::circuit_clean, 1, 0.5), false },
-        { "clean.lp.o8.static",    cfg(ksv::mode_lowpass, 8, ksv::circuit_clean, 1, 0.5), false },
-        { "clean.morph.o4.static", cfg(ksv::mode_morph,   4, ksv::circuit_clean, 1, 0.5), false },
-        { "clean.lp.o2.mod",       cfg(ksv::mode_lowpass, 2, ksv::circuit_clean, 1, 0.5), true  },
-        { "clean.lp.o8.mod",       cfg(ksv::mode_lowpass, 8, ksv::circuit_clean, 1, 0.5), true  },
-        { "clean.morph.o4.mod",    cfg(ksv::mode_morph,   4, ksv::circuit_clean, 1, 0.5), true  },
-        { "driven.lp.o2.os1",      cfg(ksv::mode_lowpass, 2, ksv::circuit_driven, 1, 0.8), false },
-        { "driven.lp.o2.os2",      cfg(ksv::mode_lowpass, 2, ksv::circuit_driven, 2, 0.8), false },
-        { "driven.lp.o2.os4",      cfg(ksv::mode_lowpass, 2, ksv::circuit_driven, 4, 0.8), false },
-        { "driven.lp.o4.os2",      cfg(ksv::mode_lowpass, 4, ksv::circuit_driven, 2, 0.8), false },
-        { "driven.lp.o8.os2",      cfg(ksv::mode_lowpass, 8, ksv::circuit_driven, 2, 0.8), false },
-        { "driven.lp.o8.os2.mod",  cfg(ksv::mode_lowpass, 8, ksv::circuit_driven, 2, 0.8), true  },
+        {"clean.lp.o2.static", cfg(ksv::mode_lowpass, 2, ksv::circuit_clean, 1, 0.5), false},
+        {"clean.lp.o4.static", cfg(ksv::mode_lowpass, 4, ksv::circuit_clean, 1, 0.5), false},
+        {"clean.lp.o8.static", cfg(ksv::mode_lowpass, 8, ksv::circuit_clean, 1, 0.5), false},
+        {"clean.morph.o4.static", cfg(ksv::mode_morph, 4, ksv::circuit_clean, 1, 0.5), false},
+        {"clean.lp.o2.mod", cfg(ksv::mode_lowpass, 2, ksv::circuit_clean, 1, 0.5), true},
+        {"clean.lp.o8.mod", cfg(ksv::mode_lowpass, 8, ksv::circuit_clean, 1, 0.5), true},
+        {"clean.morph.o4.mod", cfg(ksv::mode_morph, 4, ksv::circuit_clean, 1, 0.5), true},
+        {"driven.lp.o2.os1", cfg(ksv::mode_lowpass, 2, ksv::circuit_driven, 1, 0.8), false},
+        {"driven.lp.o2.os2", cfg(ksv::mode_lowpass, 2, ksv::circuit_driven, 2, 0.8), false},
+        {"driven.lp.o2.os4", cfg(ksv::mode_lowpass, 2, ksv::circuit_driven, 4, 0.8), false},
+        {"driven.lp.o4.os2", cfg(ksv::mode_lowpass, 4, ksv::circuit_driven, 2, 0.8), false},
+        {"driven.lp.o8.os2", cfg(ksv::mode_lowpass, 8, ksv::circuit_driven, 2, 0.8), false},
+        {"driven.lp.o8.os2.mod", cfg(ksv::mode_lowpass, 8, ksv::circuit_driven, 2, 0.8), true},
     };
 
     std::vector<result> results;
-    for (const auto& bc : cases)
+    for (const auto& bc : cases) {
         results.push_back(run_case(bc, seconds, reps));
+    }
 
     if (json) {
-        std::printf("{\n  \"samplerate\": %.0f,\n  \"cases\": {\n", c_sr);
-        for (size_t i = 0; i < results.size(); ++i)
+        std::printf("{\n  \"samplerate\": %.0f,\n  \"cases\": {\n", k_sr);
+        for (size_t i = 0; i < results.size(); ++i) {
             std::printf("    \"%s\": { \"ns_per_sample\": %.3f }%s\n", results[i].name.c_str(),
                         results[i].ns_per_sample, i + 1 < results.size() ? "," : "");
+        }
         std::printf("  }\n}\n");
     }
     else {
         std::printf("%-24s %14s %12s %14s\n", "case", "ns/sample", "x realtime", "checksum");
         for (const auto& r : results) {
-            const double xrt = 1e9 / (r.ns_per_sample * c_sr);
-            std::printf("%-24s %14.2f %12.0f %14.6f\n", r.name.c_str(), r.ns_per_sample, xrt,
-                        r.checksum);
+            const double xrt = 1e9 / (r.ns_per_sample * k_sr);
+            std::printf("%-24s %14.2f %12.0f %14.6f\n", r.name.c_str(), r.ns_per_sample, xrt, r.checksum);
         }
     }
     return 0;

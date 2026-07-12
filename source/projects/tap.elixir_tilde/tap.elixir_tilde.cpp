@@ -6,34 +6,37 @@
 ///             Faithful port of the original (self-contained — no Jamoma); the per-inlet-count perform
 ///             routines of the original are folded into one variable-width loop.
 /// @author     Timothy Place
-/// @copyright  Copyright 2001-2026 Timothy Place. Distributed under the New BSD License.
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright 2001-2026 Timothy Place.
 
-#include "c74_min.h"
 #include <algorithm>
 #include <array>
 #include <memory>
 #include <vector>
 
+#include "c74_min.h"
+
 using namespace c74::min;
 
-
 class elixir : public object<elixir>, public vector_operator<> {
-public:
-    MIN_DESCRIPTION { "A crossfading mixer for managing gain structure. 2-10 inlets, each gated by a "
-                      "toggle; active inlets share the gain equally and changes are slewed." };
-    MIN_TAGS    { "mixing" };
-    MIN_AUTHOR  { "Timothy Place" };
-    MIN_RELATED { "tap.limi~, matrix~, *~, line~" };
+  public:
+    MIN_DESCRIPTION{"A crossfading mixer for managing gain structure. 2-10 inlets, each gated by a "
+                    "toggle; active inlets share the gain equally and changes are slewed."};
+    MIN_TAGS{"mixing"};
+    MIN_AUTHOR{"Timothy Place"};
+    MIN_RELATED{"tap.limi~, matrix~, *~, line~"};
 
-    outlet<> m_out { this, "(signal) mixed output", "signal" };
+    outlet<> m_out{this, "(signal) mixed output", "signal"};
 
     elixir(const atoms& args = {}) {
         int num = 2;
-        if (!args.empty())
-            num = std::clamp(static_cast<int>(args[0]), 2, c_max);
+        if (!args.empty()) {
+            num = std::clamp(static_cast<int>(args[0]), 2, k_max);
+        }
         m_num_inlets = num;
-        if (args.size() > 1)
+        if (args.size() > 1) {
             m_gtime = static_cast<double>(args[1]);
+        }
 
         for (int i = 0; i < num; ++i) {
             m_inlets.push_back(std::make_unique<inlet<>>(this, "(signal) input / toggle gate"));
@@ -41,27 +44,29 @@ public:
         }
     }
 
-    message<> m_int { this, "int", "Toggle a channel on/off (uses the global slew time).",
-        MIN_FUNCTION { doit(static_cast<long>(args[0]), inlet, 0); return {}; }
-    };
+    message<> m_int{this, "int", "Toggle a channel on/off (uses the global slew time).",
+                    MIN_FUNCTION{
+                        doit(static_cast<long>(args[0]), inlet, 0);
+                        return {};
+                    }};
 
-    message<> m_list { this, "list", "[toggle slewtime] — toggle a channel with a specific slew time.",
-        MIN_FUNCTION {
-            if (args.size() >= 2)
-                m_time[std::clamp(inlet, 0, c_max - 1)] = args[1];
-            doit(static_cast<long>(args[0]), inlet, 1);
-            return {};
-        }
-    };
+    message<> m_list{this, "list", "[toggle slewtime] — toggle a channel with a specific slew time.",
+                     MIN_FUNCTION{
+                         if (args.size() >= 2) {
+                             m_time[std::clamp(inlet, 0, k_max - 1)] = args[1];
+                         }
+                         doit(static_cast<long>(args[0]), inlet, 1);
+                         return {};
+                     }};
 
-    message<> gtime { this, "gtime", "Set a global slew time (ms) for all channels.",
-        MIN_FUNCTION {
-            m_gtime = args[0];
-            for (int i = 0; i < c_max; ++i)
-                m_time[i] = (m_gtime > 0.0) ? m_gtime : 0.0;
-            return {};
-        }
-    };
+    message<> gtime{this, "gtime", "Set a global slew time (ms) for all channels.",
+                    MIN_FUNCTION{
+                        m_gtime = args[0];
+                        for (int i = 0; i < k_max; ++i) {
+                            m_time[i] = (m_gtime > 0.0) ? m_gtime : 0.0;
+                        }
+                        return {};
+                    }};
 
     void operator()(audio_bundle input, audio_bundle output) override {
         const long n     = input.frame_count();
@@ -78,55 +83,61 @@ public:
         }
     }
 
-private:
-    static constexpr int c_max { 10 };
+  private:
+    static constexpr int k_max{10};
 
     std::vector<std::unique_ptr<inlet<>>> m_inlets;
-    int    m_num_inlets { 2 };
-    double m_gtime { 0.0 };
+    int                                   m_num_inlets{2};
+    double                                m_gtime{0.0};
 
-    std::array<long,   c_max> m_toggle {};
-    std::array<double, c_max> m_mult   {};
-    std::array<double, c_max> m_time   {};
+    std::array<long, k_max>   m_toggle{};
+    std::array<double, k_max> m_mult{};
+    std::array<double, k_max> m_time{};
 
-    std::array<int,    c_max> m_line_toggle {};
-    std::array<double, c_max> m_line_result {};
-    std::array<double, c_max> m_line_step   {};
-    std::array<double, c_max> m_line_dest   {};
-    std::array<long,   c_max> m_line_num    {};
-    std::array<long,   c_max> m_line_done   {};
+    std::array<int, k_max>    m_line_toggle{};
+    std::array<double, k_max> m_line_result{};
+    std::array<double, k_max> m_line_step{};
+    std::array<double, k_max> m_line_dest{};
+    std::array<long, k_max>   m_line_num{};
+    std::array<long, k_max>   m_line_done{};
 
     void doit(long val, int in, int typeofmess) {
-        in = std::clamp(in, 0, c_max - 1);
+        in           = std::clamp(in, 0, k_max - 1);
         m_toggle[in] = val;
-        if (typeofmess == 0)
+        if (typeofmess == 0) {
             m_time[in] = m_gtime;
+        }
 
         long active = 0;
-        for (int i = 0; i < c_max; ++i)
-            if (m_toggle[i] == 1)
+        for (int i = 0; i < k_max; ++i) {
+            if (m_toggle[i] == 1) {
                 ++active;
+            }
+        }
 
         const double nn = static_cast<double>(active);
-        for (int i = 0; i < c_max; ++i) {
-            if (nn != 0.0)
+        for (int i = 0; i < k_max; ++i) {
+            if (nn != 0.0) {
                 m_mult[i] = (m_toggle[i] != 0) ? (1.0 / nn) : 0.0;
-            else
+            }
+            else {
                 m_mult[i] = 0.0;
+            }
         }
-        for (int i = 0; i < c_max; ++i)
+        for (int i = 0; i < k_max; ++i) {
             interp_calc(i);
+        }
     }
 
     void interp_calc(int i) {
         if (m_time[i] != 0.0) {
-            const double slew = m_time[i] * 0.001 * samplerate();    // ms -> samples
-            m_line_toggle[i] = 1;
-            const double ff = m_line_result[i];
-            m_line_step[i]  = (m_mult[i] - ff) / slew;
-            m_line_dest[i]  = m_mult[i];
-            m_line_num[i]   = static_cast<long>(slew);
-            m_line_done[i]  = 0;
+            const double slew = m_time[i] * 0.001 * samplerate(); // ms -> samples
+            m_line_toggle[i]  = 1;
+            const double ff   = m_line_result[i];
+            m_line_step[i]    = (m_mult[i] - ff) / slew;
+            m_line_dest[i]    = m_mult[i];
+            m_line_num[i]     = static_cast<long>(slew);
+            m_line_done[i]    = 0;
         }
         else {
             m_line_toggle[i] = 0;
@@ -141,6 +152,5 @@ private:
         return m_line_result[i];
     }
 };
-
 
 MIN_EXTERNAL(elixir);

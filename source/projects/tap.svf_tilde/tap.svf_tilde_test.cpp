@@ -3,91 +3,96 @@
 /// @details    Kernel scenarios exercise taptools::svf::svf_filter directly; one scenario goes
 ///             through the Min mock. The harness pins this translation unit to C++17.
 /// @author     Timothy Place
-/// @copyright  Copyright 2026 Timothy Place. Distributed under the New BSD License.
-
-#include "c74_min_unittest.h"
-#include "tap.svf_tilde.cpp"
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright 2026 Timothy Place.
 
 #include <cmath>
 #include <cstddef>
 #include <vector>
 
+#include "c74_min_unittest.h"
+#include "tap.svf_tilde.cpp"
+
 namespace ksv = taptools::svf;
 
 namespace {
 
-constexpr double c_sr = 48000.0;
+    constexpr double k_sr = 48000.0;
 
-ksv::svf_filter make_filter(int channels = 1) {
-    ksv::svf_filter f;
-    f.prepare(c_sr, channels);
-    f.set_smooth_ms(0.0);
-    return f;
-}
-
-std::vector<double> tone(double freq, double seconds, double amp) {
-    std::vector<double> x(static_cast<size_t>(seconds * c_sr));
-    for (size_t i = 0; i < x.size(); ++i)
-        x[i] = amp * std::sin(2.0 * ksv::k_pi * freq * i / c_sr);
-    return x;
-}
-
-double goertzel(const std::vector<double>& x, size_t lo, size_t hi, double freq_hz) {
-    const double w    = 2.0 * ksv::k_pi * freq_hz / c_sr;
-    const double coef = 2.0 * std::cos(w);
-    double s1 = 0.0, s2 = 0.0;
-    for (size_t i = lo; i < hi && i < x.size(); ++i) {
-        const double s = x[i] + coef * s1 - s2;
-        s2 = s1;
-        s1 = s;
+    ksv::svf_filter make_filter(int channels = 1) {
+        ksv::svf_filter f;
+        f.prepare(k_sr, channels);
+        f.set_smooth_ms(0.0);
+        return f;
     }
-    return s1 * s1 + s2 * s2 - coef * s1 * s2;
-}
 
-double rms(const std::vector<double>& x, size_t lo, size_t hi) {
-    double acc = 0.0;
-    size_t n   = 0;
-    for (size_t i = lo; i < hi && i < x.size(); ++i, ++n)
-        acc += x[i] * x[i];
-    return n ? std::sqrt(acc / n) : 0.0;
-}
-
-size_t at_s(double seconds) { return static_cast<size_t>(seconds * c_sr); }
-
-// Steady-state gain (dB) of a fresh filter configured by `setup`, probed with a tone at `freq`.
-template <typename Setup>
-double gain_db(Setup setup, double freq, double amp = 0.1) {
-    auto f = make_filter();
-    setup(f);
-    const auto in = tone(freq, 0.5, amp);
-    std::vector<double> out(in.size());
-    for (size_t i = 0; i < in.size(); ++i)
-        out[i] = f.process(in[i]);
-    const size_t lo = at_s(0.25), hi = at_s(0.5);
-    return 10.0 * std::log10(goertzel(out, lo, hi, freq) / goertzel(in, lo, hi, freq));
-}
-
-// Run white-ish deterministic noise through a configured filter, return the output.
-template <typename Setup>
-std::vector<double> run_noise(Setup setup, size_t n) {
-    auto f = make_filter();
-    setup(f);
-    std::vector<double> out(n);
-    unsigned s = 22222u;
-    for (size_t i = 0; i < n; ++i) {
-        s = s * 1664525u + 1013904223u;   // LCG: deterministic, no <random> needed
-        const double x = (static_cast<double>(s) / 2147483648.0 - 1.0) * 0.25;
-        out[i] = f.process(x);
+    std::vector<double> tone(double freq, double seconds, double amp) {
+        std::vector<double> x(static_cast<size_t>(seconds * k_sr));
+        for (size_t i = 0; i < x.size(); ++i) {
+            x[i] = amp * std::sin(2.0 * ksv::k_pi * freq * i / k_sr);
+        }
+        return x;
     }
-    return out;
-}
 
-}  // namespace
+    double goertzel(const std::vector<double>& x, size_t lo, size_t hi, double freq_hz) {
+        const double w    = 2.0 * ksv::k_pi * freq_hz / k_sr;
+        const double coef = 2.0 * std::cos(w);
+        double       s1 = 0.0, s2 = 0.0;
+        for (size_t i = lo; i < hi && i < x.size(); ++i) {
+            const double s = x[i] + coef * s1 - s2;
+            s2             = s1;
+            s1             = s;
+        }
+        return s1 * s1 + s2 * s2 - coef * s1 * s2;
+    }
 
+    double rms(const std::vector<double>& x, size_t lo, size_t hi) {
+        double acc = 0.0;
+        size_t n   = 0;
+        for (size_t i = lo; i < hi && i < x.size(); ++i, ++n) {
+            acc += x[i] * x[i];
+        }
+        return n ? std::sqrt(acc / n) : 0.0;
+    }
+
+    size_t at_s(double seconds) {
+        return static_cast<size_t>(seconds * k_sr);
+    }
+
+    // Steady-state gain (dB) of a fresh filter configured by `setup`, probed with a tone at `freq`.
+    template <typename Setup>
+    double gain_db(Setup setup, double freq, double amp = 0.1) {
+        auto f = make_filter();
+        setup(f);
+        const auto          in = tone(freq, 0.5, amp);
+        std::vector<double> out(in.size());
+        for (size_t i = 0; i < in.size(); ++i) {
+            out[i] = f.process(in[i]);
+        }
+        const size_t lo = at_s(0.25), hi = at_s(0.5);
+        return 10.0 * std::log10(goertzel(out, lo, hi, freq) / goertzel(in, lo, hi, freq));
+    }
+
+    // Run white-ish deterministic noise through a configured filter, return the output.
+    template <typename Setup>
+    std::vector<double> run_noise(Setup setup, size_t n) {
+        auto f = make_filter();
+        setup(f);
+        std::vector<double> out(n);
+        unsigned            s = 22222u;
+        for (size_t i = 0; i < n; ++i) {
+            s              = s * 1664525u + 1013904223u; // LCG: deterministic, no <random> needed
+            const double x = (static_cast<double>(s) / 2147483648.0 - 1.0) * 0.25;
+            out[i]         = f.process(x);
+        }
+        return out;
+    }
+
+} // namespace
 
 SCENARIO("the cascade is maximally flat at resonance 0 — Butterworth at every order") {
     GIVEN("a 1 kHz lowpass with resonance 0") {
-        for (int order : { 2, 4, 8 }) {
+        for (int order : {2, 4, 8}) {
             auto setup = [order](ksv::svf_filter& f) {
                 f.set_mode(ksv::mode_lowpass);
                 f.set_order(order);
@@ -103,7 +108,7 @@ SCENARIO("the cascade is maximally flat at resonance 0 — Butterworth at every 
 }
 
 SCENARIO("stopband slope scales with order: 12/24/48 dB per octave") {
-    for (int order : { 2, 4, 8 }) {
+    for (int order : {2, 4, 8}) {
         auto setup = [order](ksv::svf_filter& f) {
             f.set_mode(ksv::mode_lowpass);
             f.set_order(order);
@@ -156,10 +161,11 @@ SCENARIO("Q conversion helpers") {
         REQUIRE(ksv::q_from_resonance(0.0, 8) == Approx(2.56291545).epsilon(1e-6));
     }
     THEN("q_from_resonance and resonance_from_q round-trip") {
-        for (int order : { 2, 4, 8 })
-            for (double r : { 0.0, 0.3, 0.7, 0.95 })
-                REQUIRE(ksv::resonance_from_q(ksv::q_from_resonance(r, order), order)
-                        == Approx(r).margin(1e-9));
+        for (int order : {2, 4, 8}) {
+            for (double r : {0.0, 0.3, 0.7, 0.95}) {
+                REQUIRE(ksv::resonance_from_q(ksv::q_from_resonance(r, order), order) == Approx(r).margin(1e-9));
+            }
+        }
     }
     THEN("a Q at or below the base maps to resonance 0") {
         REQUIRE(ksv::resonance_from_q(0.5, 2) == 0.0);
@@ -167,41 +173,51 @@ SCENARIO("Q conversion helpers") {
 }
 
 SCENARIO("morph corners are bit-identical to the discrete modes") {
-    struct corner { double morph; int mode; };
-    for (corner c : { corner { 0.0, ksv::mode_lowpass }, corner { 0.25, ksv::mode_bandpass },
-                      corner { 0.5, ksv::mode_highpass }, corner { 0.75, ksv::mode_notch },
-                      corner { 1.0, ksv::mode_lowpass } }) {
-        auto discrete = run_noise([&](ksv::svf_filter& f) {
-            f.set_mode(c.mode);
-            f.set_order(4);
-            f.set_frequency(800.0);
-            f.set_resonance(0.5);
-        }, 4096);
-        auto morphed = run_noise([&](ksv::svf_filter& f) {
-            f.set_mode(ksv::mode_morph);
-            f.set_morph(c.morph);
-            f.set_order(4);
-            f.set_frequency(800.0);
-            f.set_resonance(0.5);
-        }, 4096);
+    struct corner {
+        double morph;
+        int    mode;
+    };
+    for (corner c : {corner{0.0, ksv::mode_lowpass}, corner{0.25, ksv::mode_bandpass}, corner{0.5, ksv::mode_highpass},
+                     corner{0.75, ksv::mode_notch}, corner{1.0, ksv::mode_lowpass}}) {
+        auto discrete = run_noise(
+            [&](ksv::svf_filter& f) {
+                f.set_mode(c.mode);
+                f.set_order(4);
+                f.set_frequency(800.0);
+                f.set_resonance(0.5);
+            },
+            4096);
+        auto morphed = run_noise(
+            [&](ksv::svf_filter& f) {
+                f.set_mode(ksv::mode_morph);
+                f.set_morph(c.morph);
+                f.set_order(4);
+                f.set_frequency(800.0);
+                f.set_resonance(0.5);
+            },
+            4096);
         THEN("morph " + std::to_string(c.morph) + " matches mode " + std::to_string(c.mode)) {
             double maxdiff = 0.0;
-            for (size_t i = 0; i < discrete.size(); ++i)
+            for (size_t i = 0; i < discrete.size(); ++i) {
                 maxdiff = std::max(maxdiff, std::abs(discrete[i] - morphed[i]));
+            }
             REQUIRE(maxdiff < 1e-12);
         }
     }
     THEN("mid-morph positions stay bounded") {
-        auto mid = run_noise([](ksv::svf_filter& f) {
-            f.set_mode(ksv::mode_morph);
-            f.set_morph(0.375);
-            f.set_order(8);
-            f.set_frequency(2000.0);
-            f.set_resonance(0.8);
-        }, 24000);
+        auto mid = run_noise(
+            [](ksv::svf_filter& f) {
+                f.set_mode(ksv::mode_morph);
+                f.set_morph(0.375);
+                f.set_order(8);
+                f.set_frequency(2000.0);
+                f.set_resonance(0.8);
+            },
+            24000);
         REQUIRE(rms(mid, 0, mid.size()) > 0.0);
-        for (double v : mid)
+        for (double v : mid) {
             REQUIRE(std::abs(v) < 100.0);
+        }
     }
 }
 
@@ -225,7 +241,7 @@ SCENARIO("the allpass passes every frequency at unity") {
         f.set_frequency(1000.0);
         f.set_resonance(0.3);
     };
-    for (double freq : { 100.0, 1000.0, 4000.0, 12000.0 }) {
+    for (double freq : {100.0, 1000.0, 4000.0, 12000.0}) {
         THEN("unity at " + std::to_string(freq) + " Hz") {
             REQUIRE(std::abs(gain_db(setup, freq)) < 0.2);
         }
@@ -291,21 +307,25 @@ SCENARIO("the driven circuit self-oscillates at the cutoff at resonance 1") {
         f.set_circuit(ksv::circuit_driven);
         f.set_frequency(1000.0);
         f.set_resonance(1.0);
-        f.process(0.5);   // the ping — an all-zero state is a fixed point
-        const size_t n = at_s(1.0);
+        f.process(0.5); // the ping — an all-zero state is a fixed point
+        const size_t        n = at_s(1.0);
         std::vector<double> out(n);
-        for (size_t i = 0; i < n; ++i)
+        for (size_t i = 0; i < n; ++i) {
             out[i] = f.process(0.0);
+        }
         THEN("it keeps ringing, bounded by the saturator") {
             REQUIRE(rms(out, at_s(0.75), n) > 0.05);
-            for (double v : out)
+            for (double v : out) {
                 REQUIRE(std::abs(v) < 4.0);
+            }
         }
         THEN("the oscillation sits within 3% of the tuned cutoff") {
             size_t zc = 0;
-            for (size_t i = at_s(0.5) + 1; i < n; ++i)
-                if ((out[i] >= 0.0) != (out[i - 1] >= 0.0))
+            for (size_t i = at_s(0.5) + 1; i < n; ++i) {
+                if ((out[i] >= 0.0) != (out[i - 1] >= 0.0)) {
                     ++zc;
+                }
+            }
             const double hz = zc / (2.0 * 0.5);
             REQUIRE(hz > 970.0);
             REQUIRE(hz < 1030.0);
@@ -321,32 +341,37 @@ SCENARIO("stability under abuse") {
         f.set_circuit(ksv::circuit_driven);
         f.set_resonance(1.0);
         f.set_drive(24.0);
-        unsigned s = 777u;
-        bool finite = true;
+        unsigned s      = 777u;
+        bool     finite = true;
         for (size_t i = 0; i < at_s(1.0); ++i) {
-            s = s * 1664525u + 1013904223u;
+            s               = s * 1664525u + 1013904223u;
             const double cf = 100.0 + (static_cast<double>(s >> 8) / 16777216.0) * 15000.0;
-            const double x  = std::sin(2.0 * ksv::k_pi * 220.0 * i / c_sr);
+            const double x  = std::sin(2.0 * ksv::k_pi * 220.0 * i / k_sr);
             const double y  = f.process(x, cf);
-            if (!std::isfinite(y) || std::abs(y) > 100.0)
+            if (!std::isfinite(y) || std::abs(y) > 100.0) {
                 finite = false;
+            }
         }
         THEN("the output never blows up") {
             REQUIRE(finite);
         }
     }
     GIVEN("a clean filter at resonance 1 (the damping floor)") {
-        auto out = run_noise([](ksv::svf_filter& f) {
-            f.set_mode(ksv::mode_lowpass);
-            f.set_order(2);
-            f.set_frequency(3000.0);
-            f.set_resonance(1.0);
-        }, 48000);
+        auto out = run_noise(
+            [](ksv::svf_filter& f) {
+                f.set_mode(ksv::mode_lowpass);
+                f.set_order(2);
+                f.set_frequency(3000.0);
+                f.set_resonance(1.0);
+            },
+            48000);
         THEN("the output stays finite") {
             bool ok = true;
-            for (double v : out)
-                if (!std::isfinite(v) || std::abs(v) > 1000.0)
+            for (double v : out) {
+                if (!std::isfinite(v) || std::abs(v) > 1000.0) {
                     ok = false;
+                }
+            }
             REQUIRE(ok);
         }
     }
@@ -377,8 +402,9 @@ SCENARIO("clear() silences the filter") {
     auto f = make_filter();
     f.set_frequency(500.0);
     f.set_resonance(0.9);
-    for (int i = 0; i < 1000; ++i)
+    for (int i = 0; i < 1000; ++i) {
         f.process(1.0);
+    }
     f.clear();
     double energy = 0.0;
     for (int i = 0; i < 1000; ++i) {
@@ -404,7 +430,7 @@ SCENARIO("the Min wrapper instantiates and takes its attributes") {
         WHEN("attributes are set") {
             my_object.type      = "morph";
             my_object.morph     = 0.5;
-            my_object.order     = 5;   // snaps down to 4
+            my_object.order     = 5; // snaps down to 4
             my_object.circuit   = "driven";
             my_object.resonance = 0.8;
             THEN("they are stored and quantized as documented") {
