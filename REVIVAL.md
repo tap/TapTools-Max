@@ -136,7 +136,7 @@ source. Strong candidates to **resurrect from docs + git history** if still usef
 | `tap.vocoder~` | 24-band vocoder | ✅ **done** (reinvented standalone) |
 | `tap.spectra~` | Spectral remapping | ✅ **done** (reinvented standalone) |
 | `tap.nr~` | Spectral noise reduction | ✅ **done** (reinvented standalone) |
-| `tap.5comb~` | 5× comb filter | maybe |
+| `tap.5comb~` | 5× comb filter | ✅ **done** (recreated as a native external + portable kernel — see §7 2026-07-11) |
 | `tap.adapt~` | (audio processor) | review |
 | `tap.buffer.record2~` | Smooth buffer recording (v2) | merge into `tap.buffer.record~`? |
 | `tap.smooth` | Data-stream smoother | maybe (native alts exist) |
@@ -495,6 +495,57 @@ GitHub Actions CI.
   documented a nonexistent `windowsize` attribute — it is `window_size`). Legacy help
   patcher for `tap.semitone2ratio` ported as-is (valid modern JSON). Compile/ctest-verified
   on Linux/GCC; **wants the usual open-in-Max audition.**
+- ✅ **`tap.5comb~` resurrected (2026-07-11)** — recreated as a native external modeled on
+  the **GRM Tools Classic "Comb Filters"** plugin, not ported from the legacy version: the
+  legacy `tap.5comb~` was a patcher *abstraction* over five `tap.comb~` objects (recovered
+  from git history at `b62bba8^`) and never matched the GRM sound — integer-sample delays
+  detuned the combs and killed the beating between them, control-rate stepping zippered on
+  sweeps, and the in-loop hard clipper distorted at high resonance. Only its 20-name
+  parameter surface (`freq`/`res`/`lp` masters, `freq1..5`/`res1..5`/`lp1..5`, `gain`,
+  `mix`) and 5 Hz frequency floor were kept. **All DSP lives in a portable, header-only,
+  Max-free kernel** (`source/projects/tap.5comb_tilde/grm_comb.h`,
+  `taptools::fivecomb::comb_bank`) — a first for the repo, per the "Min is a thin shim"
+  philosophy — with: fractional delays (4-point Hermite), every parameter on a per-sample
+  linear ramp, resonance mapped to ring time on a log curve (20 ms → 100 s; feedback derived
+  from the current delay, capped at 0.99999 — no clipper, DC blocker in the loop instead),
+  an exact one-pole feedback lowpass, and a **16-slot preset-morph engine** (GRM's hallmark:
+  `store`/`recall` interpolates everything over a settable time; grabbing one slider
+  mid-morph overrides just that parameter). New capabilities beyond the Classic: `warp`
+  (negative-coefficient in-loop allpass → stiff-string inharmonic partial stretch,
+  fundamental-compensated) and `phase` (half-loop pickup tap; 100 = odd harmonics only),
+  both neutral at 0. Ships the full slice: maxref, help patcher, two runtime maxtest
+  patchers, 11 Catch scenarios (echo spacing, RT60-vs-res, morph continuity, warp/phase
+  spectra via Goertzel, master math, mix law), and `grm_comb_render` — a kernel-only offline
+  WAV renderer (lands in `tests/`) proving the kernel runs outside Max and giving the
+  listening-check material. **Deliberate deviations flagged for audition:** 1/5 wet-sum
+  normalization (legacy summed raw and ran hot), res→ring-time map (legacy was linear
+  feedback), equal-power mix. Compile/ctest-verified on Linux/GCC; **audio still needs
+  runtime validation in Max.**
+
+- ✅ **`tap.pitchaccum~` added (2026-07-11)** — second GRM recreation, **net-new** (no legacy
+  TapTools ancestor): the GRM Tools Classic **"PitchAccum"** — two independent granular
+  transposers ("shadows"), each ±24 semitones with its own delay (≤ 3 s), feedback, and
+  gain, where the feedback **re-enters the transposer** so pitch accumulates pass after
+  pass (the shimmer/spiral the plugin is named for). Same architecture as `tap.5comb~`:
+  all DSP in a portable header-only kernel
+  (`source/projects/tap.pitchaccum_tilde/grm_pitchaccum.h`,
+  `taptools::pitchaccum::accum_bank`), 17 per-sample-ramped parameters, 16-slot
+  preset-morph engine, thin Min shim. The transposer is the `tap.shift~`/tt_shift engine
+  (phasor sweeping two taps half a cycle apart) modernized: Hermite fractional taps and a
+  **complementary cos²-flank envelope pair that sums exactly to 1** (constant level at any
+  `xfade`, vs tt_shift's fixed padded-Welch ripple), with the crossfade width exposed as
+  GRM's Cross-fade control. Global LFO (voice 2 phase-offset via `modphase`) + per-voice
+  deterministic random transposition modulation; DC blocker in each feedback loop, fb
+  capped at 0.99. Optional **pitch follower** (`follow`, default off): decimated
+  normalized autocorrelation, smallest-lag-near-max peak picking (global max picks
+  subharmonics — caught by the unit test), confidence-gated, window → ~2 detected periods.
+  GRM's stereo-width fader intentionally dropped (mono object; `mc.` for multichannel).
+  Full slice: maxref, help patcher, runtime maxtest, 10 Catch scenarios (Goertzel
+  transposition checks, the two-pass accumulation signature at +7→+14 st, delay timing,
+  modulation spread, bit-exact determinism, morph continuity, follower convergence and
+  noise fallback, 0.99-feedback boundedness), and `grm_pitchaccum_render` (offline WAV
+  demos, lands in `tests/`). Compile/ctest-verified on Linux/GCC; **audio still needs
+  runtime validation in Max.**
 
 ---
 
@@ -581,6 +632,7 @@ check). `demosound.maxpat` is a stock Max abstraction (fine).
 **3. Resurrection candidates still open** (§3, all "maybe/review"):
 `tap.adapt~`, `tap.buffer.record2~` (merge into `tap.buffer.record~`?),
 `tap.smooth`, `tap.deviate`, `tap.string.sub`, `tap.thru`/`tap.thru~`,
+`tap.smooth`, `tap.deviate`, `tap.semitone2ratio`, `tap.string.sub`, `tap.thru`/`tap.thru~`,
 `tap.decay_calc`; and the retired **Jitter** ones (`tap.jit.delay`, `tap.jit.motion`/`+`/`2`,
 `tap.jit.grayscale`, `tap.jit.pan`, `tap.jit.getattributes`). None are committed to yet.
 
