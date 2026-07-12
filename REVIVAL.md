@@ -474,6 +474,27 @@ working tree now contains only the modern package: `CMakeLists.txt`, `source/min
 (submodule), `source/projects/`, `docs/`, `help/`, `package-info.json.in`, and the
 GitHub Actions CI.
 
+- ✅ **`tap.vco~` added (2026-07-11)** — a **virtual-analog oscillator**, the source-side
+  companion to `tap.ladder~` and the repo's first oscillator (`tap.noise~` was the only
+  generator). Kernel (`source/projects/tap.vco_tilde/vco.h`, `taptools::vco::vco_osc`):
+  **polyBLEP** alias-suppressed saw and pulse (PWM 1–99%), triangle via leaky integration
+  of the BLEP square, pure sine — all driven by one master phase and **morphed by a
+  continuous `shape` parameter (0 sine → 1 tri → 2 saw → 3 pulse)** that rides the
+  per-sample ramps, so shape sweeps and preset morphs glide through hybrid waveforms.
+  Full VCO tier: **hard sync** (rising-zero-cross reset with sub-sample accuracy and a
+  one-sided first-order step correction; minBLEP tables flagged as the upgrade path),
+  **through-zero linear FM** calibrated in Hz (negative effective frequency runs the
+  phase backward, tested bounded at depths far past the carrier), and an
+  **analog-character section** — slow random pitch drift (S&H ~2 Hz through a ~0.5 Hz
+  one-pole, depth in cents) plus static detune, **deterministic per `seed`** so renders
+  and tests reproduce and mc. instances decorrelate by seed. House ramps + 16-slot preset
+  morphing. Wrapper: 3 inlets (frequency signal/float — true per-sample; FM; sync),
+  `waveform sine|triangle|saw|pulse` snap message. 10 Catch scenarios (frequency
+  accuracy, **alias suppression > 35 dB at a folded 13th harmonic** — the VA proof —,
+  sine/triangle purity, PWM duty cycle, morph continuity, sync locking, TZFM sidebands +
+  boundedness, drift determinism/decorrelation, preset morph, wrapper defaults) plus
+  `vco_render` demos (PWM pad, sync sweep, TZFM growl, shape-morph tour, preset morph).
+  Compile/ctest-verified on Linux/GCC; **audio still needs runtime validation in Max.**
 - ✅ **`tap.ladder~` added (2026-07-11)** — a **virtual-analog transistor-ladder filter**,
   the nonlinear sibling of `tap.fourpole~` (which stays as the cheap linear Stilson/Smith
   ladder; the two maxrefs cross-reference, and fourpole~ finally *got* a maxref — it had
