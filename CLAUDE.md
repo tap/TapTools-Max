@@ -16,17 +16,22 @@ progress log current as objects land.
 
 ## Repo layout & branches
 
-`main` is now the consolidated modern package — the legacy Jamoma-era tree has been pruned. Two
-source trees matter:
+This is the **TapTools-Max** repository — the Max/MSP wrapper package. The portable DSP kernel
+now lives in its **own repository** (`tap/taptools`, the TapTools library), pinned here as the
+`submodules/taptools` submodule — the AmbiTap / AmbiTap-Max split. `main` is the consolidated
+modern package; the legacy Jamoma-era tree has been pruned. What matters here:
 
-- **`kernel/`** — the portable DSP library (header-only, plain C++, no Max/Min dependency): one
-  self-contained header per object under `kernel/include/taptools/`, in the `taptools` namespace,
-  plus the kernel's own Catch2 tests, offline render tools, C ABI, notebooks, and benchmarks. It
-  is a complete standalone CMake project (`cmake -S kernel -B build-kernel`), staged for
-  extraction into its own repository (the AmbiTap / AmbiTap-Max pattern). See `kernel/README.md`.
+- **`submodules/taptools/`** — the portable DSP library (header-only, plain C++, no Max/Min
+  dependency), pinned as a submodule: one self-contained header per object under
+  `submodules/taptools/include/taptools/`, in the `taptools` namespace, plus the kernel's own
+  Catch2 tests, render tools, C ABI, notebooks, and benchmarks. It is a standalone CMake project
+  with its own CI; develop the DSP there (or against a sibling checkout via `TAPTOOLS_KERNEL_DIR`).
+  See `submodules/taptools/README.md`.
 - **`source/projects/<name>/`** — the Min-based externals (one folder per object: a `.cpp` + a
   `CMakeLists.txt`), thin wrappers over the kernel headers where the DSP has been extracted.
 - **`source/min-api/`** — the Min SDK submodule.
+- **`scripts/extract-kernel-repo.sh`** — the git-filter-repo recipe used to carve the kernel out
+  of this repo's history into `tap/taptools`; kept for provenance (runs against pre-split history).
 
 The historical material lives on branches, not in the working tree:
 
@@ -43,11 +48,12 @@ The historical material lives on branches, not in the working tree:
 - **Min is a thin wrapper only.** Use `min-api` (`#include "c74_min.h"`) for the Max plumbing —
   inlets/outlets, attributes, messages, the perform loop. Write **all DSP as plain portable C++**
   with **no dependency on `min-lib`** (min-lib is the under-maintained piece; keeping DSP portable
-  makes the wrapper a small swappable shim). Substantial DSP belongs in a **kernel header**
-  (`kernel/include/taptools/<name>.h`, namespace `taptools`, C++ stdlib only, C++17-clean) with the
-  wrapper `.cpp` doing only Min glue — six objects follow this today. Within `source/projects/`,
-  no shared global lookup tables — each object is self-contained; sharing between kernels is
-  allowed (and encouraged) inside `kernel/`.
+  makes the wrapper a small swappable shim). Substantial DSP belongs in a **kernel header** in the
+  kernel repo (`submodules/taptools/include/taptools/<name>.h`, namespace `taptools`, C++ stdlib
+  only, C++17-clean) with the wrapper `.cpp` doing only Min glue — six objects follow this today.
+  New/changed DSP is committed in the kernel repo, then the submodule pin is bumped here. Within
+  `source/projects/`, no shared global lookup tables — each object is self-contained; sharing
+  between kernels is allowed (and encouraged) inside the kernel repo.
 - **Port faithfully.** Match the original Jamoma object's behavior, including magic constants (e.g.
   `tap.dcblock~` keeps `R = 0.9997` from Jamoma's `TTDCBlock`). Document the provenance in a comment.
 - **C++20** everywhere.
@@ -87,14 +93,15 @@ cmake --build build --config Release
 - `package-info.json` is generated from `package-info.json.in` by the Min package machinery and is
   gitignored — edit the `.in`, not the output.
 - A local `_build/` directory may exist from prior runs; CI and `.gitignore` standardize on `build/`.
-- The externals find the kernel headers via `TAPTOOLS_KERNEL_DIR` (defaults to `kernel/`;
-  overridable to an external checkout). The kernel itself also builds standalone — no submodules
-  needed: `cmake -S kernel -B build-kernel && cmake --build build-kernel && ctest --test-dir
-  build-kernel`.
+- The externals find the kernel headers via `TAPTOOLS_KERNEL_DIR` (defaults to the pinned
+  `submodules/taptools` submodule; override with `-DTAPTOOLS_KERNEL_DIR=/path/to/kernel` to build
+  against a sibling dev checkout). Run `git submodule update --init --recursive` after cloning. The
+  kernel also builds/tests standalone in its own repo (`cmake -S submodules/taptools -B build-kernel
+  && ctest --test-dir build-kernel`), and has its own CI there.
 
-CI (`.github/workflows/build.yml`) builds both platforms on every push and **fails the macOS job if
-any `.mxo` is not universal** (checked with `lipo`); a separate `kernel` job builds the standalone
-kernel and runs its Catch2 tests on Linux, macOS, and Windows.
+CI (`.github/workflows/build.yml`) checks out submodules recursively, builds both platforms on
+every push, and **fails the macOS job if any `.mxo` is not universal** (checked with `lipo`). DSP
+correctness is gated by the kernel repo's own CI, not here.
 
 ## Adding / porting an object
 
@@ -124,9 +131,9 @@ is handled by users wrapping the object in `mc.` — objects stay single-channel
 
 Two test layers:
 
-**Kernel tests** (`kernel/tests/`) — plain Catch2 (FetchContent), no Max/min-api/mock kernel.
-They drive the kernel headers directly and run via `ctest --test-dir build-kernel`; CI runs them
-on all three OSes. DSP correctness tests belong here, at full C++ (no mock-harness constraints).
+**Kernel tests** (in the kernel repo, `submodules/taptools/tests/`) — plain Catch2 (FetchContent),
+no Max/min-api/mock kernel. They drive the kernel headers directly and run via `ctest` in the
+kernel repo's own CI. DSP correctness tests belong there, at full C++ (no mock-harness constraints).
 
 **Wrapper tests** (min-api harness) — for Min-level behavior (attribute defaults, clamping,
 message plumbing). To add tests to an object, drop a

@@ -28,13 +28,15 @@ if (APPLE)
     add_link_options(-mmacosx-version-min=11.0)
 endif ()
 
-# The portable DSP kernel (header-only, no Max dependency), staged in kernel/ for extraction into
-# its own repository (the AmbiTap / AmbiTap-Max pattern). The externals consume only its headers;
-# the kernel's own tests/tools/benchmarks build standalone: cmake -S kernel -B build-kernel.
-set(TAPTOOLS_KERNEL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/kernel" CACHE PATH
-    "Path to the TapTools DSP kernel (override to build against an external kernel checkout)")
+# The portable DSP kernel (header-only, no Max dependency) lives in its own repository — the
+# TapTools library — pinned here as the submodules/taptools submodule (the AmbiTap / AmbiTap-Max
+# pattern). The externals consume only its headers. Override with -DTAPTOOLS_KERNEL_DIR=/path/to
+# to build against a sibling checkout of the kernel instead of the pinned submodule.
+set(TAPTOOLS_KERNEL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/submodules/taptools" CACHE PATH
+    "Path to the TapTools DSP kernel (defaults to the pinned submodule; override for a dev checkout)")
 if (NOT EXISTS "${TAPTOOLS_KERNEL_DIR}/include/taptools/taptools.h")
-    message(FATAL_ERROR "TapTools kernel not found at ${TAPTOOLS_KERNEL_DIR}")
+    message(FATAL_ERROR "TapTools kernel not found at ${TAPTOOLS_KERNEL_DIR}. "
+                        "Run: git submodule update --init --recursive (or set -DTAPTOOLS_KERNEL_DIR).")
 endif ()
 
 # Min-DevKit package helpers (defines SUBDIRLIST, packaging, etc.)
