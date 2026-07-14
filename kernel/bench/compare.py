@@ -3,13 +3,13 @@
 committed baseline. Exits nonzero if any case regressed past the threshold, so it can
 gate a commit:
 
-    cmake --build build --target svf_bench
-    tests/svf_bench --json > /tmp/current.json
-    python3 benchmarks/compare.py /tmp/current.json benchmarks/baselines/<machine>.json
+    cmake --build build-kernel --target svf_bench
+    build-kernel/bench/svf_bench --json > /tmp/current.json
+    python3 kernel/bench/compare.py /tmp/current.json kernel/bench/baselines/<machine>.json
 
 Baselines are machine-specific (absolute ns/sample is meaningless across machines);
 compare only against the baseline recorded on the same machine, and re-record the
-baseline (`svf_bench --json > benchmarks/baselines/<machine>.json`) when an
+baseline (`svf_bench --json > kernel/bench/baselines/<machine>.json`) when an
 optimization lands.
 """
 import argparse

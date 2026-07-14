@@ -10,10 +10,12 @@ include(${C74_MIN_API_DIR}/script/min-pretarget.cmake)
 #############################################################
 
 include_directories("${C74_INCLUDES}")
+# The portable DSP kernel (header-only; kernel/ at the repo root, see kernel/README.md).
+include_directories("${TAPTOOLS_KERNEL_DIR}/include")
 
 set(SOURCES
     ${PROJECT_NAME}.cpp
-    svf.h
+    ${TAPTOOLS_KERNEL_DIR}/include/taptools/svf.h
 )
 
 add_library(
@@ -33,14 +35,3 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 # Catch-based unit tests (built when the _test.cpp is present; run via ctest).
 include(${C74_MIN_API_DIR}/test/min-object-unittest.cmake)
 
-#############################################################
-# CPU BENCHMARK (kernel-only, no Max dependency)
-#############################################################
-
-# Times the svf.h kernel over a config matrix; used by the benchmarks/ ratchet workflow.
-# Lands in the gitignored tests/ directory alongside the unit-test binaries.
-add_executable(svf_bench svf_bench.cpp)
-set_target_properties(svf_bench PROPERTIES
-    CXX_STANDARD 20
-    CXX_STANDARD_REQUIRED ON
-)

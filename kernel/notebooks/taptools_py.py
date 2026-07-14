@@ -1,15 +1,17 @@
 """ctypes bridge to the TapTools C ABI, shared by the verification notebooks.
 
-Loads build_capi/libtaptools_capi.{so,dylib,dll} relative to the repository
-root, building it first if missing (requires cmake in PATH):
+Loads build_capi/libtaptools_capi.{so,dylib,dll} relative to the kernel root
+(kernel/ in the TapTools repo), building it first if missing (requires cmake
+in PATH):
 
-    cmake -B build_capi -S tools/capi
-    cmake --build build_capi
+    cmake -B kernel/build_capi -S kernel/tools/capi
+    cmake --build kernel/build_capi
 
-The C ABI (tools/capi/) wraps the *same* portable DSP headers the Max externals
-compile — so the notebooks exercise the real shipping code, not a Python
-re-implementation. Currently exposes tap.convolve~'s conv_engine (uniformly-
-partitioned overlap-save convolution) through the `Convolver` class.
+The C ABI (kernel/tools/capi/) wraps the *same* portable DSP headers the Max
+externals compile — so the notebooks exercise the real shipping code, not a
+Python re-implementation. Currently exposes tap.convolve~'s
+taptools::conv_engine (uniformly-partitioned overlap-save convolution) through
+the `Convolver` class.
 
 Copyright 2003-2026 Timothy Place. New BSD License.
 """
@@ -23,13 +25,14 @@ import sys
 
 import numpy as np
 
-REPO = pathlib.Path(__file__).resolve().parent.parent
+# The kernel root (this file lives in kernel/notebooks/).
+KERNEL = pathlib.Path(__file__).resolve().parent.parent
 
 # Categorical palette for the notebooks (colorblind-safe, fixed assignment
 # order — never cycled). Sequential maps use viridis; diverging use RdBu_r.
 PALETTE = ["#4269d0", "#efb118", "#ff725c", "#6cc5b0", "#3ca951", "#ff8ab7", "#a463f2"]
 
-_BUILD = REPO / "build_capi"
+_BUILD = KERNEL / "build_capi"
 
 
 def _lib_path() -> pathlib.Path:
@@ -44,10 +47,10 @@ def _lib_path() -> pathlib.Path:
 
 
 def _build_lib() -> None:
-    subprocess.run(["cmake", "-B", str(_BUILD), "-S", str(REPO / "tools" / "capi")],
-                   cwd=REPO, check=True, capture_output=True)
+    subprocess.run(["cmake", "-B", str(_BUILD), "-S", str(KERNEL / "tools" / "capi")],
+                   cwd=KERNEL, check=True, capture_output=True)
     subprocess.run(["cmake", "--build", str(_BUILD), "--config", "Release", "--parallel"],
-                   cwd=REPO, check=True, capture_output=True)
+                   cwd=KERNEL, check=True, capture_output=True)
 
 
 def load() -> ctypes.CDLL:

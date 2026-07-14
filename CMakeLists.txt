@@ -28,6 +28,15 @@ if (APPLE)
     add_link_options(-mmacosx-version-min=11.0)
 endif ()
 
+# The portable DSP kernel (header-only, no Max dependency), staged in kernel/ for extraction into
+# its own repository (the AmbiTap / AmbiTap-Max pattern). The externals consume only its headers;
+# the kernel's own tests/tools/benchmarks build standalone: cmake -S kernel -B build-kernel.
+set(TAPTOOLS_KERNEL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/kernel" CACHE PATH
+    "Path to the TapTools DSP kernel (override to build against an external kernel checkout)")
+if (NOT EXISTS "${TAPTOOLS_KERNEL_DIR}/include/taptools/taptools.h")
+    message(FATAL_ERROR "TapTools kernel not found at ${TAPTOOLS_KERNEL_DIR}")
+endif ()
+
 # Min-DevKit package helpers (defines SUBDIRLIST, packaging, etc.)
 include(${CMAKE_CURRENT_SOURCE_DIR}/source/min-api/script/min-package.cmake)
 

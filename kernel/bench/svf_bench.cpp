@@ -7,8 +7,8 @@
 ///             accumulated and printed so the optimizer cannot elide the work.
 ///
 ///             Output: a human table on stdout, or machine-readable JSON with --json. The ratchet
-///             workflow lives in benchmarks/: run with --json, compare against the committed
-///             baseline with benchmarks/compare.py, and update the baseline when an optimization
+///             workflow lives in kernel/bench/: run with --json, compare against the committed
+///             baseline with compare.py, and update the baseline when an optimization
 ///             lands. Absolute numbers are machine-specific; the ratchet compares like with like.
 ///
 ///             Usage: svf_bench [--json] [--seconds N]
@@ -24,7 +24,7 @@
 #include <string>
 #include <vector>
 
-#include "svf.h"
+#include <taptools/svf.h>
 
 namespace ksv = taptools::svf;
 

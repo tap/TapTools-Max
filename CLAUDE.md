@@ -16,11 +16,16 @@ progress log current as objects land.
 
 ## Repo layout & branches
 
-`main` is now the consolidated modern package — the legacy Jamoma-era tree has been pruned. One
-source tree matters:
+`main` is now the consolidated modern package — the legacy Jamoma-era tree has been pruned. Two
+source trees matter:
 
+- **`kernel/`** — the portable DSP library (header-only, plain C++, no Max/Min dependency): one
+  self-contained header per object under `kernel/include/taptools/`, in the `taptools` namespace,
+  plus the kernel's own Catch2 tests, offline render tools, C ABI, notebooks, and benchmarks. It
+  is a complete standalone CMake project (`cmake -S kernel -B build-kernel`), staged for
+  extraction into its own repository (the AmbiTap / AmbiTap-Max pattern). See `kernel/README.md`.
 - **`source/projects/<name>/`** — the Min-based externals (one folder per object: a `.cpp` + a
-  `CMakeLists.txt`). This is the only thing the CMake build compiles.
+  `CMakeLists.txt`), thin wrappers over the kernel headers where the DSP has been extracted.
 - **`source/min-api/`** — the Min SDK submodule.
 
 The historical material lives on branches, not in the working tree:
@@ -38,8 +43,11 @@ The historical material lives on branches, not in the working tree:
 - **Min is a thin wrapper only.** Use `min-api` (`#include "c74_min.h"`) for the Max plumbing —
   inlets/outlets, attributes, messages, the perform loop. Write **all DSP as plain portable C++**
   with **no dependency on `min-lib`** (min-lib is the under-maintained piece; keeping DSP portable
-  makes the wrapper a small swappable shim). No shared global lookup tables — each object is
-  self-contained.
+  makes the wrapper a small swappable shim). Substantial DSP belongs in a **kernel header**
+  (`kernel/include/taptools/<name>.h`, namespace `taptools`, C++ stdlib only, C++17-clean) with the
+  wrapper `.cpp` doing only Min glue — six objects follow this today. Within `source/projects/`,
+  no shared global lookup tables — each object is self-contained; sharing between kernels is
+  allowed (and encouraged) inside `kernel/`.
 - **Port faithfully.** Match the original Jamoma object's behavior, including magic constants (e.g.
   `tap.dcblock~` keeps `R = 0.9997` from Jamoma's `TTDCBlock`). Document the provenance in a comment.
 - **C++20** everywhere.
@@ -79,9 +87,14 @@ cmake --build build --config Release
 - `package-info.json` is generated from `package-info.json.in` by the Min package machinery and is
   gitignored — edit the `.in`, not the output.
 - A local `_build/` directory may exist from prior runs; CI and `.gitignore` standardize on `build/`.
+- The externals find the kernel headers via `TAPTOOLS_KERNEL_DIR` (defaults to `kernel/`;
+  overridable to an external checkout). The kernel itself also builds standalone — no submodules
+  needed: `cmake -S kernel -B build-kernel && cmake --build build-kernel && ctest --test-dir
+  build-kernel`.
 
 CI (`.github/workflows/build.yml`) builds both platforms on every push and **fails the macOS job if
-any `.mxo` is not universal** (checked with `lipo`).
+any `.mxo` is not universal** (checked with `lipo`); a separate `kernel` job builds the standalone
+kernel and runs its Catch2 tests on Linux, macOS, and Windows.
 
 ## Adding / porting an object
 
@@ -109,7 +122,14 @@ is handled by users wrapping the object in `mc.` — objects stay single-channel
 
 ## Testing
 
-The Catch-based unit-test harness is wired up. To add tests to an object, drop a
+Two test layers:
+
+**Kernel tests** (`kernel/tests/`) — plain Catch2 (FetchContent), no Max/min-api/mock kernel.
+They drive the kernel headers directly and run via `ctest --test-dir build-kernel`; CI runs them
+on all three OSes. DSP correctness tests belong here, at full C++ (no mock-harness constraints).
+
+**Wrapper tests** (min-api harness) — for Min-level behavior (attribute defaults, clamping,
+message plumbing). To add tests to an object, drop a
 `tap.NAME_test.cpp` next to its source and add this line to the object's `CMakeLists.txt` (after the
 `min-posttarget` include):
 

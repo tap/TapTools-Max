@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-#include "grm_pitchaccum.h"
+#include <taptools/grm_pitchaccum.h>
 
 using taptools::pitchaccum::accum_bank;
 namespace k = taptools::pitchaccum;

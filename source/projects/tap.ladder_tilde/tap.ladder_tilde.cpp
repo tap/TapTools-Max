@@ -12,8 +12,9 @@
 /// @author     Timothy Place
 /// @copyright  Copyright 2026 Timothy Place. Distributed under the New BSD License.
 
+#include <taptools/ladder.h>
+
 #include "c74_min.h"
-#include "ladder.h"
 
 using namespace c74::min;
 namespace kernel = taptools::ladder;

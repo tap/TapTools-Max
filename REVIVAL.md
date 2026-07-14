@@ -683,6 +683,31 @@ GitHub Actions CI.
   demos, lands in `tests/`). Compile/ctest-verified on Linux/GCC; **audio still needs
   runtime validation in Max.**
 
+- ✅ **Kernel/wrapper separation staged (2026-07-14)** — the portable DSP layer now lives in
+  **`kernel/`**, a complete standalone CMake project with **zero Max dependency**, staged for
+  extraction into its own repository (the **AmbiTap / AmbiTap-Max** pattern: kernel repo =
+  header-only C++ library consumed by the wrapper repo as a pinned submodule via a
+  `*_ROOT`-style override). What moved: the six extracted kernel headers
+  (`ladder.h`, `svf.h`, `vco.h`, `grm_comb.h`, `grm_pitchaccum.h`, `conv_engine.h`) →
+  `kernel/include/taptools/` (with `conv_engine` brought into the `taptools` namespace — it was
+  the only global-namespace kernel — plus a `taptools/taptools.h` umbrella); the offline render
+  tools → `kernel/tools/render/`; the C ABI → `kernel/tools/capi/`; the notebooks →
+  `kernel/notebooks/`; `benchmarks/` + `svf_bench` → `kernel/bench/`. The kernel exports a
+  header-only `TapTools::taptools` target (C++17-clean — the min-api test harness compiles
+  wrapper TUs at C++17) with install/`find_package(TapToolsKernel)` support, and grew its own
+  **Max-free Catch2 test suite** (`kernel/tests/`, FetchContent) seeded with the conv_engine
+  tests, which no longer need the min mock kernel. The externals consume only
+  `${TAPTOOLS_KERNEL_DIR}/include` (root `CMakeLists.txt`, defaults to `kernel/`, overridable —
+  this becomes the submodule pin after the split). CI gained a 3-OS `kernel` job
+  (build + ctest, no submodules); the clang-format gate now covers `kernel/`. Verified: kernel
+  standalone build + tests green, Max package configure + all wrapper tests green, zero
+  behavioral change. Paths cited in older log entries above predate these moves. **Next
+  extractions:** the spectral trio (`tap.nr~` / `tap.spectra~` / `tap.vocoder~`) whose STFT math
+  is already portable but inline — consolidating the radix-2 FFT currently duplicated between
+  `conv_engine.h` and `tap.nr~` into a shared kernel header — then simple inline-DSP objects
+  opportunistically. Control/utility and Jitter objects are Max-bound by nature and stay
+  wrapper-side permanently.
+
 ---
 
 ## 8. The `taptools-min` reconciliation (2026-06-17)
@@ -788,3 +813,14 @@ unit tests (now testable for the first time, guarding the curve selection).
 **7. Release engineering.** A versioned GitHub release + Max Package Manager submission;
 and, later, automating the runtime tests on a self-hosted macOS runner (feasible — an
 unlicensed Max runs patchers; the blocker is GUI/activation, not licensing).
+
+**8. Kernel/wrapper repo split.** ✅ **Staged (2026-07-14, §7)** — the portable DSP layer is now
+the standalone `kernel/` project (own CMake package, Catch2 tests, tools, bench, notebooks; the
+externals consume only its headers via `TAPTOOLS_KERNEL_DIR`). Remaining to finish the split,
+in order: (a) extract the spectral trio's STFT/FFT into kernel headers (de-duplicating the
+radix-2 FFT shared with `conv_engine.h`); (b) lift the remaining simple inline-DSP objects'
+math into kernel headers opportunistically as they're touched; (c) the physical split — move
+`kernel/` to its own repository (full-history clone-and-prune, both sides keep the 1999
+lineage) and switch `TAPTOOLS_KERNEL_DIR` to a pinned submodule, exactly like AmbiTap-Max's
+`submodules/AmbiTap` + `AmbiTap_ROOT`. Control/utility and Jitter objects never move — they are
+Max message-logic, not kernel material.

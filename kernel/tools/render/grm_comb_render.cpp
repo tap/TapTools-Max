@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include "grm_comb.h"
+#include <taptools/grm_comb.h>
 
 using taptools::fivecomb::comb_bank;
 namespace k = taptools::fivecomb;
