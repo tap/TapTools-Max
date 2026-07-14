@@ -4,14 +4,14 @@
 # Header-only, plain C++ (C++17 minimum): no Max SDK, no min-api, no Jamoma. The kernels live
 # under include/taptools/, one self-contained header per object, in the `taptools` namespace.
 #
-# This directory is a complete standalone CMake project, staged here for extraction into its
-# own repository (the AmbiTap / AmbiTap-Max pattern). The Max externals at the repo root
-# consume only include/ (via TAPTOOLS_KERNEL_DIR in the root CMakeLists.txt); the kernel's own
-# tests, tools, and benchmarks build from here:
+# This is a complete standalone CMake project (the AmbiTap / AmbiTap-Max pattern): it lives in
+# kernel/ of the TapTools monorepo and is designed to lift verbatim into its own repository. The
+# Max package's externals consume only include/ (via TAPTOOLS_KERNEL_DIR); the kernel's own
+# tests, tools, and benchmarks build from this directory:
 #
-#     cmake -S kernel -B build-kernel -DCMAKE_BUILD_TYPE=Release
-#     cmake --build build-kernel
-#     ctest --test-dir build-kernel
+#     cmake -S . -B build -DCMAKE_BUILD_TYPE=Release   # or -S kernel from the monorepo root
+#     cmake --build build
+#     ctest --test-dir build
 
 cmake_minimum_required(VERSION 3.19)
 project(TapToolsKernel VERSION 0.1.0 LANGUAGES CXX)
