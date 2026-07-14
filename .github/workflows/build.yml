@@ -9,28 +9,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+# The portable DSP kernel now lives in its own repository (tap/taptools) with its own CI; it is
+# pinned here as the submodules/taptools submodule and pulled via `submodules: recursive` below.
+# These jobs gate the Max package (externals + wrapper tests).
 jobs:
-  kernel:
-    # The portable DSP kernel (kernel/) builds standalone — no Max SDK, no submodules — and
-    # carries its own Catch2 unit tests. This is the correctness gate for the DSP itself; the
-    # macos/windows jobs below gate the Max package (externals + wrapper tests).
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure
-        run: cmake -S kernel -B build-kernel -DCMAKE_BUILD_TYPE=Release
-
-      - name: Build
-        run: cmake --build build-kernel --config Release --parallel
-
-      - name: Test
-        run: ctest --test-dir build-kernel -C Release --output-on-failure
-
   macos:
     runs-on: macos-latest
     steps:

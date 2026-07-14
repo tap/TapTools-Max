@@ -10,7 +10,7 @@ include(${C74_MIN_API_DIR}/script/min-pretarget.cmake)
 #############################################################
 
 include_directories("${C74_INCLUDES}")
-# The portable DSP kernel (header-only; kernel/ at the repo root, see kernel/README.md).
+# The portable DSP kernel (header-only), pinned as the submodules/taptools submodule.
 include_directories("${TAPTOOLS_KERNEL_DIR}/include")
 
 set(SOURCES

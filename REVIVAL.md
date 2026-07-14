@@ -814,13 +814,21 @@ unit tests (now testable for the first time, guarding the curve selection).
 and, later, automating the runtime tests on a self-hosted macOS runner (feasible — an
 unlicensed Max runs patchers; the blocker is GUI/activation, not licensing).
 
-**8. Kernel/wrapper repo split.** ✅ **Staged (2026-07-14, §7)** — the portable DSP layer is now
-the standalone `kernel/` project (own CMake package, Catch2 tests, tools, bench, notebooks; the
-externals consume only its headers via `TAPTOOLS_KERNEL_DIR`). Remaining to finish the split,
-in order: (a) extract the spectral trio's STFT/FFT into kernel headers (de-duplicating the
-radix-2 FFT shared with `conv_engine.h`); (b) lift the remaining simple inline-DSP objects'
-math into kernel headers opportunistically as they're touched; (c) the physical split — move
-`kernel/` to its own repository (full-history clone-and-prune, both sides keep the 1999
-lineage) and switch `TAPTOOLS_KERNEL_DIR` to a pinned submodule, exactly like AmbiTap-Max's
-`submodules/AmbiTap` + `AmbiTap_ROOT`. Control/utility and Jitter objects never move — they are
-Max message-logic, not kernel material.
+**8. Kernel/wrapper repo split.** ✅ **Done (2026-07-14)** — the physical split is complete, the
+AmbiTap / AmbiTap-Max pattern:
+- The old `tap/taptools` repo was **renamed to `tap/taptools-max`** (this repo — the Max wrapper
+  package), keeping all history, issues, and the `legacy`/`taptools-min`/`windows` branches.
+- A new **`tap/taptools`** repo holds the portable DSP **library** (kernel), extracted with
+  `git filter-repo` so every file keeps its full pre-move history; `include/` sits at the repo
+  root (AmbiTap layout). It builds/tests standalone with its own CI. Recipe:
+  `scripts/extract-kernel-repo.sh` (kept here for provenance).
+- This repo pins the kernel as the **`submodules/taptools`** submodule (canonical URL
+  `github.com/tap/taptools.git`); `TAPTOOLS_KERNEL_DIR` defaults there and overrides to a sibling
+  dev checkout, exactly like AmbiTap-Max's `submodules/AmbiTap` + `AmbiTap_ROOT`. The `kernel` CI
+  job moved to the kernel repo.
+
+Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
+here): (a) extract the spectral trio's STFT/FFT into kernel headers, de-duplicating the radix-2
+FFT shared with `conv_engine.h`; (b) lift the remaining simple inline-DSP objects' math into
+kernel headers opportunistically as they're touched. Control/utility and Jitter objects never
+move — they are Max message-logic, not kernel material.
