@@ -20,8 +20,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright 2004-2026 Timothy Place.
 
+#include <taptools/svf.h>
+
 #include "c74_min.h"
-#include "svf.h"
 
 using namespace c74::min;
 namespace kernel = taptools::svf;

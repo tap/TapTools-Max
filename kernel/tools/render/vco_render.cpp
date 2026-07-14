@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include "vco.h"
+#include <taptools/vco.h>
 
 using taptools::vco::vco_osc;
 namespace k = taptools::vco;

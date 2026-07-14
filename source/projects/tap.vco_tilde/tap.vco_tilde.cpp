@@ -10,8 +10,9 @@
 /// @author     Timothy Place
 /// @copyright  Copyright 2026 Timothy Place. Distributed under the New BSD License.
 
+#include <taptools/vco.h>
+
 #include "c74_min.h"
-#include "vco.h"
 
 using namespace c74::min;
 namespace kernel = taptools::vco;

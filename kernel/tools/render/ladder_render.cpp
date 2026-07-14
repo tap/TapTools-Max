@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include "ladder.h"
+#include <taptools/ladder.h>
 
 using taptools::ladder::ladder_filter;
 namespace k = taptools::ladder;

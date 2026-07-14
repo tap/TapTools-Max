@@ -10,10 +10,12 @@ include(${C74_MIN_API_DIR}/script/min-pretarget.cmake)
 #############################################################
 
 include_directories("${C74_INCLUDES}")
+# The portable DSP kernel (header-only; kernel/ at the repo root, see kernel/README.md).
+include_directories("${TAPTOOLS_KERNEL_DIR}/include")
 
 set(SOURCES
     ${PROJECT_NAME}.cpp
-    grm_comb.h
+    ${TAPTOOLS_KERNEL_DIR}/include/taptools/grm_comb.h
 )
 
 add_library(
@@ -33,15 +35,3 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 # Catch-based unit tests (built when the _test.cpp is present; run via ctest).
 include(${C74_MIN_API_DIR}/test/min-object-unittest.cmake)
 
-#############################################################
-# OFFLINE RENDER TOOL (kernel-only, no Max dependency)
-#############################################################
-
-# Renders test signals through the grm_comb.h kernel to WAV files for listening checks —
-# the kernel's reusability demonstrated in ~100 lines. Not part of the Max package.
-# Lands in the gitignored tests/ directory alongside the unit-test binaries.
-add_executable(grm_comb_render grm_comb_render.cpp)
-set_target_properties(grm_comb_render PROPERTIES
-    CXX_STANDARD 20
-    CXX_STANDARD_REQUIRED ON
-)

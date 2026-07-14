@@ -6,7 +6,9 @@
 #include "taptools_capi.h"
 
 // The DSP core is the same header the tap.convolve~ external compiles — no Max/Min dependency.
-#include "../../source/projects/tap.convolve_tilde/conv_engine.h"
+#include <taptools/conv_engine.h>
+
+using taptools::conv_engine;
 
 extern "C" {
 

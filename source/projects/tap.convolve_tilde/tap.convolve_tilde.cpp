@@ -37,12 +37,14 @@
 #include <cmath>
 #include <vector>
 
+#include <taptools/conv_engine.h> // the Min-free, unit-tested DSP core (see the header for the algorithm)
+
 #include "c74_min.h"
-#include "conv_engine.h" // the Min-free, unit-tested DSP core (see the header for the algorithm)
 
 using namespace c74::min;
+using taptools::conv_engine;
 
-// The convolution DSP lives in conv_engine (conv_engine.h). Everything below is the Min wrapper:
+// The convolution DSP lives in taptools::conv_engine. Everything below is the Min wrapper:
 // reading the IR from a buffer~, dry/wet, predelay, output gain, energy normalisation, bypass/mute.
 // ------------------------------------------------------------------------------------------------
 class convolve : public object<convolve>, public vector_operator<> {
