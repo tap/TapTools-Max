@@ -827,8 +827,15 @@ AmbiTap / AmbiTap-Max pattern:
   dev checkout, exactly like AmbiTap-Max's `submodules/AmbiTap` + `AmbiTap_ROOT`. The `kernel` CI
   job moved to the kernel repo.
 
+✅ **Spectral trio extracted (2026-07-14).** `tap.nr~`, `tap.spectra~`, and `tap.vocoder~` now
+consume kernel headers (`taptools::nr::reducer`, `spectra::remapper`, `vocoder::bank`); the
+radix-2 FFT that was byte-identical across `conv_engine`/`nr`/`spectra` is consolidated into
+`fft.h`, and the overlap-add machinery `nr`/`spectra` shared lives in `stft.h`. (`vocoder~` turned
+out to be a time-domain biquad filterbank, so it follows the `svf`/`ladder` `prepare(sr)` idiom,
+not the STFT scaffold.) DSP correctness is covered by the kernel's own Catch2 suite; the wrappers
+kept their behavior tests. No behavior change — same code, relocated.
+
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
-here): (a) extract the spectral trio's STFT/FFT into kernel headers, de-duplicating the radix-2
-FFT shared with `conv_engine.h`; (b) lift the remaining simple inline-DSP objects' math into
-kernel headers opportunistically as they're touched. Control/utility and Jitter objects never
-move — they are Max message-logic, not kernel material.
+here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
+they're touched. Control/utility and Jitter objects never move — they are Max message-logic, not
+kernel material.
