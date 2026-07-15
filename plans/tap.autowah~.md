@@ -97,12 +97,19 @@ in ──┬──────────────────────�
   and A/B it during validation, since half-wave adds ripple at the sweep rate that
   may be part of the feel.
 - **Control law:** `cutoff = clamp(bias · 2^(env_scaled · range_oct), floor, ceil)`
-  — exponential (octave-linear) sweep upward from `bias`, which matches both the
-  OTA current-to-frequency behavior and how wah sweeps are heard. Defaults sized to
-  the hardware: `bias` default ≈ 250 Hz, `range` default ≈ 3.3 octaves (→ ~2500 Hz
-  ceiling), both freely settable beyond the hardware span (we are not limited by
-  two sweep caps). A soft saturation on `env_scaled` (e.g. tanh) rather than a hard
-  clamp keeps hard playing from slamming the rail — verify feel in Max.
+  — exponential (octave-linear) sweep upward from `bias`, which matches how wah
+  sweeps are heard. Defaults sized to the hardware: `bias` default ≈ 250 Hz,
+  `range` default ≈ 3.3 octaves (→ ~2500 Hz ceiling), both freely settable beyond
+  the hardware span (we are not limited by two sweep caps). A soft saturation on
+  `env_scaled` (e.g. tanh) rather than a hard clamp keeps hard playing from
+  slamming the rail — verify feel in Max. **Open technical point (§7.6): the
+  hardware law may actually be closer to linear-in-Hz** — LM13700 frequency is
+  linear in the control current, so the overall law hinges on whether the BJT
+  bias/envelope driver is a linear V→I stage or rides a Vbe exponential. The
+  schematic and/or the §6.2 trajectory analysis (an exponential-in-Hz decay curves
+  visibly differently from exponential-in-octaves on a spectrogram) will settle
+  it. Kernel consequence: keep the mapping behind one small isolated function so
+  the law is swappable without touching anything else.
 - **Faithful behaviors kept:** `sensitivity` at minimum ⇒ envelope contributes
   nothing ⇒ **fixed cocked-wah mode** where `bias` is the manual sweep (falls out
   of the model for free, but document + test it, since it's a headline feature);
@@ -291,9 +298,14 @@ no dry track needed:
   knob position under our control** — a circuit-level reference implementation for
   the price of an afternoon. Nobody has published one; ours could live in the
   kernel repo next to the notebook.
-- **Hardware A/B (gold standard, ~$40):** the **Demon FX Pearl White** — a
-  purchasable hardware copy of the SWAW (~$30–45 on Reverb/Amazon/AliExpress) — as
-  a measurement mule, or the real GB pedal (~$200). Reamp license-clear DI stimuli
+- **Hardware A/B (gold standard):** ✅ **a real Snow White is on order
+  (author, 2026-07-15) — not immediately available**, so implementation and the
+  §6.1/§6.2 validation proceed now, and the pedal's arrival becomes a scheduled
+  **calibration pass**: reamp the license-clear DI stimuli below through it, re-run
+  the trajectory notebook against the recordings, adjust the kernel's envelope
+  constants / sweep law / Q mapping, and document any deviations kept on purpose.
+  (The ~$30–45 Demon FX Pearl White clone remains an option if an interim mule is
+  wanted.) Reamp license-clear DI stimuli
   through it, record wet, run the identical files through `autowah_render` (which
   gains a **WAV-in mode** for exactly this), and compare via the 5.2 notebook.
   Note: an exact null test is off the table for any nonlinear, level-dependent
@@ -308,20 +320,50 @@ no dry track needed:
 `autowah_validation.ipynb` peak-trajectory notebook (both kernel repo). The SPICE
 deck and the Pearl White purchase are optional escalations, in that order.
 
-## 7. Open questions (for the author, none blocking a start)
+## 7. Pre-implementation questions
 
-1. **Name:** `tap.autowah~` (as planned) or lean into `tap.eah~`?
-2. **Envelope outlet:** signal-rate (proposed) or also a float/control tap à la
-   `tap.sift~`? Proposed: signal only; patch `tap.sift~` after it if control-rate
-   is wanted — that's what it's for.
-3. **Rectifier default:** full-wave (cleaner tracking) vs half-wave (trace-faithful
-   ripple). Proposed: decide by ear during runtime validation; kernel constant
-   either way.
-4. **Factory presets:** ship guitar/bass/slow-swell/cocked-wah in slots 0–3
-   (proposed), or leave all 16 slots blank?
-5. **Hardware reference (§6.3):** worth ordering a Demon FX Pearl White (~$40
-   hardware copy) as a measurement mule — or is there a real Snow White within
-   reach to borrow/buy? Not needed to start; decides how far validation can go.
+Status 2026-07-15. Split by who answers them. **Only 7.1 actually blocks the first
+commit** (it names every folder/file/doc); everything else is either cheap to
+answer or deliberately deferred behind an isolated function/constant that the §6
+validation loop exists to calibrate.
+
+### Author decisions
+
+1. **Name (blocking):** `tap.autowah~` (planned — matches the reserved
+   `taptools-min` prototype name, best discoverability) or lean into `tap.eah~`?
+   Recommendation: `tap.autowah~`.
+2. **Control units:** physical units as planned (`bias` in Hz, `decay` in ms,
+   `sensitivity` in dB, `range` in octaves — house style, self-documenting) vs
+   pedal-style 0..1 knobs? Recommendation: physical units; the pedal-knob feel
+   belongs in the help patcher and factory presets, not the API. Wrapper-stage,
+   but settles the maxref early.
+3. **Envelope outlet semantics:** normalized 0..1 (proposed), the mapped cutoff in
+   Hz, or both? Recommendation: 0..1 signal only (Hz is derivable in-patch from
+   the same attributes; `tap.sift~` covers control-rate taps).
+4. **Factory presets:** guitar / bass / slow-swell / cocked-wah in slots 0–3
+   (proposed) or all 16 blank?
+5. **Hardware reference:** ✅ **answered — a real Snow White is on order**, arrival
+   not immediate. Consequence folded into §6.3: build + validate against demo
+   trajectories now; hardware calibration pass when it lands.
+
+### Technical unknowns — resolvable without the author, none blocking
+
+6. **Sweep law, exponential vs linear-in-Hz** (see §3.2): settled by the schematic
+   or the §6.2 trajectory analysis; isolated behind one mapping function.
+7. **Stock output tap, LP vs BP:** settled by the schematic; both taps ship as
+   `mode` regardless, so this only picks the *default*. The §6.2 analysis can also
+   distinguish them (spectral shape above the swept peak).
+8. **Envelope constants** (attack ms, decay range/taper, sensitivity span) and
+   **rectifier half- vs full-wave:** schematic values seed them; demo trajectories
+   refine them; the hardware calibration pass finalizes them. Kernel constants.
+9. **Schematic access (feeds 6–8):** all fetch routes to the PedalPCB Poison Apple
+   build doc (docs.pedalpcb.com/project/PoisonApple-PedalPCB.pdf), the Révolution
+   Deux analysis, and 320volt are **egress-blocked from the dev sandbox** (403 at
+   the proxy). *Two-minute human task: download the PDF locally and drop the
+   relevant values (output tap, D6/C8 envelope section, decay/sensitivity/
+   resonance pot values, integrator caps, the BJT control-current driver) into
+   this doc — or just commit the PDF path note. Absent that, items 6–8 fall back
+   to trajectory analysis + hardware calibration, which §6 covers anyway.*
 
 ## 8. Sources
 
