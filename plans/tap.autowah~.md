@@ -323,9 +323,14 @@ no dry track needed:
   notes incl. slap techniques — ideal for envelope-tracking tests); Cambridge-MT
   multitrack library for real funk DI stems.
 
-**Deliverables this adds to the plan:** the `autowah_render` WAV-in mode and the
-`autowah_validation.ipynb` peak-trajectory notebook (both kernel repo). The SPICE
-deck and the Pearl White purchase are optional escalations, in that order.
+**Deliverables this adds to the plan:** ✅ both shipped (kernel repo, 2026-07-15) —
+the `autowah_render` WAV-in mode and **`notebooks/autowah_validation.ipynb`**, which
+now verifies the sweep law against the design curve (plotting the linear-in-Hz
+alternative for the §7.6 decision), fits the attack/decay constants, proves the
+peak-trajectory extractor against the kernel's own cutoff trace, quantifies the
+rectifier A/B, and ends with a hardware-comparison cell that ingests reamped
+recordings from `notebooks/reference/` the day the pedal arrives. The SPICE deck
+remains the optional escalation.
 
 ## 7. Pre-implementation questions
 
