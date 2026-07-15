@@ -814,7 +814,19 @@ unit tests (now testable for the first time, guarding the curve selection).
 and, later, automating the runtime tests on a self-hosted macOS runner (feasible — an
 unlicensed Max runs patchers; the blocker is GUI/activation, not licensing).
 
-**8. Kernel/wrapper repo split.** ✅ **Done (2026-07-14)** — the physical split is complete, the
+**8. Planned net-new object — `tap.autowah~` (2026-07-15).** An envelope filter /
+auto-wah modeled on the **Mad Professor Snow White AutoWah** (BJF's OTA-SVF design:
+Sensitivity/Decay/Bias/Resonance, fast fixed attack, upward 250–2500 Hz sweep,
+sensitivity-0 cocked-wah mode). This picks up the `tap.autowah~` prototype idea from
+the `taptools-min` archive (§8 above — help-patcher only, and the patcher itself
+doesn't survive at the branch tip, so the design starts from the hardware).
+Architecture: new kernel header `autowah.h` in `tap/taptools` **composing the
+existing Simper `svf.h`** (per-sample `tick(cutoff_hz)` modulation path) behind a
+rectifier + attack/release follower and an exponential bias+range sweep law, with
+the house ramps + 16-slot preset-morph engine; thin Min wrapper with a sidechain
+inlet and an envelope outlet. **Full design + work breakdown: `plans/tap.autowah~.md`.**
+
+**9. Kernel/wrapper repo split.** ✅ **Done (2026-07-14)** — the physical split is complete, the
 AmbiTap / AmbiTap-Max pattern:
 - The old `tap/taptools` repo was **renamed to `tap/taptools-max`** (this repo — the Max wrapper
   package), keeping all history, issues, and the `legacy`/`taptools-min`/`windows` branches.
