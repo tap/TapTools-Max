@@ -745,6 +745,25 @@ GitHub Actions CI.
   determinism; and the autowah's full §6 validation harness with the wet-audio-only
   peak-trajectory extractor and a waiting hardware-comparison cell).
 
+- ✅ **`tap.vco~` analog-character v2 + the book (2026-07-15).** Four upgrades toward
+  real hardware, all deterministic per seed and **exactly zero by default** (kernel-pinned:
+  at `imperfect` 0 every seed renders bit-identically): **`imperfect`** (0..1 waveform
+  imperfection with per-seed component tolerances — bowed shark-fin saw with a rounded
+  reset corner measured 6.4 dB down at h40, asymmetric triangle whose 2nd harmonic rises
+  from −185 dB to −34 dB at 0.8, mild sine THD, per-seed pulse-width offset — every seed a
+  different unit off the line), **`jitter`** (0..20 cents fast pitch noise, the short-time
+  companion to `drift`), and **`track`** (±10 cents/oct V/oct calibration error from A440,
+  measured exact at the trim point and ±15 c at ±3 octaves with track 5). Kernel-side test
+  suite added (`tests/vco_test.cpp`, 6 scenarios — an honest measurement note: the saw bend
+  is a shape/phase effect, its parabola sits in quadrature with the saw's components, so
+  the test pins the waveform bow and the corner rounding, not a phantom harmonic shift);
+  `vco.ipynb` §7 measures everything; wrapper gains the three attributes + maxref entries.
+  **And the book:** the kernel repo now has **`book/` — *Tools on Tap***, the mdBook field
+  guide in the AmbiTap/SampleRateTap/MuTap (*Quieting the Loop*) pattern, first chapter
+  **"The oscillator and its knobs"** (the aliasing contract, every attribute as a trade,
+  the analog section with measured numbers, the honest Moog recipe), published to Pages by
+  the kernel repo's new `docs.yml`.
+
 ---
 
 ## 8. The `taptools-min` reconciliation (2026-06-17)

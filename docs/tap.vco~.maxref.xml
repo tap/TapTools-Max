@@ -17,8 +17,10 @@
 		signal calibrated in Hz (modulation deeper than the carrier frequency reverses the phase
 		cleanly), and the third inlet is a hard-sync input: a rising zero crossing resets the
 		phase with sub-sample accuracy and an alias-corrected step. The analog-character section
-		adds a slow random pitch drift (in cents, deterministic per seed — give mc. instances
-		different seeds to decorrelate them) and a static detune. Sixteen preset slots can be
+		adds a slow random pitch drift, a fast pitch jitter, a static detune, a V/oct tracking
+		error, and a waveform-imperfection control — all in cents-calibrated units and all
+		deterministic per seed (give mc. instances different seeds: with imperfect raised, each
+		becomes a slightly different unit off the production line). Sixteen preset slots can be
 		stored and morphed between. Pairs naturally with <o>tap.ladder~</o>.
 	</description>
 
@@ -85,6 +87,21 @@
 		<attribute name="drift" get="1" set="1" type="float" size="1">
 			<description>Slow random pitch-drift depth in cents (0-100) — the analog-character
 			control. Deterministic per seed.</description>
+		</attribute>
+		<attribute name="imperfect" get="1" set="1" type="float" size="1">
+			<description>Waveform imperfection (0-1): curved saw ramp with a rounded reset corner,
+			slightly asymmetric triangle (even harmonics), mild sine shaper color, and a small
+			static pulse-width offset — the amounts drawn from the seed as per-unit component
+			tolerances, so each seed is a slightly different oscillator. 0 is the exact ideal
+			waveform regardless of seed.</description>
+		</attribute>
+		<attribute name="jitter" get="1" set="1" type="float" size="1">
+			<description>Fast pitch-noise depth in cents (0-20) — the short-time instability of a
+			real oscillator core; the quick companion to drift. Deterministic per seed.</description>
+		</attribute>
+		<attribute name="track" get="1" set="1" type="float" size="1">
+			<description>V/oct calibration error in cents per octave (-10..10), measured from
+			A440 — the pitch offset grows with distance from the trim point.</description>
 		</attribute>
 		<attribute name="detune" get="1" set="1" type="float" size="1">
 			<description>Static detune in cents (-1200..1200).</description>
