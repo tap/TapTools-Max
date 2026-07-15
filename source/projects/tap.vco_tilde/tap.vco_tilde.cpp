@@ -4,9 +4,11 @@
 ///             its header comment). PolyBLEP alias-suppressed saw/pulse (with PWM), an
 ///             integrated-square triangle, and a pure sine, all morphable through a continuous
 ///             shape parameter. Hard sync (third inlet), through-zero linear FM in Hz (second
-///             inlet), and an analog-character section (deterministic slow pitch drift plus
-///             static detune). Single-channel; mc.-wrap for stacks and give each instance a
-///             different seed to decorrelate the drift.
+///             inlet), and an analog-character section, deterministic per seed: slow pitch
+///             drift, fast pitch jitter, static detune, V/oct tracking error, and a waveform
+///             imperfection control with per-seed component tolerances. Single-channel;
+///             mc.-wrap for stacks and give each instance a different seed — each becomes a
+///             slightly different unit off the production line.
 /// @author     Timothy Place
 /// @copyright  Copyright 2026 Timothy Place. Distributed under the New BSD License.
 
@@ -27,8 +29,10 @@ class vco : public object<vco>, public vector_operator<> {
                     "triangle, and sine, morphable through a continuous shape parameter. "
                     "Hard sync on the third inlet (rising zero crossing resets the phase, "
                     "alias-corrected), through-zero linear FM in Hz on the second inlet, and "
-                    "an analog-character section: slow random pitch drift and static detune, "
-                    "deterministic per seed. All parameters glide smoothly and sixteen preset "
+                    "an analog-character section, deterministic per seed: slow pitch drift, "
+                    "fast jitter, static detune, V/oct tracking error, and a waveform "
+                    "imperfection control that gives every seed the component tolerances of a "
+                    "different vintage unit. All parameters glide smoothly and sixteen preset "
                     "slots can be stored and morphed between."};
     MIN_TAGS{"generators"};
     MIN_AUTHOR{"Timothy Place"};
@@ -61,6 +65,19 @@ class vco : public object<vco>, public vector_operator<> {
     TAP_VCO_ATTR(drift, kernel::p_drift, 0.0,
                  "Analog-style slow random pitch drift depth in cents (0..100). Deterministic per seed.")
     TAP_VCO_ATTR(detune, kernel::p_detune, 0.0, "Static detune in cents (-1200..1200).")
+    TAP_VCO_ATTR(imperfect, kernel::p_imperfect, 0.0,
+                 "Waveform imperfection (0..1): the saw takes on the curved ramp and rounded reset corner of a "
+                 "vintage oscillator core, the triangle goes slightly asymmetric (even harmonics), the sine picks "
+                 "up mild shaper color, and the pulse width takes a small static offset. The amounts are per-unit "
+                 "component tolerances drawn from the seed, so each seed is a slightly different oscillator. 0 is "
+                 "the exact ideal waveform regardless of seed.")
+    TAP_VCO_ATTR(jitter, kernel::p_jitter, 0.0,
+                 "Fast pitch noise depth in cents (0..20) - the short-time instability of a real oscillator core, "
+                 "the quick companion to drift. Deterministic per seed.")
+    TAP_VCO_ATTR(track, kernel::p_track, 0.0,
+                 "V/oct calibration error in cents per octave (-10..10), measured from A440: the pitch offset "
+                 "grows with distance from the trim point, like an analog exponential converter drifting out of "
+                 "calibration.")
     TAP_VCO_ATTR(gain, kernel::p_gain, 0.0, "Output gain in dB.")
 
 #undef TAP_VCO_ATTR
