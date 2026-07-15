@@ -27,7 +27,7 @@
 
 Researched 2026-07-15 from the official manuals, the freestompboxes.org trace, the
 La Révolution Deux block analysis, and the PedalPCB "Poison Apple" clone docs
-(links in §7). Confirmed unless flagged as inference.
+(links in §8). Confirmed unless flagged as inference.
 
 **Controls (all versions):**
 
@@ -201,9 +201,10 @@ defaults, clamping, `mode`/`direction` index mapping, message plumbing.
 2-inlet arg): envelope outlet responds to a `test.sample~` burst; sensitivity-0
 passes a steady tone at the bias-peak gain.
 
-**Optional (nice-to-have): notebook** driving the kernel through the C ABI
-(`tools/capi` + `notebooks/`), plotting the measured sweep law (envelope vs. cutoff)
-against the 2^x design curve — the `convolution_reverb.ipynb` template.
+**Notebook** driving the kernel through the C ABI (`tools/capi` + `notebooks/`),
+plotting the measured sweep law (envelope vs. cutoff) against the 2^x design curve —
+the `convolution_reverb.ipynb` template. Promoted from nice-to-have to planned: the
+same notebook is the vehicle for matching the hardware's sound (see §6).
 
 ## 5. Vertical slice checklist (definition of done)
 
@@ -225,15 +226,89 @@ Wrapper repo (here) — after bumping the `submodules/taptools` pin:
 - [ ] REVIVAL.md progress-log entry; CI green both platforms, `.mxo` universal
 - [ ] The standing caveat, honestly recorded: **feel needs runtime validation in
       Max** — this object more than most, since "how it tracks your picking" *is*
-      the product. Compare against demo videos of the pedal; A/B the half-wave vs
-      full-wave rectifier; tune the default `resonance` and the soft-sat knee.
+      the product. Validate per §6 below (reference audio + trajectory analysis +
+      optional hardware A/B); A/B the half-wave vs full-wave rectifier; tune the
+      default `resonance` and the soft-sat knee.
 
 Estimated shape: the kernel is small (~300–400 lines — detector + mapping +
 composed SVF + the boilerplate preset engine), the wrapper is boilerplate-sized,
 and the tests/docs/help are the usual slice. One focused session for kernel+tests,
 one for wrapper+slice.
 
-## 6. Open questions (for the author, none blocking a start)
+## 6. Validation — can we tell if we match the "vocal" quality of the original?
+
+Surveyed 2026-07-15. The landscape: **Mad Professor hosts no downloadable sound
+clips** (their product pages lean on YouTube demos), **nobody has published
+measurements** of this circuit (no Bode plots, spectrograms, or SPICE decks
+circulate — we would be producing the first), and **no commercial modeler or
+plugin models it** (verified against the Helix and Fractal wah/filter model lists;
+Kemper's built-ins are generic). So there is no drop-in reference — but there are
+three workable tiers, cheapest first:
+
+### 5.1 Reference audio that does exist (golden-ear tier, free, immediate)
+
+- **Official Mad Professor YouTube demos** — the primary sonic reference:
+  - GB version, guitar + bass modes (Marko Karhu / Sami Sallinen):
+    `youtube.com/watch?v=6KdD3cHyRxc` — most relevant to the current product.
+  - "Funky clip" (Jarmo Hynninen): `youtube.com/watch?v=oCPOd_VWZFE` — the
+    signature staccato-funk use case, ideal for sweep-trajectory analysis.
+  - Original SWAW (Marko Karhu): `youtube.com/watch?v=mk53MnU-mAA`.
+- Third-party: a likely-PGS demo (`OK7KpanfFHU`), Bass Club Chicago bass demo
+  (`rUwSURWrvOo`), and a TalkBass thread of clean bass clips
+  (talkbass.com/threads/…588248 — 2009, links may be dead).
+- Clone builds with demos: PedalPCB Poison Apple forum threads (17084, 19712,
+  19526) and Demon FX Pearl White demos (`26jBO6UzPVI`).
+- House rule for using these: analyze locally, **never commit the audio** (it's
+  other people's copyrighted material) — the repo stores URLs + timestamps and the
+  *extracted* trajectory data/plots only.
+
+### 5.2 Objective analysis without a dry reference (the real workhorse)
+
+The "human vocal" quality is physically concrete: **one resonant peak sweeping
+250–2500 Hz — straight through the F1/F2 vowel-formant space — with a fast rise
+and an RC-exponential fall.** That makes it measurable *from wet-only demo audio*,
+no dry track needed:
+
+- **Peak-trajectory extraction notebook** (`notebooks/autowah_validation.ipynb`,
+  kernel repo): STFT → track the resonant peak per frame over the staccato
+  passages of the demos above → recover the four numbers that define the feel:
+  **resting frequency** (Bias), **sweep ceiling vs. pick intensity** (Sensitivity/
+  range law), **attack time of the peak motion** (should be near-instant), and the
+  **decay curve shape** (exponential, time constant vs. the Decay setting), plus
+  **Q** from the peak's −3 dB bandwidth and the OTA harmonic signature.
+- Then render the kernel (via the C ABI, `convolution_reverb.ipynb` pattern) on
+  stimulus with matching input envelopes and **overlay the trajectories**. Match
+  the four numbers and the curve shapes and the vowel is right; mismatch shows up
+  as visibly different trajectory geometry long before ears agree on why.
+
+### 5.3 Ground truth options (when 5.2 isn't enough)
+
+- **SPICE simulation, no hardware needed:** build an LTspice deck from the
+  **PedalPCB Poison Apple schematic PDF** (docs.pedalpcb.com/project/
+  PoisonApple-PedalPCB.pdf — the cleanest published schematic) — the LM13700
+  macromodel ships with LTspice, and LTspice does audio I/O (`wavefile` source in,
+  `.wave` directive out). That yields **dry/wet pairs on any stimulus with every
+  knob position under our control** — a circuit-level reference implementation for
+  the price of an afternoon. Nobody has published one; ours could live in the
+  kernel repo next to the notebook.
+- **Hardware A/B (gold standard, ~$40):** the **Demon FX Pearl White** — a
+  purchasable hardware copy of the SWAW (~$30–45 on Reverb/Amazon/AliExpress) — as
+  a measurement mule, or the real GB pedal (~$200). Reamp license-clear DI stimuli
+  through it, record wet, run the identical files through `autowah_render` (which
+  gains a **WAV-in mode** for exactly this), and compare via the 5.2 notebook.
+  Note: an exact null test is off the table for any nonlinear, level-dependent
+  effect — compare trajectory/Q/harmonic *features*, not waveforms.
+- **Common stimulus, license-clear:** the NAM standardized reamp DI
+  (`v3_0_0.wav`, MIT) and GuitarML `ProteusCapture.wav` — purpose-built for
+  hardware-vs-model A/B; **Fraunhofer IDMT-SMT-Bass** (CC BY-NC-ND, ~4300 bass
+  notes incl. slap techniques — ideal for envelope-tracking tests); Cambridge-MT
+  multitrack library for real funk DI stems.
+
+**Deliverables this adds to the plan:** the `autowah_render` WAV-in mode and the
+`autowah_validation.ipynb` peak-trajectory notebook (both kernel repo). The SPICE
+deck and the Pearl White purchase are optional escalations, in that order.
+
+## 7. Open questions (for the author, none blocking a start)
 
 1. **Name:** `tap.autowah~` (as planned) or lean into `tap.eah~`?
 2. **Envelope outlet:** signal-rate (proposed) or also a float/control tap à la
@@ -244,8 +319,11 @@ one for wrapper+slice.
    either way.
 4. **Factory presets:** ship guitar/bass/slow-swell/cocked-wah in slots 0–3
    (proposed), or leave all 16 slots blank?
+5. **Hardware reference (§6.3):** worth ordering a Demon FX Pearl White (~$40
+   hardware copy) as a measurement mule — or is there a real Snow White within
+   reach to borrow/buy? Not needed to start; decides how far validation can go.
 
-## 7. Sources
+## 8. Sources
 
 - Official manuals / product pages: mpamp.com Snow White AutoWah HW manual;
   SWBAW manual (manualslib); Snow White AutoWah GB product page (250–2500 Hz spec).
