@@ -735,6 +735,15 @@ GitHub Actions CI.
   green on Linux/GCC in both repos; **audio needs runtime validation in Max**, and the
   **hardware calibration pass** (a real Snow White is on order) will tune the envelope
   constants, sweep law, and default filter tap against reamped recordings.
+  **Same-day follow-up — verification notebooks (kernel repo):** the C ABI now wraps
+  all four parameter-indexed kernels (was conv_engine-only) and four new executed
+  notebooks join `convolution_reverb.ipynb`: **`svf.ipynb`**, **`ladder.ipynb`**,
+  **`vco.ipynb`**, and **`autowah_validation.ipynb`** — every documented claim
+  measured against the shipping C++ through ctypes (Butterworth slopes and
+  bit-identical morph corners; in-tune self-oscillation, asym even harmonics, and
+  oversampling alias reduction; polyBLEP alias suppression, TZFM, sync, drift
+  determinism; and the autowah's full §6 validation harness with the wet-audio-only
+  peak-trajectory extractor and a waiting hardware-comparison cell).
 
 ---
 
