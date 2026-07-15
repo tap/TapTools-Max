@@ -1,6 +1,8 @@
 # Plan — `tap.autowah~` (Snow White–style envelope filter / auto-wah)
 
-> Status: **plan approved-pending-review, not yet implemented.** Drafted 2026-07-15.
+> Status: **implemented 2026-07-15** (kernel + wrapper + vertical slice; see the ticked
+> checklist in §5). Remaining: runtime validation in Max (§6.1/§6.2) and the hardware
+> calibration pass when the ordered pedal arrives (§6.3). Drafted 2026-07-15.
 > This is the design + work breakdown for the next net-new DSP object: an auto-wah
 > ("auto-eah") in the spirit of the **Mad Professor Snow White AutoWah** (BJF design).
 > The DSP will land in the kernel repo (`tap/taptools`) first, then the Min wrapper +
@@ -216,26 +218,31 @@ same notebook is the vehicle for matching the hardware's sound (see §6).
 ## 5. Vertical slice checklist (definition of done)
 
 Kernel repo (`tap/taptools`) — **land first**:
-- [ ] `include/taptools/autowah.h` (+ umbrella `taptools.h` entry, README table row)
-- [ ] `tests/autowah_test.cpp` green in kernel CI (3-OS)
-- [ ] `tools/render/autowah_render.cpp`
-- [ ] clang-format/-tidy clean (STYLE.md)
+- [x] `include/taptools/autowah.h` (+ umbrella `taptools.h` entry, README table row)
+- [x] `tests/autowah_test.cpp` — 9 scenarios, green locally (Linux/GCC); kernel CI
+      runs them 3-OS on push
+- [x] `tools/render/autowah_render.cpp` (demo scenarios + the `--in` WAV mode)
+- [x] clang-format clean (STYLE.md)
 
 Wrapper repo (here) — after bumping the `submodules/taptools` pin:
-- [ ] `source/projects/tap.autowah_tilde/` (`.cpp` + `CMakeLists.txt` with the
+- [x] `source/projects/tap.autowah_tilde/` (`.cpp` + `CMakeLists.txt` with the
       `CXX_STANDARD 20` override; `_tilde` naming convention)
-- [ ] `tap.autowah_tilde_test.cpp` + `min-object-unittest` include
-- [ ] `docs/tap.autowah~.maxref.xml` (document the hardware provenance + the
-      deliberate extensions and their neutral defaults)
-- [ ] `help/tap.autowah~.maxhelp` (sound source → wah → dac~; sensitivity-0
-      cocked-wah demo; preset store/recall demo)
-- [ ] `runtime-tests/patchers/tap.autowah~.maxtest.maxpat`
-- [ ] REVIVAL.md progress-log entry; CI green both platforms, `.mxo` universal
+- [x] `tap.autowah_tilde_test.cpp` + `min-object-unittest` include (34/34 package
+      suite green locally)
+- [x] `docs/tap.autowah~.maxref.xml` (hardware provenance + the deliberate
+      extensions and their neutral defaults documented)
+- [x] `help/tap.autowah~.maxhelp` (pluck source → wah → ezdac~; the four pedal
+      knobs; extensions; factory-preset recall row; envelope-outlet scope —
+      authored headless, **wants a first open-in-Max check**)
+- [x] `runtime-tests/patchers/tap.autowah~.maxtest.maxpat` (cocked-mode DC-unity)
+- [x] REVIVAL.md progress-log entry (§7, 2026-07-15); CI on push covers both
+      platforms + the universal-binary gate
 - [ ] The standing caveat, honestly recorded: **feel needs runtime validation in
       Max** — this object more than most, since "how it tracks your picking" *is*
       the product. Validate per §6 below (reference audio + trajectory analysis +
-      optional hardware A/B); A/B the half-wave vs full-wave rectifier; tune the
-      default `resonance` and the soft-sat knee.
+      the hardware calibration pass when the pedal arrives); A/B the half-wave vs
+      full-wave rectifier (`set_rectifier`, kernel-side); tune the default
+      `resonance` and the tanh knee (`k_env_knee`).
 
 Estimated shape: the kernel is small (~300–400 lines — detector + mapping +
 composed SVF + the boilerplate preset engine), the wrapper is boilerplate-sized,

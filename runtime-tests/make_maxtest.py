@@ -87,7 +87,7 @@ def _write(name, doc):
 
 
 def audio_test(filename, object_text, input_value, expected, assert_name,
-               tolerance=0.000001, description="", numinlets=1):
+               tolerance=0.000001, description="", numinlets=1, numoutlets=1):
     """A signal-rate test: feed `sig~ input_value` into `object_text`, sample the
     output, and assert it equals `expected` (within `tolerance`)."""
     b = _Builder()
@@ -100,8 +100,8 @@ def audio_test(filename, object_text, input_value, expected, assert_name,
 
     sig = b.box(f"sig~ {input_value}", numoutlets=1, outlettype=["signal"],
                 x=300, y=40, w=110)
-    obj = b.box(object_text, numinlets=numinlets, numoutlets=1, outlettype=["signal"],
-                x=300, y=100, w=160)
+    obj = b.box(object_text, numinlets=numinlets, numoutlets=numoutlets,
+                outlettype=["signal"] * numoutlets, x=300, y=100, w=160)
     rnd = b.box(f"round~ {tolerance}", numoutlets=1, outlettype=["signal"],
                 x=300, y=160, w=110)
     sample = b.box("test.sample~", numoutlets=1, outlettype=[""], x=300, y=220, w=90)
@@ -173,4 +173,18 @@ if __name__ == "__main__":
         assert_name="tap.svf~-lowpass-dc-unity",
         description="tap.svf~ lowpass @ 20 kHz: DC (sig~ 1) passes at unity.",
         numinlets=2,
+    )
+    # tap.autowah~: with sensitivity at the floor the envelope is off (the cocked-wah
+    # manual mode) and the object is a fixed 2-pole lowpass parked at bias — whose DC
+    # gain is exactly 1 (same Simper-SVF property the tap.svf~ test uses). This pins
+    # both the cocked-wah behavior and the wet-only default mix in one assertion.
+    audio_test(
+        "tap.autowah~.maxtest.maxpat",
+        object_text="tap.autowah~ @sensitivity -60 @bias 15000",
+        input_value="1.",
+        expected="1.",
+        assert_name="tap.autowah~-cocked-lowpass-dc-unity",
+        description="tap.autowah~ cocked mode (sensitivity -60): DC passes the parked lowpass at unity.",
+        numinlets=2,
+        numoutlets=2,
     )

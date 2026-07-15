@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.autowah~" module="msp" category="TapTools, MSP Filters">
+
+	<digest>
+		Envelope filter (auto-wah) in the Snow White style
+	</digest>
+
+	<description>
+		The <o>tap.autowah~</o> object is an envelope filter modeled on the Mad Professor Snow
+		White AutoWah pedal (a Björn Juhl design): a resonant 2-pole filter whose frequency is
+		pushed up from the bias resting point by your playing dynamics, then falls back at the
+		decay rate. The attack is fast — the pedal's signature — so every picked note articulates;
+		a fast decay gives a wah on every note, a slow one gives classic auto-wah swells. The sweep
+		is voiced like a real wah (a throaty resonant peak riding 250 Hz to 2.5 kHz by default —
+		straight through vowel-formant territory), not the quack of a Mu-Tron-style filter.
+		Sensitivity sets how hard your signal drives the sweep; at minimum the envelope is off and
+		the object becomes the pedal's secondary mode — a fixed, manually swept "cocked wah" with
+		bias as the sweep control. Extensions beyond the hardware, all neutral at their defaults:
+		a dry/wet mix (the pedal is wet-only), a downward sweep direction, a drive stage into a
+		saturating filter circuit (2x oversampled), a bandpass tap (the circuit's other output, a
+		known hardware mod), and an adjustable attack. A signal in the right inlet sidechains the
+		envelope detector so one signal can wah another; the right outlet emits the envelope
+		(0..1) as a signal for patching elsewhere. All parameters glide smoothly, and sixteen
+		preset slots can be stored and morphed between — slots 1-4 ship factory voicings (guitar,
+		bass, slow swell, cocked wah). Single-channel: wrap in mc. for multichannel (each channel
+		gets its own envelope).
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Filter</metadata>
+		<metadata name="tag">Effects</metadata>
+	</metadatalist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="store">
+			<arglist>
+				<arg name="slot" type="int" optional="0"/>
+			</arglist>
+			<description>Store the current parameters in a preset slot (1-16).</description>
+		</method>
+		<method name="recall">
+			<arglist>
+				<arg name="slot" type="int" optional="0"/>
+				<arg name="time" type="float" optional="1"/>
+			</arglist>
+			<description>
+				Morph all parameters to a stored preset (1-16; slots 1-4 ship factory voicings:
+				guitar, bass, slow swell, cocked wah). The optional second argument overrides the
+				morph time in milliseconds (default: the interp attribute).
+			</description>
+		</method>
+		<method name="clear">
+			<arglist/>
+			<description>Reset the filter state and the envelope.</description>
+		</method>
+	</methodlist>
+
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="sensitivity" get="1" set="1" type="float" size="1">
+			<description>Envelope-detector input gain in dB (-60..24) — the filter trigger level;
+			tune it to your instrument's output and your touch. At -60 the envelope is off and the
+			object becomes a fixed, manually swept filter with bias as the sweep control (the
+			pedal's cocked-wah mode).</description>
+		</attribute>
+		<attribute name="decay" get="1" set="1" type="float" size="1">
+			<description>How fast the filter falls back to the bias resting point, in milliseconds
+			(10-5000). Fast gives a wah on every note; slow gives traditional auto-wah
+			swells.</description>
+		</attribute>
+		<attribute name="bias" get="1" set="1" type="float" size="1">
+			<description>The filter's resting frequency in Hz (20-20000) — where the sweep starts
+			from and returns to. The hardware rests around 250 Hz.</description>
+		</attribute>
+		<attribute name="resonance" get="1" set="1" type="float" size="1">
+			<description>Filter resonance / Q, normalized 0-1 (1 is the edge of
+			self-oscillation).</description>
+		</attribute>
+		<attribute name="range" get="1" set="1" type="float" size="1">
+			<description>Sweep span in octaves from the bias frequency (0-5). The hardware sweeps
+			about 3.3 octaves (250 Hz to ~2500 Hz).</description>
+		</attribute>
+		<attribute name="direction" get="1" set="1" type="int" size="1">
+			<description>Sweep direction: 0 = up from bias (the pedal), 1 = down from bias (a
+			TapTools extension).</description>
+		</attribute>
+		<attribute name="attack" get="1" set="1" type="float" size="1">
+			<description>Envelope attack in milliseconds (0.05-100). The hardware's attack is fast
+			and fixed (about 2 ms, the default) — raise it for softer filter onsets.</description>
+		</attribute>
+		<attribute name="mode" get="1" set="1" type="int" size="1">
+			<description>Filter tap: 0 = lowpass (the stock resonant voicing), 1 = bandpass (the
+			circuit's other tap — quackier and noticeably quieter, a known hardware
+			mod).</description>
+		</attribute>
+		<attribute name="drive" get="1" set="1" type="float" size="1">
+			<description>Drive in dB (0-24) into a saturating filter circuit (2x oversampled) — an
+			OTA-flavored color stage. 0 runs the pure linear filter.</description>
+		</attribute>
+		<attribute name="mix" get="1" set="1" type="float" size="1">
+			<description>Dry/wet mix in percent, equal-power (0-100). The hardware is wet-only:
+			100, the default.</description>
+		</attribute>
+		<attribute name="gain" get="1" set="1" type="float" size="1">
+			<description>Output gain in dB.</description>
+		</attribute>
+		<attribute name="interp" get="1" set="1" type="float" size="1">
+			<description>Default preset-morph time in milliseconds used by the recall message.</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>Anti-zipper interpolation time in milliseconds applied to parameter changes.</description>
+		</attribute>
+		<attribute name="bypass" get="1" set="1" type="int" size="1">
+			<description>Pass the input through unprocessed.</description>
+		</attribute>
+		<attribute name="mute" get="1" set="1" type="int" size="1">
+			<description>Silence the output.</description>
+		</attribute>
+	</attributelist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.svf~"/>
+		<seealso name="tap.ladder~"/>
+		<seealso name="tap.filter~"/>
+		<seealso name="tap.adsr~"/>
+	</seealsolist>
+
+
+</c74object>

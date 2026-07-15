@@ -708,6 +708,34 @@ GitHub Actions CI.
   opportunistically. Control/utility and Jitter objects are Max-bound by nature and stay
   wrapper-side permanently.
 
+- ✅ **`tap.autowah~` added (2026-07-15)** — an **envelope filter / auto-wah modeled on the
+  Mad Professor Snow White AutoWah** (BJF's LM13700 OTA-SVF design), the third net-new DSP
+  object and the follow-through on the `tap.autowah~` prototype idea from the `taptools-min`
+  archive (§8). Full design + hardware research + validation method: **`plans/tap.autowah~.md`**.
+  First object developed **cross-repo from the start**: the kernel
+  (`include/taptools/autowah.h`, `taptools::autowah::wah_filter`) landed in `tap/taptools`
+  and the submodule pin was bumped here. Also the first **kernel composing another kernel** —
+  it wraps `svf.h`'s Simper filter (one 2nd-order section, per-sample `tick(cutoff_hz)`)
+  behind a sensitivity→rectifier→attack/release detector and an exponential `bias · 2^(sweep ·
+  range)` law (isolated in `map_cutoff()` — the hardware calibration pass may swap it for
+  linear-in-Hz, see the plan §7.6). Faithful: fast fixed attack, Decay fall-back, upward
+  250→2500 Hz sweep, wet-only, and sensitivity-at-floor = the pedal's **cocked-wah manual
+  mode**. Extensions (neutral defaults): mix, down-sweep `direction`, `drive` into the svf
+  driven circuit (2×OS), bandpass tap (`mode`), adjustable `attack`, half/full-wave rectifier
+  select (kernel-side A/B), **sidechain right inlet** and an **envelope (0..1) right outlet**.
+  House ramps + 16-slot preset morph, with **factory voicings in slots 0–3** (guitar, bass,
+  slow swell, cocked wah — the GB pedal's GTR/BASS switch is just a preset morph here). Kernel:
+  9 Catch scenarios (attack/decay timing, sweep law + ceiling, burst sweep ± direction,
+  cocked-wah **bit-equivalence** to a bare `svf_filter`, Q monotonicity, sidechain routing,
+  max-everything boundedness, bit-exact determinism, preset morph) and `autowah_render`
+  (factory-voicing funk-chop demos **plus a `--in` WAV mode** for the hardware-vs-model
+  comparisons in the validation plan). Wrapper: 4-scenario Min test (defaults, clamping,
+  range/direction sign forwarding, preset/clear plumbing), maxref, help patcher, and a runtime
+  maxtest (cocked-mode DC-unity; `make_maxtest.py` gained a `numoutlets` arg). Compile/ctest
+  green on Linux/GCC in both repos; **audio needs runtime validation in Max**, and the
+  **hardware calibration pass** (a real Snow White is on order) will tune the envelope
+  constants, sweep law, and default filter tap against reamped recordings.
+
 ---
 
 ## 8. The `taptools-min` reconciliation (2026-06-17)
@@ -814,17 +842,12 @@ unit tests (now testable for the first time, guarding the curve selection).
 and, later, automating the runtime tests on a self-hosted macOS runner (feasible — an
 unlicensed Max runs patchers; the blocker is GUI/activation, not licensing).
 
-**8. Planned net-new object — `tap.autowah~` (2026-07-15).** An envelope filter /
-auto-wah modeled on the **Mad Professor Snow White AutoWah** (BJF's OTA-SVF design:
-Sensitivity/Decay/Bias/Resonance, fast fixed attack, upward 250–2500 Hz sweep,
-sensitivity-0 cocked-wah mode). This picks up the `tap.autowah~` prototype idea from
-the `taptools-min` archive (§8 above — help-patcher only, and the patcher itself
-doesn't survive at the branch tip, so the design starts from the hardware).
-Architecture: new kernel header `autowah.h` in `tap/taptools` **composing the
-existing Simper `svf.h`** (per-sample `tick(cutoff_hz)` modulation path) behind a
-rectifier + attack/release follower and an exponential bias+range sweep law, with
-the house ramps + 16-slot preset-morph engine; thin Min wrapper with a sidechain
-inlet and an envelope outlet. **Full design + work breakdown: `plans/tap.autowah~.md`.**
+**8. Net-new object — `tap.autowah~` (2026-07-15).** ✅ **Shipped** — see the §7
+progress-log entry. An envelope filter / auto-wah modeled on the **Mad Professor
+Snow White AutoWah**; design, hardware research, and the validation method live in
+**`plans/tap.autowah~.md`**. Still open from its plan: runtime validation in Max,
+and the **hardware calibration pass** when the ordered pedal arrives (envelope
+constants, exp-vs-linear sweep law, default filter tap — all isolated kernel-side).
 
 **9. Kernel/wrapper repo split.** ✅ **Done (2026-07-14)** — the physical split is complete, the
 AmbiTap / AmbiTap-Max pattern:
