@@ -327,24 +327,23 @@ commit** (it names every folder/file/doc); everything else is either cheap to
 answer or deliberately deferred behind an isolated function/constant that the §6
 validation loop exists to calibrate.
 
-### Author decisions
+### Author decisions — ✅ all answered (author, 2026-07-15)
 
-1. **Name (blocking):** `tap.autowah~` (planned — matches the reserved
-   `taptools-min` prototype name, best discoverability) or lean into `tap.eah~`?
-   Recommendation: `tap.autowah~`.
-2. **Control units:** physical units as planned (`bias` in Hz, `decay` in ms,
-   `sensitivity` in dB, `range` in octaves — house style, self-documenting) vs
-   pedal-style 0..1 knobs? Recommendation: physical units; the pedal-knob feel
-   belongs in the help patcher and factory presets, not the API. Wrapper-stage,
-   but settles the maxref early.
-3. **Envelope outlet semantics:** normalized 0..1 (proposed), the mapped cutoff in
-   Hz, or both? Recommendation: 0..1 signal only (Hz is derivable in-patch from
-   the same attributes; `tap.sift~` covers control-rate taps).
-4. **Factory presets:** guitar / bass / slow-swell / cocked-wah in slots 0–3
-   (proposed) or all 16 blank?
-5. **Hardware reference:** ✅ **answered — a real Snow White is on order**, arrival
-   not immediate. Consequence folded into §6.3: build + validate against demo
+1. **Name:** ✅ **`tap.autowah~`** (kernel header `autowah.h`, folder
+   `tap.autowah_tilde/`).
+2. **Control units:** ✅ **physical units** (`bias` in Hz, `decay` in ms,
+   `sensitivity` in dB, `range` in octaves); pedal-knob feel lives in the help
+   patcher and factory presets.
+3. **Envelope outlet:** ✅ **normalized 0..1 signal** (Hz derivable in-patch;
+   `tap.sift~` covers control-rate taps).
+4. **Factory presets:** ✅ **slots 0–3**: guitar voicing, bass voicing (the GB
+   switch, done better), slow-swell, cocked-wah.
+5. **Hardware reference:** ✅ **a real Snow White is on order**, arrival not
+   immediate. Consequence folded into §6.3: build + validate against demo
    trajectories now; hardware calibration pass when it lands.
+
+**With these settled, implementation is unblocked** — the kernel
+(`autowah.h` + tests + render tool in `tap/taptools`) can start immediately.
 
 ### Technical unknowns — resolvable without the author, none blocking
 
