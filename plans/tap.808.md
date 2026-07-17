@@ -193,9 +193,15 @@ Each slice is independently shippable and ends with the full definition of done 
   Validated the shared-block design, the trigger/accent convention, and the test
   workflow. Still open: runtime validation in Max (§7.3) and golden renders /
   sample-pack comparison (§7.2).
-- **Slice 2 — snare + clap channel.** `tr808_snare.h` (two bridged-Ts + snappy noise
-  path), `tr808_clap.h` (`@model clap|maracas`) — exercises `drum_noise.h` and the
-  pulse-train VCA.
+- ✅ **Slice 2 — snare + clap channel** (2026-07-17). `swing_vca.h` (decay_env, linear
+  swing-VCA, seeded white noise), `tr808_snare.h` (two bridged-Ts at the late-revision
+  ~173/336 Hz with the Roland design change documented, trigger divider, ~4 kHz snappy
+  path), `tr808_clap.h` (`@model clap|maracas`; schematic-exact ~2 kHz dual band-pass,
+  Figure-13 three-teeth envelope, Q70 reverberation tail + tail bend). Primary source:
+  the Service Notes themselves (p.6 descriptions + Fig. 13, p.9 schematic, p.14 voice
+  chart) — fetched and read directly, giving every component value. Vertical slices
+  `tap.808.snare~` / `tap.808.clap~` shipped. Still open: runtime validation in Max,
+  golden renders (§7.2).
 - **Slice 3 — the metal voices.** `metal_bank.h`, then `tap.808.hat~` (two triggers +
   choke), `tap.808.cymbal~` (two-band sizzle envelope, tone/decay), `tap.808.cowbell~`
   (the bank's two tunable oscillators). One shared header, three thin voices; the

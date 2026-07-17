@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.808.snare~" module="msp" category="TapTools, MSP Synthesis">
+
+	<digest>
+		TR-808-style snare drum voice, synthesized from the analog circuit
+	</digest>
+
+	<description>
+		The <o>tap.808.snare~</o> object is a circuit-informed model of the Roland TR-808 snare
+		drum voice, built from the original schematic: two bridged-T resonators — the fundamental
+		(~173 Hz) and harmonic (~336 Hz) modes, in Roland's late-revision tuning — blended by the
+		tone control, plus the "snappy" path: bright high-passed noise through a fast envelope.
+		Trigger it with a signal: a rising edge fires the voice, and the amplitude of the edge
+		(0..1) is the accent (the hardware's trigger-bus voltage — harder excitation, not just
+		louder). Tone, snappy, and level mirror the hardware panel; tuning and seed are
+		extensions beyond the panel, stock at their defaults. Single-channel: wrap in mc. and
+		give each instance a different seed to decorrelate the noise.
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Synthesis</metadata>
+		<metadata name="tag">Drums</metadata>
+	</metadatalist>
+
+
+	<!--INLETS/OUTLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Trigger: a rising edge fires the voice; edge amplitude (0..1) is the accent</digest>
+		</inlet>
+	</inletlist>
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>Snare drum output</digest>
+		</outlet>
+	</outletlist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<arglist/>
+			<description>
+				A rising edge triggers the drum, sample-accurately; the value the signal rises to
+				(0..1) is the accent.
+			</description>
+		</method>
+		<method name="bang">
+			<arglist/>
+			<description>Trigger the drum at full accent (from the scheduler).</description>
+		</method>
+		<method name="trigger">
+			<arglist>
+				<arg name="accent" type="float" optional="1"/>
+			</arglist>
+			<description>Trigger the drum with an accent value (0..1, default 1).</description>
+		</method>
+		<method name="clear">
+			<arglist/>
+			<description>Reset all circuit state, silencing any ringing tail.</description>
+		</method>
+	</methodlist>
+
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="tone" get="1" set="1" type="float" size="1">
+			<digest>Resonator balance (panel knob VR8)</digest>
+			<description>
+				Balance of the two resonators, 0..1 (default 0.5): 0 is all fundamental (~173 Hz,
+				deep), 1 all harmonic (~336 Hz, hard). The hardware knob's travel.
+			</description>
+		</attribute>
+		<attribute name="snappy" get="1" set="1" type="float" size="1">
+			<digest>Snappy amount (panel knob VR9)</digest>
+			<description>
+				Depth of the bright enveloped noise burst, 0..1 (default 0.5) — the snare's
+				"wires". At 0 the voice is just the two resonators (a tom-like thud).
+			</description>
+		</attribute>
+		<attribute name="level" get="1" set="1" type="float" size="1">
+			<digest>Output level (panel knob VR7)</digest>
+			<description>Output level, 0..1 (default 1).</description>
+		</attribute>
+		<attribute name="tuning" get="1" set="1" type="float" size="1">
+			<digest>Circuit bend: pitch ratio (default 1 = stock ~173/336 Hz)</digest>
+			<description>
+				Pitch as a ratio of the stock tuning, 0.25..4 (default 1), scaling both
+				resonators together. Roland's own first-edition units shipped a sharper tuning
+				(~238/476 Hz) — about 1.4 here.
+			</description>
+		</attribute>
+		<attribute name="seed" get="1" set="1" type="int" size="1">
+			<digest>Noise seed (deterministic)</digest>
+			<description>
+				Seed for the noise source (default 1). Renders are bit-reproducible per seed;
+				give mc. instances different seeds to decorrelate.
+			</description>
+		</attribute>
+	</attributelist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.808.kick~"/>
+		<seealso name="tap.808.clap~"/>
+		<seealso name="tap.noise~"/>
+		<seealso name="click~"/>
+	</seealsolist>
+
+</c74object>

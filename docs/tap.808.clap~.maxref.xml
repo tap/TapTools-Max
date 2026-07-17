@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.808.clap~" module="msp" category="TapTools, MSP Synthesis">
+
+	<digest>
+		TR-808-style handclap/maracas voice, synthesized from the analog circuit
+	</digest>
+
+	<description>
+		The <o>tap.808.clap~</o> object is a circuit-informed model of the Roland TR-808's CP/MA
+		voice channel — one circuit the hardware switches between two sounds, here the model
+		attribute. The clap is band-passed noise (~2 kHz, straight from the schematic's filter
+		values) driven by the hardware's celebrated three-teeth sawtooth envelope — three rapid
+		bursts ~10 ms apart, the "multiple hands" transient — plus a parallel longer decay, the
+		clap's reverberation wash. The maracas model is the same channel's short, bright
+		high-passed noise burst. Trigger with a signal: a rising edge fires the voice, and the
+		edge's amplitude (0..1) is the accent. Single-channel: wrap in mc. and give each
+		instance a different seed to decorrelate the noise.
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Synthesis</metadata>
+		<metadata name="tag">Drums</metadata>
+	</metadatalist>
+
+
+	<!--INLETS/OUTLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Trigger: a rising edge fires the voice; edge amplitude (0..1) is the accent</digest>
+		</inlet>
+	</inletlist>
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>Handclap/maracas output</digest>
+		</outlet>
+	</outletlist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<arglist/>
+			<description>
+				A rising edge triggers the voice, sample-accurately; the value the signal rises
+				to (0..1) is the accent.
+			</description>
+		</method>
+		<method name="bang">
+			<arglist/>
+			<description>Trigger the voice at full accent (from the scheduler).</description>
+		</method>
+		<method name="trigger">
+			<arglist>
+				<arg name="accent" type="float" optional="1"/>
+			</arglist>
+			<description>Trigger the voice with an accent value (0..1, default 1).</description>
+		</method>
+		<method name="clear">
+			<arglist/>
+			<description>Reset all circuit state.</description>
+		</method>
+	</methodlist>
+
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="model" get="1" set="1" type="symbol" size="1">
+			<digest>Voice model: clap or maracas</digest>
+			<description>
+				The hardware's CP/MA switch: <m>clap</m> (default) or <m>maracas</m>.
+			</description>
+		</attribute>
+		<attribute name="level" get="1" set="1" type="float" size="1">
+			<digest>Output level (panel knob VR17)</digest>
+			<description>Output level, 0..1 (default 1).</description>
+		</attribute>
+		<attribute name="tail" get="1" set="1" type="float" size="1">
+			<digest>Circuit bend: reverberation-tail level (clap model)</digest>
+			<description>
+				Level of the clap's longer noise wash, 0..2 (default 1 = stock). 0 disconnects
+				it, leaving only the three teeth; above 1 exaggerates the wash.
+			</description>
+		</attribute>
+		<attribute name="seed" get="1" set="1" type="int" size="1">
+			<digest>Noise seed (deterministic)</digest>
+			<description>
+				Seed for the noise source (default 1). Renders are bit-reproducible per seed;
+				give mc. instances different seeds to decorrelate.
+			</description>
+		</attribute>
+	</attributelist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.808.kick~"/>
+		<seealso name="tap.808.snare~"/>
+		<seealso name="tap.noise~"/>
+		<seealso name="click~"/>
+	</seealsolist>
+
+</c74object>
