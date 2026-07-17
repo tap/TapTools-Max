@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.808.cymbal~" module="msp" category="TapTools, MSP Synthesis">
+
+	<digest>
+		TR-808-style cymbal voice, synthesized from the analog circuit
+	</digest>
+
+	<description>
+		The <o>tap.808.cymbal~</o> object is a circuit-informed model of the Roland TR-808
+		cymbal: the shared bank of six square oscillators, filtered through the hardware's ~3.4
+		and ~7.1 kHz voicings and split into strike, ring, and body components with separate
+		decays. The tone knob balances strike against body (the hardware's level-ratio control);
+		the decay knob sets the ring, spanning roughly 350 ms to 1.2 s overall like the original.
+		Trigger with a signal rising edge (amplitude 0..1 = accent) or bang / trigger messages.
+		The tolerance attribute spreads the oscillators per seed up to the real ~20% production
+		tolerance — the documented reason no two 808s' cymbals sound alike.
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Synthesis</metadata>
+		<metadata name="tag">Drums</metadata>
+	</metadatalist>
+
+
+	<!--INLETS/OUTLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Trigger: a rising edge fires the voice; edge amplitude (0..1) is the accent</digest>
+		</inlet>
+	</inletlist>
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>Cymbal output</digest>
+		</outlet>
+	</outletlist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<arglist/>
+			<description>A rising edge triggers the cymbal, sample-accurately; edge amplitude (0..1) is the accent.</description>
+		</method>
+		<method name="bang">
+			<arglist/>
+			<description>Trigger at full accent (from the scheduler).</description>
+		</method>
+		<method name="trigger">
+			<arglist>
+				<arg name="accent" type="float" optional="1"/>
+			</arglist>
+			<description>Trigger with an accent value (0..1, default 1).</description>
+		</method>
+		<method name="clear">
+			<arglist/>
+			<description>Reset all circuit state.</description>
+		</method>
+	</methodlist>
+
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="tone" get="1" set="1" type="float" size="1">
+			<digest>Strike/body balance (panel knob VR4)</digest>
+			<description>0 = all body (~3.4 kHz voicing), 1 = all strike (~7.1 kHz). Default 0.5.</description>
+		</attribute>
+		<attribute name="decay" get="1" set="1" type="float" size="1">
+			<digest>Ring length (panel knob VR2)</digest>
+			<description>0..1 (default 0.5); the hardware spans roughly 350 ms to 1.2 s overall.</description>
+		</attribute>
+		<attribute name="level" get="1" set="1" type="float" size="1">
+			<digest>Output level</digest>
+			<description>Output level, 0..1 (default 1).</description>
+		</attribute>
+		<attribute name="tuning" get="1" set="1" type="float" size="1">
+			<digest>Circuit bend: bank pitch ratio (default 1 = stock)</digest>
+			<description>Pitch ratio of the six-oscillator bank, 0.25..4.</description>
+		</attribute>
+		<attribute name="tolerance" get="1" set="1" type="float" size="1">
+			<digest>Per-unit component spread (default 0 = exact nominal)</digest>
+			<description>
+				Spread of the six oscillator frequencies, 0..1: 1 is the full ~20% production
+				tolerance. Deterministic per seed.
+			</description>
+		</attribute>
+		<attribute name="seed" get="1" set="1" type="int" size="1">
+			<digest>Unit identity for the tolerance spread</digest>
+			<description>Seed (&gt;= 1); each seed is a different unit off the line.</description>
+		</attribute>
+	</attributelist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.808.hat~"/>
+		<seealso name="tap.808.cowbell~"/>
+		<seealso name="tap.808.kick~"/>
+		<seealso name="click~"/>
+	</seealsolist>
+
+</c74object>
