@@ -898,6 +898,15 @@ out to be a time-domain biquad filterbank, so it follows the `svf`/`ladder` `pre
 not the STFT scaffold.) DSP correctness is covered by the kernel's own Catch2 suite; the wrappers
 kept their behavior tests. No behavior change — same code, relocated.
 
+**10. Net-new object family — `tap.808.*` (2026-07-17).** 📋 **Plan drafted** — see
+**`plans/tap.808.md`**. Circuit-informed recreations of the Roland TR-808's analog drum
+voices (kick/snare/tom/rim/clap/hat/cymbal/cowbell, per hardware voice channel, shared
+kernel blocks: bridged-T resonator, metal bank, swing-VCA), with a flagged WDF
+circuit-simulation upgrade path (`@circuit`, the `svf.h` two-circuit pattern) and a
+potential later sequencer phase (`tap.808.seq~`). Provenance: the Werner–Abel–Smith
+DAFx-14 papers + service-manual schematics. Awaiting author sign-off on the plan's §8
+questions (naming, trigger-as-accent convention, mode-attribute pairing) before slice 1.
+
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
 they're touched. Control/utility and Jitter objects never move — they are Max message-logic, not
