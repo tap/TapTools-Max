@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.diode~" module="msp" category="TapTools, MSP Filters">
+
+	<digest>
+		Virtual-analog diode-ladder filter (the TB-303 topology)
+	</digest>
+
+	<description>
+		The <o>tap.diode~</o> object is a virtual-analog model of the 4-pole diode-ladder
+		lowpass — the filter topology of the Roland TB-303, modeled from Tim Stinchcombe's
+		published circuit analysis. Unlike the buffered transistor ladder
+		(<o>tap.ladder~</o>), a diode ladder's stages load each other, spreading the poles
+		far apart: the response has a shallow knee near cutoff that opens into a full
+		24 dB/octave slope (the honest version of the panel's famous "18 dB" claim), and the
+		resonance is broad and squelchy rather than surgical. The frequency attribute is
+		calibrated to the resonance peak. The resonance feedback path is high-passed
+		(150 Hz, the hardware value): resonance thins as the cutoff comes down, the bass
+		survives full squelch — and, exactly like a stock TB-303, the standard resonance
+		range (up to 1) never quite self-oscillates. The range above 1 and the fbhp
+		attribute are the documented circuit bends: extended resonance makes it sing at
+		high cutoffs, and fbhp 0 converts the feedback to DC-coupled, giving exact
+		self-oscillation tuning at any cutoff (with transistor-ladder-style bass droop as
+		the trade). Saturating diode pairs bound everything; drive pushes the input into
+		them. Runs oversampled (2x by default). A signal in the right inlet modulates the
+		cutoff with true per-sample resolution. All parameters glide smoothly, and sixteen
+		preset slots can be stored and morphed between. Single-channel: wrap in mc. for
+		multichannel.
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Filter</metadata>
+	</metadatalist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="float">
+			<arglist>
+				<arg name="input" type="float" optional="0" id="0" />
+			</arglist>
+			<description>In the right inlet, sets the cutoff frequency in Hz.</description>
+		</method>
+		<method name="store">
+			<arglist>
+				<arg name="slot" type="int" optional="0"/>
+			</arglist>
+			<description>Store the current parameters in a preset slot (1-16).</description>
+		</method>
+		<method name="recall">
+			<arglist>
+				<arg name="slot" type="int" optional="0"/>
+				<arg name="time" type="float" optional="1"/>
+			</arglist>
+			<description>
+				Morph all parameters to a stored preset (1-16). The optional second argument
+				overrides the morph time in milliseconds (default: the interp attribute).
+			</description>
+		</method>
+		<method name="clear">
+			<arglist/>
+			<description>Reset the filter state (this also stops self-oscillation).</description>
+		</method>
+	</methodlist>
+
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="frequency" get="1" set="1" type="float" size="1">
+			<description>Cutoff frequency in Hz (10-20000), calibrated to the resonance peak /
+			oscillation frequency. At low resonance the -3 dB point sits well below this — the
+			diode ladder's spread poles, faithfully. A signal in the right inlet overrides this
+			with per-sample resolution.</description>
+		</attribute>
+		<attribute name="resonance" get="1" set="1" type="float" size="1">
+			<description>Resonance (0-1.5). 0-1 is the hardware-realistic range: squelchy, but —
+			like a stock TB-303 — never quite self-oscillating. Above 1 is the documented bend:
+			the filter sings at high cutoffs, bounded by the diodes. With fbhp 0 the threshold is
+			exactly 1.0 and oscillation lands exactly on the cutoff.</description>
+		</attribute>
+		<attribute name="drive" get="1" set="1" type="float" size="1">
+			<description>Input drive in dB (-24..24): how hard the signal hits the saturating
+			diode pairs.</description>
+		</attribute>
+		<attribute name="fbhp" get="1" set="1" type="float" size="1">
+			<description>Resonance-feedback high-pass corner in Hz (0-2000; default 150, the
+			hardware value). This is why resonance thins toward the bass and why the low end
+			survives full squelch. 0 bends the circuit to DC-coupled feedback:
+			transistor-ladder behavior, exact oscillation tuning, low-end droop at high
+			resonance.</description>
+		</attribute>
+		<attribute name="gain" get="1" set="1" type="float" size="1">
+			<description>Output gain in dB.</description>
+		</attribute>
+		<attribute name="solver" get="1" set="1" type="int" size="1">
+			<description>Nonlinear solver for the coupled diode equations: 0 = fast
+			(secant-linearized solve plus one corrective pass, the default), 1 = exact
+			(re-linearization iterated to convergence). Audibly different only when drive and
+			resonance are both pushed hard.</description>
+		</attribute>
+		<attribute name="oversample" get="1" set="1" type="int" size="1">
+			<description>Internal oversampling factor (1, 2, or 4; default 2). Higher factors
+			reduce aliasing from the diode saturation, at higher CPU cost.</description>
+		</attribute>
+		<attribute name="interp" get="1" set="1" type="float" size="1">
+			<description>Default preset-morph time in milliseconds used by the recall message.</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>Anti-zipper interpolation time in milliseconds applied to parameter changes.</description>
+		</attribute>
+		<attribute name="bypass" get="1" set="1" type="int" size="1">
+			<description>Pass the input through unprocessed.</description>
+		</attribute>
+		<attribute name="mute" get="1" set="1" type="int" size="1">
+			<description>Silence the output.</description>
+		</attribute>
+	</attributelist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.ladder~"/>
+		<seealso name="tap.fourpole~"/>
+		<seealso name="tap.svf~"/>
+		<seealso name="tap.filter~"/>
+		<seealso name="lores~"/>
+	</seealsolist>
+
+
+</c74object>
