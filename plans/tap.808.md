@@ -1,9 +1,12 @@
 # Plan — `tap.808.*` (TR-808-style analog drum voices, and later a sequencer)
 
-> Status: **slice 1 shipped 2026-07-17** (`tap.808.kick~`: `bridged_t.h` +
-> `tr808_kick.h` in the kernel + the full vertical slice here — see the REVIVAL.md §7
-> progress-log entry; the §8 blocking decisions are answered below). Remaining: runtime
-> validation in Max, then slice 2 onward. Drafted 2026-07-17.
+> Status: **Phase 1 complete — all five slices shipped 2026-07-17** (the eight voice
+> channels `tap.808.{kick,snare,clap,hat,cymbal,cowbell,tom,rim}~` end to end, plus the
+> slice-5 family polish: output balance, the family overview patcher, the kernel's
+> `tr808_render` tool — see the REVIVAL.md §7 progress-log entries; the §8 blocking
+> decisions are answered below). Remaining: runtime validation in Max (§7.3),
+> sample-pack calibration (§7.2), then the Phase 2 WDF go/no-go on the kick.
+> Drafted 2026-07-17.
 > Design + phased work breakdown for the first net-new object *family*:
 > circuit-informed recreations of the Roland TR-808's analog drum voices, with a
 > flagged upgrade path to full circuit simulation, and a potential later phase adding
@@ -218,10 +221,18 @@ Each slice is independently shippable and ends with the full definition of done 
   ~1667+~455 Hz crack with the VCA's tanh harmonics vs the pure ~2500 Hz tick).
   **All eight voice channels of the family are now shipped.** Still open: runtime
   validation in Max, golden renders (§7.2).
-- **Slice 5 — family polish.** Accent-bus conventions documented once and
-  cross-referenced from every maxref; an overview help patcher wiring all voices to a
-  drum-pattern demo; `RELATED` metadata linking the family; REVIVAL.md progress-log
-  entries.
+- ✅ **Slice 5 — family polish** (2026-07-17). **Family output balance:** the six
+  tom/conga channels and the claves left their resonators at wildly different levels
+  (the bridged-T's impulse gain grows with fc·Q — high conga peaked ~5.3 at full
+  accent); per-channel summing gains in the kernel (`k_tomc_mix`, `k_cl_mix` — the
+  hardware's per-channel summing resistors into the mix bus) now land every voice's
+  full-accent peak in a consistent ~0.3–1.0 band, pinned by kernel balance tests.
+  **`tools/render/tr808_render`** in the kernel repo: demo mode (each voice's
+  characteristic moves + an eight-voice kit pattern) and `--hit` mode (single
+  full-accent hits — the §7.2 golden-render stimulus). **Family overview patcher**
+  `help/tap.808.maxhelp`: all eight voices on a 16-step two-bar pattern, with the
+  accent-bus contract documented once; every maxref now cross-references it, and
+  `RELATED` metadata links the family. REVIVAL.md §7/§9 updated.
 
 ## 5. Phase 2 — circuit simulation (the fidelity upgrade)
 

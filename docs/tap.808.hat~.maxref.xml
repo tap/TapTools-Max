@@ -17,6 +17,8 @@
 		the closed hat is fixed (~50 ms), like the hardware. The tolerance attribute spreads the
 		six oscillators per seed, up to the real ~20% production tolerance — every seed is a
 		different unit off the line. Single-channel: wrap in mc. for a rack of different 808s.
+	
+		The eight tap.808 voices share one accent-bus contract; the family overview patcher (tap.808.maxhelp) demonstrates them together on a running pattern.
 	</description>
 
 

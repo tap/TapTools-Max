@@ -16,6 +16,8 @@
 		"artificial reverberation" layer; congas ring pure — the model attribute is the
 		hardware's switch. Trigger with a signal rising edge (amplitude 0..1 = accent) or
 		bang / trigger messages.
+	
+		The eight tap.808 voices share one accent-bus contract; the family overview patcher (tap.808.maxhelp) demonstrates them together on a running pattern.
 	</description>
 
 

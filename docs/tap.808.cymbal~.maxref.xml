@@ -16,6 +16,8 @@
 		Trigger with a signal rising edge (amplitude 0..1 = accent) or bang / trigger messages.
 		The tolerance attribute spreads the oscillators per seed up to the real ~20% production
 		tolerance — the documented reason no two 808s' cymbals sound alike.
+	
+		The eight tap.808 voices share one accent-bus contract; the family overview patcher (tap.808.maxhelp) demonstrates them together on a running pattern.
 	</description>
 
 

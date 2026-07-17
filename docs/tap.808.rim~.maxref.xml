@@ -14,6 +14,8 @@
 		harmonic-generating VCA; the claves model is a single pure ~2500 Hz woody tick, ~25 ms.
 		Trigger with a signal rising edge (amplitude 0..1 = accent) or bang / trigger messages.
 		This channel has no noise source, so renders are fully deterministic.
+	
+		The eight tap.808 voices share one accent-bus contract; the family overview patcher (tap.808.maxhelp) demonstrates them together on a running pattern.
 	</description>
 
 
