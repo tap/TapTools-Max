@@ -26,8 +26,8 @@ using namespace c74::min;
 class kick808 : public object<kick808>, public sample_operator<1, 1> {
   private:
     // Constructed before the attributes below so attribute setters can forward into it.
-    taptools::tr808::kick m_kick;
-    sample                m_previous{0.0};
+    taptools::tr808::kick   m_kick;
+    sample                  m_previous{0.0};
     static constexpr double k_edge_threshold{1e-3};
 
   public:
@@ -131,8 +131,9 @@ class kick808 : public object<kick808>, public sample_operator<1, 1> {
                        }};
 
     sample operator()(sample x) {
-        if (x > k_edge_threshold && m_previous <= k_edge_threshold)
+        if (x > k_edge_threshold && m_previous <= k_edge_threshold) {
             m_kick.trigger(MIN_CLAMP(static_cast<double>(x), 0.0, 1.0));
+        }
         m_previous = x;
         return m_kick.process();
     }
