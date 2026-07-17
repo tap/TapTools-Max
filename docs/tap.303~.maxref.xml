@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.303~" module="msp" category="TapTools, MSP Synthesis">
+
+	<digest>
+		TB-303-style acid bass voice
+	</digest>
+
+	<description>
+		The <o>tap.303~</o> object is a monophonic acid bass voice modeled on the Roland
+		TB-303: a sawtooth or square oscillator into the diode-ladder filter (the same kernel
+		as <o>tap.diode~</o>), shaped by the 303's two envelopes — the decay-only Main
+		Envelope sweeping the cutoff (envmod, with the hardware's law: two thirds of the
+		sweep above the cutoff knob, one third below) and the fixed-decay VCA envelope
+		(fast attack, ~1.2 s decay, no sustain, chopped at gate-off). Accented notes hit
+		louder with a faster envelope, scaled by the accent knob. Pitch arrives in the left
+		inlet as a MIDI note number (signal, read per sample, or float; fractions are
+		cents). The right inlet is a gate signal whose rising edge triggers the note —
+		<b>edge amplitude encodes accent</b>: 1.0 is a plain note, up to 2.0 fully
+		accented. Slide is legato, exactly like the hardware: change the pitch while the
+		gate is held and it glides through the 303's ~60 ms lag without retriggering — no
+		separate slide input. The note/bang/release messages provide the same control
+		without signals. Envelope constants and the filter's feedback behavior follow
+		measured hardware values (via the Open303 project and the Devil Fish
+		documentation). One voice per object; wrap in mc. for polyphony.
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Synthesis</metadata>
+	</metadatalist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="float">
+			<arglist>
+				<arg name="pitch" type="float" optional="0" id="0" />
+			</arglist>
+			<description>In the left inlet, sets the pitch (MIDI note number). The next
+			trigger plays it; if the gate is currently held, the voice slides there now.</description>
+		</method>
+		<method name="note">
+			<arglist>
+				<arg name="pitch" type="float" optional="0"/>
+				<arg name="accent" type="int" optional="1"/>
+				<arg name="slide" type="int" optional="1"/>
+			</arglist>
+			<description>Play a note: pitch in MIDI note numbers, accent 0/1, slide 0/1.
+			With slide 1 and a note already sounding, the pitch glides legato instead of
+			retriggering.</description>
+		</method>
+		<method name="bang">
+			<arglist/>
+			<description>Retrigger the last note (plain, no accent).</description>
+		</method>
+		<method name="release">
+			<arglist/>
+			<description>Release the gate — the VCA chops, like the hardware's gate-off.</description>
+		</method>
+		<method name="store">
+			<arglist>
+				<arg name="slot" type="int" optional="0"/>
+			</arglist>
+			<description>Store the current parameters in a preset slot (1-16).</description>
+		</method>
+		<method name="recall">
+			<arglist>
+				<arg name="slot" type="int" optional="0"/>
+				<arg name="time" type="float" optional="1"/>
+			</arglist>
+			<description>
+				Morph all parameters to a stored preset (1-16). The optional second argument
+				overrides the morph time in milliseconds (default: the interp attribute).
+			</description>
+		</method>
+		<method name="clear">
+			<arglist/>
+			<description>Silence the voice and reset all DSP state.</description>
+		</method>
+	</methodlist>
+
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="cutoff" get="1" set="1" type="float" size="1">
+			<description>Filter cutoff knob in Hz (100-5000; the stock 303 knob spans
+			~302-2394 — the wider range is the Devil-Fish-style bend). The Main Envelope
+			sweeps around this.</description>
+		</attribute>
+		<attribute name="resonance" get="1" set="1" type="float" size="1">
+			<description>Filter resonance (0-1.5). Up to 1 is the stock range — squelchy but,
+			like a real 303, never quite self-oscillating; above 1 is the documented
+			bend.</description>
+		</attribute>
+		<attribute name="envmod" get="1" set="1" type="float" size="1">
+			<description>Envelope modulation (0-1): how much of the Main Envelope reaches the
+			cutoff. Raising it also lowers the sweep's resting point, like the
+			hardware.</description>
+		</attribute>
+		<attribute name="decay" get="1" set="1" type="float" size="1">
+			<description>Main Envelope decay in ms (200-2000, the stock knob range). Accented
+			notes bypass this and run at ~200 ms.</description>
+		</attribute>
+		<attribute name="accent" get="1" set="1" type="float" size="1">
+			<description>Accent amount (0-1): how strongly accented notes hit — louder, with a
+			faster envelope.</description>
+		</attribute>
+		<attribute name="tuning" get="1" set="1" type="float" size="1">
+			<description>Master tuning in cents (-1200..1200).</description>
+		</attribute>
+		<attribute name="waveform" get="1" set="1" type="symbol" size="1">
+			<description>Oscillator waveform: saw or square (the hardware's two). Switching
+			glides click-free.</description>
+		</attribute>
+		<attribute name="gain" get="1" set="1" type="float" size="1">
+			<description>Output gain in dB.</description>
+		</attribute>
+		<attribute name="solver" get="1" set="1" type="int" size="1">
+			<description>Filter nonlinear solver: 0 = fast (default), 1 = exact. See
+			tap.diode~.</description>
+		</attribute>
+		<attribute name="oversample" get="1" set="1" type="int" size="1">
+			<description>Filter oversampling factor (1, 2, or 4; default 2).</description>
+		</attribute>
+		<attribute name="interp" get="1" set="1" type="float" size="1">
+			<description>Default preset-morph time in milliseconds used by the recall message.</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>Anti-zipper interpolation time in milliseconds applied to parameter changes.</description>
+		</attribute>
+		<attribute name="mute" get="1" set="1" type="int" size="1">
+			<description>Silence the output.</description>
+		</attribute>
+	</attributelist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.diode~"/>
+		<seealso name="tap.vco~"/>
+		<seealso name="tap.808.kick~"/>
+		<seealso name="tap.adsr~"/>
+	</seealsolist>
+
+
+</c74object>
