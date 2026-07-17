@@ -299,6 +299,20 @@ abundant; unit-to-unit variance is expected and is itself modeled). Per-voice de
 documented in the header comment, autowah-plan style. The gen~ model from the DAFx-14
 paper is a second, independent cross-check for the kick.
 
+✅ **Done (2026-07-17)** against the Fischer/Technopolis 1994 sample set — a real unit
+(s/n 103852) recorded from the individual outs with **knob positions encoded in the
+filenames** (0/2.5/5/7.5/10 dial grid, 116 samples), which upgraded this from a
+listening check to a quantitative per-knob-cell comparison. `tr808_render` gained
+`--set NAME VALUE` knob args to re-render the exact grid; identical measurements
+(spectral-peak fundamental, −40 dB decay, power centroid) ran on both sides. Results:
+pitches were already right nearly everywhere (kick within 2.4%, snare within 1.2%
+including the tone-max mode flip, toms/congas/cowbell/claves within ~4%); the decay
+classes and noise voicings were re-fit to the measured unit (tom/conga/cowbell/clap
+tails roughly doubled, the snare's snappy band-limited and re-enveloped, the rimshot
+re-voiced low-dominant, the cymbal's decay span and brightness corrected). Each kernel
+header carries a §7.2 calibration note with its numbers and residuals. The DAFx-14
+gen~ cross-check for the kick remains open as a further option.
+
 ### 7.3 Wrapper + runtime tests
 
 min-api unittests for attribute ranges/defaults and message plumbing (mock kernel,

@@ -764,6 +764,27 @@ GitHub Actions CI.
   the analog section with measured numbers, the honest Moog recipe), published to Pages by
   the kernel repo's new `docs.yml`.
 
+- ✅ **`tap.808.*` §7.2 calibration against a real unit (2026-07-17).** The plan's
+  sample-pack comparison, done quantitatively: the **Fischer/Technopolis 1994 TR-808
+  sample set** (unit s/n 103852, recorded from the individual outs,
+  machines.hyperreal.org) encodes **knob positions in its filenames** (0/2.5/5/7.5/10
+  dial grid, 116 samples), so the comparison ran per knob cell, not by ear:
+  `tr808_render` gained repeatable **`--set NAME VALUE`** knob args to re-render the
+  exact grid, and identical measurements (spectral-peak fundamental, −40 dB decay,
+  power centroid) were applied to both sides. The tunings were already right nearly
+  everywhere — kick fundamental within 2.4% and decay endpoints within 6% across the
+  whole tone×decay grid, snare within 1.2% including its tone-max mode flip, every
+  tom/conga/cowbell/claves pitch within ~4% — while the decay classes and noise
+  voicings were **re-fit to the measured unit**: tom/conga/cowbell/clap tails roughly
+  doubled (the chart's figures read as a hotter reference level), the snare's snappy
+  path band-limited (the schematic high-pass alone left it white to Nyquist) and
+  re-enveloped with a fitted VR9 dial law, the rimshot re-voiced low-dominant (the
+  real RS peaks at ~455 Hz), and the cymbal's decay span and brightness corrected to
+  the measured 0.65–2.7 s / centroid range. Every kernel header now carries a §7.2
+  calibration note with its numbers and honest residuals (e.g. the closed hat measures
+  ~29% brighter on the real unit than the shared-band model produces). Kernel suite
+  green at 86 scenarios with the decay pins updated to the calibrated classes.
+
 - ✅ **`tap.808.*` slice 5 — family polish (2026-07-17). PHASE 1 OF THE PLAN IS
   COMPLETE.** Kernel side: **family output balance** — the bridged-T's impulse gain
   grows with fc·Q, so the six tom/conga channels and the claves left their resonators
