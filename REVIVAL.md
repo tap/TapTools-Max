@@ -764,6 +764,25 @@ GitHub Actions CI.
   the analog section with measured numbers, the honest Moog recipe), published to Pages by
   the kernel repo's new `docs.yml`.
 
+- ✅ **`tap.808.snare~` + `tap.808.clap~` added (2026-07-17, slice 2)** — the snare and
+  the CP/MA channel, **primary-sourced from the TR-808 Service Notes themselves** (the
+  manual was fetched and its p.6 circuit descriptions, p.9 main-board schematic, and
+  p.14 voice chart read directly — every component value carries its designator).
+  Kernel: **`swing_vca.h`** (shared noise-voice blocks: RC `decay_env`, linear swing-VCA,
+  seeded xorshift64* `white_noise` — deterministic renders, mc. decorrelation by seed),
+  **`tr808_snare.h`** (two bridged-T resonators reusing `bridged_t.h` — stock at the
+  **late-revision ~173.3/336 Hz** tuning with Roland's design change from the first
+  edition's ~250/499 Hz documented; the R189/C57/R190 trigger divider — its omission
+  made the first build 40x too hot, caught by the calibration test; ~4 kHz snappy path
+  with its 14 ms RC envelope; VR8 tone crossfade / VR9 snappy / VR7 level; `tuning` +
+  `seed` bends), **`tr808_clap.h`** (the CP/MA switch as `@model`: the clap's IC21
+  **dual** band-pass — schematic-exact ~2.06 kHz, *not* the ~1 kHz folklore — the
+  Figure-13 **three-teeth sawtooth envelope** ~10 ms apart, the Q70 reverberation wash
+  with a `tail` bend that disconnects it; maracas as the short bright burst). 19 new
+  kernel scenarios (59 total green); wrappers with 8 more scenarios (37 total green on
+  Linux), maxrefs, help patchers, maxtest patchers. The GCC `attribute<symbol>` cast
+  ambiguity resurfaced in the clap test — solved with the house `== symbol{"..."}`
+  idiom (§9 item 5 precedent). **Runtime validation in Max still open.**
 - ✅ **`tap.808.kick~` added (2026-07-17)** — the first of the **`tap.808.*` drum-voice
   family** (plan: **`plans/tap.808.md`**): a **circuit-informed TR-808 bass drum**, block for
   block after Werner/Abel/Smith (DAFx-14) with component values read off the Service Notes
