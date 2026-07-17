@@ -69,8 +69,9 @@ SCENARIO("tap.808.kick~ is silent at rest and sounds on bang") {
 
         WHEN("no trigger has arrived") {
             double peak = 0.0;
-            for (int i = 0; i < 4800; ++i)
+            for (int i = 0; i < 4800; ++i) {
                 peak = std::max(peak, std::abs(static_cast<double>(my_object(0.0))));
+            }
             THEN("the output is silence") {
                 REQUIRE(peak == 0.0);
             }
@@ -79,8 +80,9 @@ SCENARIO("tap.808.kick~ is silent at rest and sounds on bang") {
         WHEN("a bang triggers the voice") {
             my_object.bang();
             double peak = 0.0;
-            for (int i = 0; i < 9600; ++i)
+            for (int i = 0; i < 9600; ++i) {
                 peak = std::max(peak, std::abs(static_cast<double>(my_object(0.0))));
+            }
             THEN("the drum sounds") {
                 REQUIRE(peak > 0.1);
             }
@@ -120,8 +122,9 @@ SCENARIO("tap.808.kick~ clear silences a ringing tail") {
         kick808&              my_object = an_instance;
 
         my_object.bang();
-        for (int i = 0; i < 4800; ++i)
+        for (int i = 0; i < 4800; ++i) {
             my_object(0.0);
+        }
 
         WHEN("clear arrives") {
             my_object.clear();
