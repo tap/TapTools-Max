@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.808.hat~" module="msp" category="TapTools, MSP Synthesis">
+
+	<digest>
+		TR-808-style hi-hat voice — closed and open, one circuit, hardware choke
+	</digest>
+
+	<description>
+		The <o>tap.808.hat~</o> object is a circuit-informed model of the Roland TR-808 hi-hat.
+		On the hardware, closed and open are one circuit sharing one sound source — the bank of
+		six square oscillators every 808 metal voice draws on — so this is one object with two
+		trigger inlets, and the choke works exactly like the hardware: a closed hit terminates a
+		sounding open hat. Trigger with signals (a rising edge fires; the edge's amplitude, 0..1,
+		is the accent) or with messages. The open hat's decay mirrors the panel knob (~90-600 ms);
+		the closed hat is fixed (~50 ms), like the hardware. The tolerance attribute spreads the
+		six oscillators per seed, up to the real ~20% production tolerance — every seed is a
+		different unit off the line. Single-channel: wrap in mc. for a rack of different 808s.
+	
+		The eight tap.808 voices share one accent-bus contract; the family overview patcher (tap.808.maxhelp) demonstrates them together on a running pattern.
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Synthesis</metadata>
+		<metadata name="tag">Drums</metadata>
+	</metadatalist>
+
+
+	<!--INLETS/OUTLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Closed-hat trigger: rising edge fires; edge amplitude (0..1) is the accent. Chokes a sounding open hat.</digest>
+		</inlet>
+		<inlet id="1" type="signal">
+			<digest>Open-hat trigger: rising edge fires; edge amplitude (0..1) is the accent</digest>
+		</inlet>
+	</inletlist>
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>Hi-hat output (closed + open paths summed)</digest>
+		</outlet>
+	</outletlist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<arglist/>
+			<description>
+				Rising edges trigger sample-accurately: inlet 1 the closed hat (choking any
+				sounding open hat, like the hardware), inlet 2 the open hat. Edge amplitude
+				(0..1) is the accent.
+			</description>
+		</method>
+		<method name="bang">
+			<arglist/>
+			<description>Trigger the closed hat at full accent (from the scheduler).</description>
+		</method>
+		<method name="trigger">
+			<arglist>
+				<arg name="accent" type="float" optional="1"/>
+			</arglist>
+			<description>Trigger the closed hat with an accent value (0..1, default 1).</description>
+		</method>
+		<method name="open">
+			<arglist>
+				<arg name="accent" type="float" optional="1"/>
+			</arglist>
+			<description>Trigger the open hat with an accent value (0..1, default 1).</description>
+		</method>
+		<method name="clear">
+			<arglist/>
+			<description>Reset all circuit state.</description>
+		</method>
+	</methodlist>
+
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="decay" get="1" set="1" type="float" size="1">
+			<digest>Open-hat ring length (panel knob VR3)</digest>
+			<description>
+				Open-hat decay, 0..1 (default 0.5): the hardware spans roughly 90-600 ms. The
+				closed hat's decay is fixed, like the hardware.
+			</description>
+		</attribute>
+		<attribute name="closed_level" get="1" set="1" type="float" size="1">
+			<digest>Closed-hat level</digest>
+			<description>Level of the closed path, 0..1 (default 1) — the CH channel's pot.</description>
+		</attribute>
+		<attribute name="open_level" get="1" set="1" type="float" size="1">
+			<digest>Open-hat level</digest>
+			<description>Level of the open path, 0..1 (default 1) — the OH channel's pot.</description>
+		</attribute>
+		<attribute name="tuning" get="1" set="1" type="float" size="1">
+			<digest>Circuit bend: bank pitch ratio (default 1 = stock)</digest>
+			<description>Pitch ratio of the six-oscillator bank, 0.25..4.</description>
+		</attribute>
+		<attribute name="tolerance" get="1" set="1" type="float" size="1">
+			<digest>Per-unit component spread (default 0 = exact nominal)</digest>
+			<description>
+				Spread of the six oscillator frequencies, 0..1: 1 is the full ~20% production
+				tolerance — the reason no two 808s' metal voices match. Deterministic per seed.
+			</description>
+		</attribute>
+		<attribute name="seed" get="1" set="1" type="int" size="1">
+			<digest>Unit identity for the tolerance spread</digest>
+			<description>Seed (&gt;= 1); each seed is a different unit off the line.</description>
+		</attribute>
+	</attributelist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.808.cymbal~"/>
+		<seealso name="tap.808.cowbell~"/>
+		<seealso name="tap.808.kick~"/>
+		<seealso name="click~"/>
+	</seealsolist>
+
+</c74object>

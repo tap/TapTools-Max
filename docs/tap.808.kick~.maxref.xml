@@ -22,6 +22,8 @@
 		hardware panel knobs; tuning, pulse, sigh, and attack are circuit bends beyond the panel
 		(component substitutions on the modeled schematic), stock at their defaults.
 		Single-channel: wrap in mc. for stacked or parallel voices.
+	
+		The eight tap.808 voices share one accent-bus contract; the family overview patcher (tap.808.maxhelp) demonstrates them together on a running pattern.
 	</description>
 
 

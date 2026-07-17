@@ -17,6 +17,8 @@
 		louder). Tone, snappy, and level mirror the hardware panel; tuning and seed are
 		extensions beyond the panel, stock at their defaults. Single-channel: wrap in mc. and
 		give each instance a different seed to decorrelate the noise.
+	
+		The eight tap.808 voices share one accent-bus contract; the family overview patcher (tap.808.maxhelp) demonstrates them together on a running pattern.
 	</description>
 
 

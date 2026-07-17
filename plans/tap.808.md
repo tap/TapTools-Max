@@ -1,9 +1,12 @@
 # Plan — `tap.808.*` (TR-808-style analog drum voices, and later a sequencer)
 
-> Status: **slice 1 shipped 2026-07-17** (`tap.808.kick~`: `bridged_t.h` +
-> `tr808_kick.h` in the kernel + the full vertical slice here — see the REVIVAL.md §7
-> progress-log entry; the §8 blocking decisions are answered below). Remaining: runtime
-> validation in Max, then slice 2 onward. Drafted 2026-07-17.
+> Status: **Phase 1 complete — all five slices shipped 2026-07-17** (the eight voice
+> channels `tap.808.{kick,snare,clap,hat,cymbal,cowbell,tom,rim}~` end to end, plus the
+> slice-5 family polish: output balance, the family overview patcher, the kernel's
+> `tr808_render` tool — see the REVIVAL.md §7 progress-log entries; the §8 blocking
+> decisions are answered below). Remaining: runtime validation in Max (§7.3),
+> sample-pack calibration (§7.2), then the Phase 2 WDF go/no-go on the kick.
+> Drafted 2026-07-17.
 > Design + phased work breakdown for the first net-new object *family*:
 > circuit-informed recreations of the Roland TR-808's analog drum voices, with a
 > flagged upgrade path to full circuit simulation, and a potential later phase adding
@@ -202,17 +205,34 @@ Each slice is independently shippable and ends with the full definition of done 
   chart) — fetched and read directly, giving every component value. Vertical slices
   `tap.808.snare~` / `tap.808.clap~` shipped. Still open: runtime validation in Max,
   golden renders (§7.2).
-- **Slice 3 — the metal voices.** `metal_bank.h`, then `tap.808.hat~` (two triggers +
-  choke), `tap.808.cymbal~` (two-band sizzle envelope, tone/decay), `tap.808.cowbell~`
-  (the bank's two tunable oscillators). One shared header, three thin voices; the
-  `seed`/`tolerance` spread lands here.
-- **Slice 4 — the resonator variations.** `tap.808.tom~` (`@model tom|conga`, tuning,
-  the tom noise layer), `tap.808.rim~` (`@model rimshot|claves`). Mostly parameter
-  work over blocks that exist by now.
-- **Slice 5 — family polish.** Accent-bus conventions documented once and
-  cross-referenced from every maxref; an overview help patcher wiring all voices to a
-  drum-pattern demo; `RELATED` metadata linking the family; REVIVAL.md progress-log
-  entries.
+- ✅ **Slice 3 — the metal voices** (2026-07-17). `metal_bank.h` (the six Schmitt
+  squares at 205.3/369.6/304.4/522.7 + trimmed 800/540 Hz, duty 47.98%, per-seed ±20%
+  `tolerance` spread, the ~3440/7100 Hz voicings, the Q19 attack smoother — constants
+  from the Werner/Abel/Smith cymbal paper + the voicing-board schematic), then
+  `tap.808.hat~` (one object, two trigger inlets, the hardware Q23/R173 choke pinned
+  by test), `tap.808.cymbal~` (strike/ring/body over the two bands; chart's 350-1200 ms
+  decay span), `tap.808.cowbell~` (the 540/800 pair, two-slope envelope, ~860 Hz IC2
+  voicing). Still open: runtime validation in Max, golden renders (§7.2).
+- ✅ **Slice 4 — the resonator variations** (2026-07-17). `tap.808.tom~` (`@size
+  low|mid|high` × `@model tom|conga` = the hardware's six sounds; chart tunings with
+  the panel knob sweeping each span; the D80/D81 attack pitch fall; the tom-only
+  pink-noise layer — pinned by seed-sensitivity, since the diode bend's own harmonics
+  defeat spectral separation) and `tap.808.rim~` (`@model rimshot|claves`; the
+  ~1667+~455 Hz crack with the VCA's tanh harmonics vs the pure ~2500 Hz tick).
+  **All eight voice channels of the family are now shipped.** Still open: runtime
+  validation in Max, golden renders (§7.2).
+- ✅ **Slice 5 — family polish** (2026-07-17). **Family output balance:** the six
+  tom/conga channels and the claves left their resonators at wildly different levels
+  (the bridged-T's impulse gain grows with fc·Q — high conga peaked ~5.3 at full
+  accent); per-channel summing gains in the kernel (`k_tomc_mix`, `k_cl_mix` — the
+  hardware's per-channel summing resistors into the mix bus) now land every voice's
+  full-accent peak in a consistent ~0.3–1.0 band, pinned by kernel balance tests.
+  **`tools/render/tr808_render`** in the kernel repo: demo mode (each voice's
+  characteristic moves + an eight-voice kit pattern) and `--hit` mode (single
+  full-accent hits — the §7.2 golden-render stimulus). **Family overview patcher**
+  `help/tap.808.maxhelp`: all eight voices on a 16-step two-bar pattern, with the
+  accent-bus contract documented once; every maxref now cross-references it, and
+  `RELATED` metadata links the family. REVIVAL.md §7/§9 updated.
 
 ## 5. Phase 2 — circuit simulation (the fidelity upgrade)
 

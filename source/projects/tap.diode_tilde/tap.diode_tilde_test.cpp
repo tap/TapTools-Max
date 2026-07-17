@@ -101,7 +101,7 @@ SCENARIO("the Min wrapper instantiates with the documented defaults") {
 SCENARIO("the wrapped kernel filters: lowpass shape and the stock-vs-bent resonance trait") {
     GIVEN("a 500 Hz cutoff") {
         auto tone_power = [](double freq) {
-            auto                f = make_filter();
+            auto f = make_filter();
             f.set_frequency(500.0);
             std::vector<double> out(at_s(0.5));
             for (size_t i = 0; i < out.size(); ++i) {
