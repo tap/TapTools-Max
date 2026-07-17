@@ -1,6 +1,7 @@
 # Plan — `tap.303.*` (TB-303-style acid bass voice, a diode-ladder filter, and later a sequencer)
 
-> Status: **drafted 2026-07-17** — design + phased work breakdown, nothing shipped yet.
+> Status: **drafted 2026-07-17; §8 blocking decisions approved by the author same day** —
+> nothing shipped yet; slice 0's remaining work is the source sweep.
 > The Roland-recreation companion to `plans/tap.808.md` (the two machines are the
 > acid-house rhythm section; this plan deliberately reuses that plan's decisions —
 > naming convention, amplitude-as-accent triggering, slice discipline — so the two
@@ -293,23 +294,24 @@ patcher → golden render committed → REVIVAL.md progress log updated.
 
 ## 8. Pre-implementation questions (author decisions)
 
-Blocking (slice 0):
+### Author decisions — ✅ the three blocking ones answered (author, 2026-07-17)
 
-1. **Naming:** `tap.303~` + a standalone `tap.diode~`, with `tap.303.seq~` reserved
-   — approve? (Alternative: fold the filter into the voice only and skip the
-   standalone external; recommended *against* — see §1.)
-2. **Note interface:** pitch-as-MIDI-note signal + gate signal with
+1. **Naming:** ✅ **approved** — `tap.303~` + a standalone `tap.diode~`, with
+   `tap.303.seq~` reserved (`taptools::tb303` / `taptools::diode` as the internal
+   namespaces; marks kept out of shipped object names only).
+2. **Note interface:** ✅ **approved** — pitch-as-MIDI-note signal + gate signal with
    amplitude-as-accent + legato-as-slide, plus the `note <pitch> [accent] [slide]`
-   message — approve as the package-wide melodic-voice contract? (This is the 808
-   trigger-convention decision's melodic sibling, and phase 3 inherits it.)
-3. **Pitch units:** MIDI note number (recommended — sequencer- and `mtof`-friendly,
-   fractional = cents) vs. Hz on inlet 1.
+   message. This is the **package-wide melodic-voice contract**; phase 3 (and any
+   future pitched voice) inherits it.
+3. **Pitch units:** ✅ **MIDI note number** on inlet 1 (fractional = cents;
+   conversion to Hz and the `tuning` trim happen inside the kernel).
 
-Non-blocking (deferrable to their slices):
+### Still open (non-blocking, deferrable to their slices)
 
-4. **Devil-Fish bends in v1** or stock-only? Proposed default, per the 808
-   precedent: ship the documented bends (`slide_time`, accent/normal decay split,
-   `soft_attack`, input drive), stock-neutral defaults, skip speculative ones.
+4. **Devil-Fish bends in v1** or stock-only? Proposed default accepted in principle,
+   per the 808 precedent: ship the documented bends (`slide_time`, accent/normal
+   decay split, `soft_attack`, input drive), stock-neutral defaults, skip
+   speculative ones. Final list confirmed at slice 4 against the slice-0 sources.
 5. **Square shaper:** reuse `vco.h`'s pulse + a post-shaper, or a dedicated
    measured-curve model in `tb303_voice.h`? (Slice-2 call, informed by the
    schematic and Open303's tables.)
