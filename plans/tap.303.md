@@ -1,7 +1,19 @@
 # Plan — `tap.303.*` (TB-303-style acid bass voice, a diode-ladder filter, and later a sequencer)
 
-> Status: **drafted 2026-07-17; §8 blocking decisions approved by the author same day** —
-> nothing shipped yet; slice 0's remaining work is the source sweep.
+> Status: **slices 0–1 shipped 2026-07-17** (source sweep done — constants pinned below;
+> `diode_ladder.h` in the kernel + the full `tap.diode~` vertical slice here — see the
+> REVIVAL.md §7 progress-log entry). §8 blocking decisions approved by the author same day.
+> Remaining: runtime validation in Max, then slice 2 (`tb303_voice.h` → `tap.303~`).
+> Slice-0 findings now pinned: Stinchcombe's normalized TF is reproduced *exactly* by the
+> equal-RC chain with the top cap halved (k_osc = 17, oscillation at √2× the stage rate —
+> derived in the kernel header); feedback HPF 150 Hz, slide 60 ms, MEG 3 ms attack /
+> 200 ms–2 s decay (accent shorts it to ~200 ms), VCA env ~0 ms attack / ~1.23 s decay /
+> 1 ms release (50 ms accented), env-up fraction 2/3, measured cutoff-knob range
+> 302–2394 Hz (all Open303 calibrations); accent-sweep circuit: diode + 47k → the resonance
+> pot's second section (100k, 1 µF to ground at CW) → 100k mix resistor, ≈100/147 MEG
+> scaling (Devil Fish). Emergent result worth noting: with the 150 Hz feedback HPF the
+> filter — like a stock TB-303, famously — never quite self-oscillates; documented as a
+> pinned behavior, not a defect (kernel header + tests).
 > The Roland-recreation companion to `plans/tap.808.md` (the two machines are the
 > acid-house rhythm section; this plan deliberately reuses that plan's decisions —
 > naming convention, amplitude-as-accent triggering, slice discipline — so the two
@@ -148,8 +160,9 @@ the contract `tap.303.seq~` (and any future melodic object) must honor. Proposed
 - **Signal surface (primary).** Inlet 1: **pitch as a MIDI note number signal**
   (float messages accepted; fractional = cents; converted to Hz inside, `tuning`
   applied there). Inlet 2: **gate signal, amplitude-as-accent** — rising edge above
-  threshold = note-on; a level at/above an accent threshold (≥ 1.0 + ε, exact
-  convention pinned at slice 0) = accented, mirroring both the 808 family's
+  threshold = note-on; a level above 1.0 = accented, with accent depth
+  min(amplitude − 1, 1) — so 1.0 is a plain note, 2.0 a fully accented one
+  (pinned at slice 0) — mirroring both the 808 family's
   amplitude-as-accent triggers and the hardware's own "accent is a hotter CV"
   reality. **Slide needs no input of its own**: a pitch change while the gate is
   held *is* a slide (legato → RC glide, no envelope retrigger) — exactly the

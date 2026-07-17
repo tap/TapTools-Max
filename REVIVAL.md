@@ -809,6 +809,34 @@ GitHub Actions CI.
   runtime validation in Max**. `swing_vca.h` deferred to slice 2 (the kick has none; the
   snare/clap analysis should drive its design).
 
+- ✅ **`tap.diode~` added (2026-07-17, tap.303 slice 1)** — a **virtual-analog diode-ladder
+  filter, the TB-303 topology** (plan: **`plans/tap.303.md`**; §8 blocking decisions approved
+  same day) and the first deliverable of the 303 recreation. Kernel-first:
+  **`diode_ladder.h`** (`taptools::diode`), a ZDF 4-stage *unbuffered* diode chain whose
+  linearized transfer function reproduces **Stinchcombe's published TB-303 response exactly**
+  — the header derives that the equal-component chain with the top cap halved yields his
+  normalized denominator (4·2^(3/4), 10√2, 8·2^(1/4)) to four digits, that Routh–Hurwitz puts
+  the oscillation threshold at **exactly k = 17** (Open303's 1/17), and that oscillation sits
+  at √2× the stage rate — which the prewarped tuning maps onto `frequency` exactly. tanh on
+  every diode-pair edge (the coupling elements saturate, not buffer amps), secant-gain ZDF
+  solvers (`fast`/`exact`), 1/2/4× oversampling, house ramps + 16-slot preset morphing.
+  **Emergent authenticity, found and pinned during implementation:** with the hardware's
+  150 Hz feedback high-pass (Open303's calibrated value) in the loop, its phase lead raises
+  the needed k to ~19 at 2 kHz / ~25 at 500 Hz — so at stock resonance the model, **like a
+  real TB-303, famously never quite self-oscillates**. The resonance range extends to 1.5 as
+  the documented Devil-Fish-style bend (it sings up high, riding sharp near the corner by the
+  predicted phase shift), and `fbhp 0` bends to DC-coupled feedback with exact-tuned
+  oscillation. Kernel: 10 Catch scenarios (the analytic Stinchcombe magnitudes at fc/2fc/8fc
+  ±1 dB, the ~14 dB first octave + 24 dB/oct asymptote, fc-independent tuning to 0.5%,
+  stock-no-osc + bent-osc-sharp, resonance thinning with unity DC, solver agreement/
+  boundedness, alias reduction, morph continuity, determinism, tail safety), `diode_render`
+  demo WAVs, `diode_bench` + container baseline. Wrapper: `tap.diode~` (mono + per-sample
+  signal-rate cutoff right inlet, the `tap.ladder~` surface minus `comp`/`asym`/`mode` — the
+  header documents why each is absent — plus `fbhp`), Min test (defaults, clamping,
+  kernel-reach, stock-vs-bent smoke), maxref, help patcher, runtime maxtest. Compile/ctest
+  green on Linux/GCC in both repos; **audio needs runtime validation in Max**. Next
+  (slice 2): `tb303_voice.h` — oscillator + envelopes around this filter → `tap.303~`.
+
 ---
 
 ## 8. The `taptools-min` reconciliation (2026-06-17)
@@ -953,6 +981,17 @@ DAFx-14 papers + service-manual schematics. The plan's blocking §8 questions (n
 trigger-as-accent convention, mode-attribute pairing) are **answered** (author,
 2026-07-17), and **`tap.808.kick~` shipped the same day** (see the §7 progress-log entry).
 Next: slice 2 (snare + clap/maracas, `swing_vca.h`), then the metal voices.
+
+**11. Net-new object family — `tap.303.*` (2026-07-17).** 📋 **Plan drafted + approved, slice 1
+shipped** — see **`plans/tap.303.md`**. The TB-303 recreation, companion to the `tap.808.*`
+program: a standalone diode-ladder filter (**`tap.diode~`** — ✅ shipped, see the §7 progress-log
+entry), then the full voice (`tap.303~`: saw/square shaper → the diode ladder → VCA, with the
+accent/slide coupling circuits that make the machine), and a deferred sequencer phase
+(`tap.303.seq~`, coordinated with `tap.808.seq~`). Provenance: Stinchcombe's filter analysis,
+the Devil Fish circuit documentation, Open303, x0xb0x schematics, Service Notes. The plan's
+blocking §8 decisions (naming; the melodic-voice note contract — MIDI-note pitch signal +
+amplitude-as-accent gate + legato-as-slide) are **answered** (author, 2026-07-17). Next:
+slice 2 (`tb303_voice.h` — oscillator, MEG + VCA envelopes, gate logic → `tap.303~`).
 
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
