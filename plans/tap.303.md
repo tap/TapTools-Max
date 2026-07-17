@@ -1,13 +1,14 @@
 # Plan — `tap.303.*` (TB-303-style acid bass voice, a diode-ladder filter, and later a sequencer)
 
-> Status: **slices 0–2 shipped 2026-07-17** (source sweep done — constants pinned below;
-> `diode_ladder.h` + `tap.diode~`, then `tb303_voice.h` + `tap.303~` — see the REVIVAL.md §7
-> progress-log entries). §8 blocking decisions approved by the author same day. Slice-2 notes:
-> slide/legato was pulled forward from slice 3 (the note contract requires it); slice-2 accent
-> is the routing level only (louder + accent-clock MEG) — the C13 sweep and its resonance
-> scaling remain slice 3's work, and the square-from-saw shaper is a polyBLEP-pulse baseline
-> flagged for refinement. Remaining: slice 3 (the wow + Open303 A/B renders), slice 4 polish,
-> runtime validation in Max for both objects.
+> Status: **slices 0–3 shipped 2026-07-17** (source sweep; `diode_ladder.h` + `tap.diode~`;
+> `tb303_voice.h` + `tap.303~`; the C13 accent-sweep circuit — see the REVIVAL.md §7
+> progress-log entries). §8 blocking decisions approved by the author same day. Scope notes:
+> slide/legato came forward into slice 2 (the note contract requires it); the slice-3 sweep's
+> RC taus are component-derived (47 ms charge / ~150 ms drain) while `k_accent_sweep_oct` and
+> the direct weight are informed approximations; the square-from-saw shaper is a
+> polyBLEP-pulse baseline. Remaining: slice 4 polish — the Open303 A/B render calibration
+> (sweep constants + square shaper), seed/tolerance, factory presets — then runtime
+> validation in Max for both objects; phase 3 (the sequencer) stays deferred.
 > Slice-0 findings now pinned: Stinchcombe's normalized TF is reproduced *exactly* by the
 > equal-RC chain with the top cap halved (k_osc = 17, oscillation at √2× the stage rate —
 > derived in the kernel header); feedback HPF 150 Hz, slide 60 ms, MEG 3 ms attack /

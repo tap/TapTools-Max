@@ -913,6 +913,24 @@ GitHub Actions CI.
   help patcher, runtime maxtest. Compile/ctest green on Linux/GCC in both repos; **audio
   needs runtime validation in Max**. Next (slice 3): the accent-sweep circuit — the wow.
 
+- ✅ **`tap.303~` accent-sweep circuit (2026-07-17, tap.303 slice 3)** — **the wow**: the C13
+  capacitor circuit that makes runs of accented notes bloom, modeled from Devil Fish's
+  component-level description (diode + 47k into the resonance pot's second section, 1 µF to
+  ground, 100k mix into the cutoff sum). In the kernel: diode-gated charge (tau = 47k·1µF =
+  47 ms, component-derived), ~150 ms drain through the output path (the across-notes memory),
+  the direct-MEG-minus-cap curve shaping (Devil Fish's "~100/147 of the MEG minus the cap
+  voltage" — what rounds the first accent), the ganged resonance-pot scaling (accent quacks
+  harder at high resonance), and direct injection into the cutoff sum **bypassing envmod** —
+  accents sweep even with envmod at zero, like the circuit. Measured (h8-brightness units,
+  16th-note spacing): first accent 3.75 → second 9.70 riding the residual charge → saturating
+  ~10.3; after a rest the charge drains and the wow starts over at 3.75. Two new Catch
+  scenarios pin the buildup monotonicity + fade, envmod independence, resonance scaling, and
+  plain-notes-never-charge (suite **105/105 green**); `tb303_wow.wav` render added (plain bar
+  → two all-accent bars). Wrapper/maxref accent descriptions updated; no interface change —
+  the sweep rides the existing note contract. Still flagged for slice 4: the
+  `k_accent_sweep_oct`/direct-weight calibration against Open303 renders, the square shaper,
+  seed/tolerance. **Runtime validation in Max still pending**, as everywhere.
+
 ---
 
 ## 8. The `taptools-min` reconciliation (2026-06-17)
@@ -1066,11 +1084,11 @@ program: the standalone diode-ladder filter (**`tap.diode~`** — ✅) and the v
 (**`tap.303~`** — ✅, TapTools' first pitched instrument, carrying the package-wide
 melodic-voice contract: MIDI-note pitch signal + amplitude-as-accent gate + legato-as-slide);
 see the §7 progress-log entries. Provenance: Stinchcombe's filter analysis, the Devil Fish
-circuit documentation, Open303, x0xb0x schematics, Service Notes. Remaining: **slice 3** —
-the C13 accent-sweep circuit (the across-notes "wow") with its resonance-pot scaling, plus
-golden renders A/B'd against Open303; **slice 4** polish (square-shaper refinement, seed/
-tolerance, presets); the deferred sequencer phase (`tap.303.seq~`, coordinated with
-`tap.808.seq~`); and runtime validation in Max for both objects.
+circuit documentation, Open303, x0xb0x schematics, Service Notes. **Slice 3 (the C13
+accent-sweep "wow") is also ✅ shipped** — see the §7 entry. Remaining: **slice 4** polish
+(the Open303 A/B render calibration — sweep-depth constants, the square shaper — plus
+seed/tolerance and factory presets); the deferred sequencer phase (`tap.303.seq~`,
+coordinated with `tap.808.seq~`); and runtime validation in Max for both objects.
 
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
