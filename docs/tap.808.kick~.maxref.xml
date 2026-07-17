@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.808.kick~" module="msp" category="TapTools, MSP Synthesis">
+
+	<digest>
+		TR-808-style bass drum voice, synthesized from the analog circuit
+	</digest>
+
+	<description>
+		The <o>tap.808.kick~</o> object is a circuit-informed model of the Roland TR-808 bass
+		drum voice, built block for block from the original schematic (after Werner, Abel and
+		Smith's DAFx-14 analysis): the pulse shaper, the bridged-T resonator with its feedback
+		regeneration loop, the ~6 ms attack frequency jump that gives the drum its punch, the
+		retriggering pulse, and the leakage nonlinearity behind the characteristic downward pitch
+		"sigh" — all emergent from the modeled circuit rather than bolted on. Trigger it with a
+		signal: a rising edge fires the voice, and the amplitude of the edge (0..1) is the accent.
+		Accent is the trigger bus voltage (4-14 V on the hardware), so an accented hit excites the
+		circuit harder — more punch, slightly different pitch trajectory — not merely louder.
+		Filter states persist across triggers, so fast rolls interfere with the ringing tail like
+		the hardware (no "machine gun effect"). The decay, tone, and level attributes mirror the
+		hardware panel knobs; tuning, pulse, sigh, and attack are circuit bends beyond the panel
+		(component substitutions on the modeled schematic), stock at their defaults.
+		Single-channel: wrap in mc. for stacked or parallel voices.
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Synthesis</metadata>
+		<metadata name="tag">Drums</metadata>
+	</metadatalist>
+
+
+	<!--INLETS/OUTLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Trigger: a rising edge fires the voice; edge amplitude (0..1) is the accent</digest>
+		</inlet>
+	</inletlist>
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>Bass drum output</digest>
+		</outlet>
+	</outletlist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<arglist/>
+			<description>
+				A rising edge on the inlet triggers the drum, sample-accurately. The value the
+				signal rises to (0..1) is the accent: it sets the trigger pulse voltage (4-14 V
+				on the hardware bus), driving the circuit harder rather than scaling the output.
+				A <o>click~</o>, the output of a sequencer row, or any impulse/gate works.
+			</description>
+		</method>
+		<method name="bang">
+			<arglist/>
+			<description>
+				Trigger the drum at full accent (from the scheduler; use a signal trigger for
+				sample accuracy).
+			</description>
+		</method>
+		<method name="trigger">
+			<arglist>
+				<arg name="accent" type="float" optional="1"/>
+			</arglist>
+			<description>
+				Trigger the drum with an accent value (0..1, default 1).
+			</description>
+		</method>
+		<method name="clear">
+			<arglist/>
+			<description>Reset all circuit state, silencing any ringing tail.</description>
+		</method>
+	</methodlist>
+
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="decay" get="1" set="1" type="float" size="1">
+			<digest>Note length (panel knob VR6)</digest>
+			<description>
+				Note length, 0..1 (default 0.5). The hardware decay pot in the bridged-T's
+				regeneration loop: near 0 a tight thump, near 1 a note that rings for seconds —
+				the classic long 808 boom.
+			</description>
+		</attribute>
+		<attribute name="tone" get="1" set="1" type="float" size="1">
+			<digest>Attack brightness (panel knob VR5)</digest>
+			<description>
+				Attack brightness, 0..1 (default 0.5): the passive low-pass after the resonator.
+				1 keeps the click (~7 kHz corner) so the attack cuts through a mix; 0 rounds it
+				off (~300 Hz).
+			</description>
+		</attribute>
+		<attribute name="level" get="1" set="1" type="float" size="1">
+			<digest>Output level (panel knob VR4)</digest>
+			<description>Output level, 0..1 (default 1).</description>
+		</attribute>
+		<attribute name="tuning" get="1" set="1" type="float" size="1">
+			<digest>Circuit bend: pitch ratio (default 1 = stock ~49 Hz)</digest>
+			<description>
+				Pitch as a ratio of the stock tuning, 0.25..4 (default 1). Scales the bridged-T
+				arm capacitors — the component-substitution mod that makes the drum tunable. The
+				stock schematic rings at about 49 Hz.
+			</description>
+		</attribute>
+		<attribute name="pulse" get="1" set="1" type="float" size="1">
+			<digest>Circuit bend: trigger pulse width in ms (default 1 = stock)</digest>
+			<description>
+				Trigger pulse width in milliseconds, 0.05..50 (default 1, the hardware CPU's
+				pulse). Longer pulses push the excitation edges apart and change the attack.
+			</description>
+		</attribute>
+		<attribute name="sigh" get="1" set="1" type="float" size="1">
+			<digest>Circuit bend: pitch-sigh depth (default 1 = stock)</digest>
+			<description>
+				Depth of the characteristic downward pitch relaxation, 0..1 (default 1). 0 is the
+				"disconnect the sigh" hardware mod: the note holds its pitch as it decays.
+			</description>
+		</attribute>
+		<attribute name="attack" get="1" set="1" type="float" size="1">
+			<digest>Circuit bend: attack-shift depth (default 1 = stock)</digest>
+			<description>
+				Depth of the ~6 ms attack frequency jump, 0..1 (default 1). This shift is where
+				the drum's punch comes from — at 0 the same trigger barely couples into the
+				resonator and the note collapses to a soft, quiet thud.
+			</description>
+		</attribute>
+	</attributelist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.adsr~"/>
+		<seealso name="tap.noise~"/>
+		<seealso name="tap.vco~"/>
+		<seealso name="click~"/>
+	</seealsolist>
+
+</c74object>
