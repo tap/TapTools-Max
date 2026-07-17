@@ -764,6 +764,21 @@ GitHub Actions CI.
   the analog section with measured numbers, the honest Moog recipe), published to Pages by
   the kernel repo's new `docs.yml`.
 
+- ✅ **`tap.808.tom~` + `tap.808.rim~` added (2026-07-17, slice 4) — ALL EIGHT
+  `tap.808.*` VOICE CHANNELS NOW SHIPPED.** The resonator variations over the shared
+  `bridged_t.h` core (kernel `tr808_tom.h` / `tr808_rim.h`): the three tom/conga
+  channels (`@size` × `@model` = the hardware's six sounds; p.14 chart tunings with
+  the panel knob sweeping each span; the D80/D81 attack pitch fall as an
+  amplitude-dependent leg, the kick's mechanism class; toms' pink-noise "artificial
+  reverberation" — congas ring pure) and the RS/CL channel (rimshot = ~1667 + ~455 Hz
+  — the 455 computes from its own schematic parts — cut to ~10 ms by the
+  harmonic-generating VCA, modeled as tanh drive; claves = pure ~2500 Hz, ~25 ms).
+  12 kernel scenarios (84 total green), 4 wrapper scenarios (42 total green on
+  Linux), maxrefs/helps/maxtests. Test craft worth noting: tom frequency probes use
+  spectral peaks (the noise layer pollutes zero-crossing counts) and the noise-layer
+  pin asks the seed. **Runtime validation in Max still open** across the family; next
+  per the plan: slice 5 polish, then the phase-2 WDF gate and the phase-3 sequencer
+  decision.
 - ✅ **`tap.808.hat~` + `tap.808.cymbal~` + `tap.808.cowbell~` added (2026-07-17,
   slice 3)** — the metal voices, completing the family's shared blocks. Kernel:
   **`metal_bank.h`** — the six Schmitt-trigger squares every 808 metal voice draws on

@@ -210,9 +210,14 @@ Each slice is independently shippable and ends with the full definition of done 
   by test), `tap.808.cymbal~` (strike/ring/body over the two bands; chart's 350-1200 ms
   decay span), `tap.808.cowbell~` (the 540/800 pair, two-slope envelope, ~860 Hz IC2
   voicing). Still open: runtime validation in Max, golden renders (§7.2).
-- **Slice 4 — the resonator variations.** `tap.808.tom~` (`@model tom|conga`, tuning,
-  the tom noise layer), `tap.808.rim~` (`@model rimshot|claves`). Mostly parameter
-  work over blocks that exist by now.
+- ✅ **Slice 4 — the resonator variations** (2026-07-17). `tap.808.tom~` (`@size
+  low|mid|high` × `@model tom|conga` = the hardware's six sounds; chart tunings with
+  the panel knob sweeping each span; the D80/D81 attack pitch fall; the tom-only
+  pink-noise layer — pinned by seed-sensitivity, since the diode bend's own harmonics
+  defeat spectral separation) and `tap.808.rim~` (`@model rimshot|claves`; the
+  ~1667+~455 Hz crack with the VCA's tanh harmonics vs the pure ~2500 Hz tick).
+  **All eight voice channels of the family are now shipped.** Still open: runtime
+  validation in Max, golden renders (§7.2).
 - **Slice 5 — family polish.** Accent-bus conventions documented once and
   cross-referenced from every maxref; an overview help patcher wiring all voices to a
   drum-pattern demo; `RELATED` metadata linking the family; REVIVAL.md progress-log
