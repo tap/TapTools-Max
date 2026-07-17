@@ -764,6 +764,23 @@ GitHub Actions CI.
   the analog section with measured numbers, the honest Moog recipe), published to Pages by
   the kernel repo's new `docs.yml`.
 
+- ✅ **`tap.808.*` slice 5 — family polish (2026-07-17). PHASE 1 OF THE PLAN IS
+  COMPLETE.** Kernel side: **family output balance** — the bridged-T's impulse gain
+  grows with fc·Q, so the six tom/conga channels and the claves left their resonators
+  at wildly different levels (high conga ~5.3 at full accent, ~6× the mid tom; claves
+  ~6× the rimshot); per-channel summing gains (`k_tomc_mix[2][3]`, `k_cl_mix` — the
+  hardware's per-channel summing resistors into the mix bus) now land every channel's
+  full-accent peak in a consistent band at any knob position, pinned by new balance
+  scenarios in the kernel tests. Plus **`tools/render/tr808_render`**: demo mode
+  renders each voice's characteristic moves and an eight-voice kit pattern; `--hit`
+  mode renders single hits — the stimulus for the plan's §7.2 golden-render
+  comparisons. Wrapper side: **`help/tap.808.maxhelp`**, the family overview patcher —
+  all eight voices wired to a 16-step, two-bar pattern with the accent-bus contract
+  documented once (edge amplitude = accent on the 4–14 V bus, `bang`/`trigger`/
+  `clear`, seeded determinism); every voice's maxref cross-references it, and the
+  family's `RELATED` metadata is cross-linked. Still open: runtime validation in Max
+  (§7.3) and the sample-pack calibration itself (§7.2).
+
 - ✅ **`tap.808.tom~` + `tap.808.rim~` added (2026-07-17, slice 4) — ALL EIGHT
   `tap.808.*` VOICE CHANNELS NOW SHIPPED.** The resonator variations over the shared
   `bridged_t.h` core (kernel `tr808_tom.h` / `tr808_rim.h`): the three tom/conga
@@ -978,16 +995,18 @@ out to be a time-domain biquad filterbank, so it follows the `svf`/`ladder` `pre
 not the STFT scaffold.) DSP correctness is covered by the kernel's own Catch2 suite; the wrappers
 kept their behavior tests. No behavior change — same code, relocated.
 
-**10. Net-new object family — `tap.808.*` (2026-07-17).** 📋 **Plan drafted, slice 1
-shipped** — see **`plans/tap.808.md`**. Circuit-informed recreations of the Roland TR-808's
-analog drum voices (kick/snare/tom/rim/clap/hat/cymbal/cowbell, per hardware voice channel,
-shared kernel blocks: bridged-T resonator, metal bank, swing-VCA), with a flagged WDF
+**10. Net-new object family — `tap.808.*` (2026-07-17).** ✅ **Phase 1 complete — all
+five slices shipped** — see **`plans/tap.808.md`**. Circuit-informed recreations of the
+Roland TR-808's analog drum voices: the eight voice channels
+`tap.808.{kick,snare,clap,hat,cymbal,cowbell,tom,rim}~` (per hardware voice channel,
+shared kernel blocks: bridged-T resonator, metal bank, swing-VCA), the family accent-bus
+contract (signal-edge amplitude = accent on the 4–14 V trigger bus), the family overview
+patcher, and the kernel's `tr808_render` tool. Provenance: the Werner–Abel–Smith
+DAFx-14/ICMC papers + the TR-808 Service Notes schematics, read directly. Flagged WDF
 circuit-simulation upgrade path (`@circuit`, the `svf.h` two-circuit pattern) and a
-potential later sequencer phase (`tap.808.seq~`). Provenance: the Werner–Abel–Smith
-DAFx-14 papers + service-manual schematics. The plan's blocking §8 questions (naming,
-trigger-as-accent convention, mode-attribute pairing) are **answered** (author,
-2026-07-17), and **`tap.808.kick~` shipped the same day** (see the §7 progress-log entry).
-Next: slice 2 (snare + clap/maracas, `swing_vca.h`), then the metal voices.
+potential later sequencer phase (`tap.808.seq~`) remain. See the §7 progress-log
+entries (slices 1–5). Next: runtime validation in Max, §7.2 sample-pack calibration,
+then the Phase 2 WDF go/no-go on the kick.
 
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as

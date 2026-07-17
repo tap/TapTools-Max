@@ -17,6 +17,8 @@
 		high-passed noise burst. Trigger with a signal: a rising edge fires the voice, and the
 		edge's amplitude (0..1) is the accent. Single-channel: wrap in mc. and give each
 		instance a different seed to decorrelate the noise.
+	
+		The eight tap.808 voices share one accent-bus contract; the family overview patcher (tap.808.maxhelp) demonstrates them together on a running pattern.
 	</description>
 
 
