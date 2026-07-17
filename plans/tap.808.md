@@ -202,10 +202,14 @@ Each slice is independently shippable and ends with the full definition of done 
   chart) — fetched and read directly, giving every component value. Vertical slices
   `tap.808.snare~` / `tap.808.clap~` shipped. Still open: runtime validation in Max,
   golden renders (§7.2).
-- **Slice 3 — the metal voices.** `metal_bank.h`, then `tap.808.hat~` (two triggers +
-  choke), `tap.808.cymbal~` (two-band sizzle envelope, tone/decay), `tap.808.cowbell~`
-  (the bank's two tunable oscillators). One shared header, three thin voices; the
-  `seed`/`tolerance` spread lands here.
+- ✅ **Slice 3 — the metal voices** (2026-07-17). `metal_bank.h` (the six Schmitt
+  squares at 205.3/369.6/304.4/522.7 + trimmed 800/540 Hz, duty 47.98%, per-seed ±20%
+  `tolerance` spread, the ~3440/7100 Hz voicings, the Q19 attack smoother — constants
+  from the Werner/Abel/Smith cymbal paper + the voicing-board schematic), then
+  `tap.808.hat~` (one object, two trigger inlets, the hardware Q23/R173 choke pinned
+  by test), `tap.808.cymbal~` (strike/ring/body over the two bands; chart's 350-1200 ms
+  decay span), `tap.808.cowbell~` (the 540/800 pair, two-slope envelope, ~860 Hz IC2
+  voicing). Still open: runtime validation in Max, golden renders (§7.2).
 - **Slice 4 — the resonator variations.** `tap.808.tom~` (`@model tom|conga`, tuning,
   the tom noise layer), `tap.808.rim~` (`@model rimshot|claves`). Mostly parameter
   work over blocks that exist by now.

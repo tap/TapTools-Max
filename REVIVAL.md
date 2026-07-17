@@ -764,6 +764,26 @@ GitHub Actions CI.
   the analog section with measured numbers, the honest Moog recipe), published to Pages by
   the kernel repo's new `docs.yml`.
 
+- ✅ **`tap.808.hat~` + `tap.808.cymbal~` + `tap.808.cowbell~` added (2026-07-17,
+  slice 3)** — the metal voices, completing the family's shared blocks. Kernel:
+  **`metal_bank.h`** — the six Schmitt-trigger squares every 808 metal voice draws on
+  (205.3/369.6/304.4/522.7 Hz nominal + the trimpot pair at 800/540 Hz — Roland's own
+  "1.25 ms / 1.85 ms" margin notes on the voicing-board schematic; duty 47.98%), with a
+  deterministic per-seed **±20% `tolerance` spread** (the documented production variance
+  — why no two 808s' cymbals match; `vco.h` `imperfect` convention), the ~3440/7100 Hz
+  band-pass voicings and the Q19 attack smoother (τ 102.44 µs, VBE 0.7258 — the
+  Werner/Abel/Smith cymbal paper's least-squares fits). **`tr808_hat.h`** — closed and
+  open as ONE circuit with two triggers, per the Service Notes, with the **hardware
+  choke** (Q23/R173: a CH trigger terminates a sounding OH) implemented and pinned by
+  test; CH fixed ~50 ms class, OH decay pot 90-600 ms, per-path levels →
+  `tap.808.hat~` is `sample_operator<2,1>` (first two-inlet voice; `open <accent>`
+  message). **`tr808_cymbal.h`** — strike/ring/body components over the two bands,
+  VR2 decay spanning the chart's 350-1200 ms, VR4 tone as the strike/body ratio.
+  **`tr808_cowbell.h`** — the 540/800 pair through the two-slope "abrupt initial
+  decay" envelope (C9 + R82/C34) and the ~860 Hz IC2 voicing derived from the
+  schematic's MFB values. 18 kernel scenarios (74 total green) + 7 wrapper scenarios
+  (40 total green on Linux); maxrefs, help patchers, maxtest patchers for all three.
+  **Runtime validation in Max still open.**
 - ✅ **`tap.808.snare~` + `tap.808.clap~` added (2026-07-17, slice 2)** — the snare and
   the CP/MA channel, **primary-sourced from the TR-808 Service Notes themselves** (the
   manual was fetched and its p.6 circuit descriptions, p.9 main-board schematic, and
