@@ -1,11 +1,15 @@
 # Plan — `tap.808.*` (TR-808-style analog drum voices, and later a sequencer)
 
-> Status: **draft 2026-07-17** — design + phased work breakdown for the first net-new
-> object *family*: circuit-informed recreations of the Roland TR-808's analog drum
-> voices, with a flagged upgrade path to full circuit simulation, and a potential
-> later phase adding the sequencer as its own object(s). As with `tap.autowah~`
-> (see `plans/tap.autowah~.md`), all DSP lands in the kernel repo (`tap/taptools`)
-> first, then the Min wrappers + vertical slices here.
+> Status: **slice 1 shipped 2026-07-17** (`tap.808.kick~`: `bridged_t.h` +
+> `tr808_kick.h` in the kernel + the full vertical slice here — see the REVIVAL.md §7
+> progress-log entry; the §8 blocking decisions are answered below). Remaining: runtime
+> validation in Max, then slice 2 onward. Drafted 2026-07-17.
+> Design + phased work breakdown for the first net-new object *family*:
+> circuit-informed recreations of the Roland TR-808's analog drum voices, with a
+> flagged upgrade path to full circuit simulation, and a potential later phase adding
+> the sequencer as its own object(s). As with `tap.autowah~` (see
+> `plans/tap.autowah~.md`), all DSP lands in the kernel repo (`tap/taptools`) first,
+> then the Min wrappers + vertical slices here.
 
 ## 0. The three fidelity phases, up front
 
@@ -179,14 +183,16 @@ override, `MIN_DESCRIPTION/TAGS/AUTHOR/RELATED` metadata, and the full vertical 
 
 Each slice is independently shippable and ends with the full definition of done (§7.4).
 
-- **Slice 0 — decisions + scaffolding.** Author sign-off on §8 questions (naming,
-  trigger convention, mode-attribute pairing). Skeleton `bridged_t.h` +
-  `swing_vca.h` with tests.
-- **Slice 1 — the kick, end to end.** `tr808_kick.h` (pulse shaper → retrigger →
-  bridged-T with feedback → tone LPF → level), ported from the DAFx-14 analysis with
-  the gen~ reference model as cross-check; then `tap.808.kick~` + docs + help +
-  maxtest. The kick alone validates the shared-block design, the trigger/accent
-  convention, and the calibration workflow — and it is 80% of why anyone types "808".
+- ✅ **Slice 0 — decisions + scaffolding** (2026-07-17). §8 sign-off + `bridged_t.h`
+  with tests. (`swing_vca.h` deferred to slice 2: the kick has no swing VCA, and the
+  snare/clap analysis should drive that design.)
+- ✅ **Slice 1 — the kick, end to end** (2026-07-17). `tr808_kick.h` (pulse shaper →
+  retrigger → bridged-T with feedback → tone LPF → level), ported from the DAFx-14
+  analysis with component values read off the Service Notes schematic in the paper's
+  Fig. 1; then `tap.808.kick~` + wrapper tests + maxref + help + maxtest patcher.
+  Validated the shared-block design, the trigger/accent convention, and the test
+  workflow. Still open: runtime validation in Max (§7.3) and golden renders /
+  sample-pack comparison (§7.2).
 - **Slice 2 — snare + clap channel.** `tr808_snare.h` (two bridged-Ts + snappy noise
   path), `tr808_clap.h` (`@model clap|maracas`) — exercises `drum_noise.h` and the
   pulse-train VCA.
@@ -282,17 +288,25 @@ golden render committed → REVIVAL.md progress log updated.
 
 ## 8. Pre-implementation questions (author decisions)
 
-1. **Naming:** `tap.808.*` family prefix OK? `taptools::tr808` as the internal
-   namespace OK (marks kept out of shipped object names only)?
-2. **Switch pairs as mode attributes** (`@model tom|conga` etc.) vs. separate externals
-   per sound?
-3. **Trigger convention sign-off:** signal-rate edge with amplitude-as-accent, plus
-   `bang`/`trigger` messages — agreed as the family-wide (and future sequencer)
-   contract? This is the one decision that's expensive to change later.
-4. **Circuit-bent attributes in v1** (where the papers document the bends) or deferred
-   to a later pass?
+### Author decisions — ✅ the three blocking ones answered (author, 2026-07-17)
+
+1. **Naming:** ✅ **`tap.808.*` approved** (`taptools::tr808` as the internal namespace;
+   marks kept out of shipped object names only).
+2. **Switch pairs as mode attributes:** ✅ **approved** (`@model tom|conga` etc., one
+   external per hardware voice channel).
+3. **Trigger convention:** ✅ **approved** — signal-rate edge with amplitude-as-accent
+   (mapped to the hardware's 4–14 V trigger bus), plus `bang`/`trigger <float>`
+   messages. This is the family-wide (and future sequencer) contract, implemented
+   first in `tap.808.kick~`.
+
+### Still open (non-blocking)
+
+4. **Circuit-bent attributes in v1** or deferred? *De facto* answered for the kick —
+   the paper-documented bends shipped as stock-neutral attributes (`tuning`, `pulse`,
+   `sigh`, `attack`) and it cost little; proposed default for later voices: ship the
+   documented bends, skip speculative ones.
 5. **Phase 3 shape** — (b) row-object decomposition acceptable in principle, or is a
-   monolithic hardware-mirror sequencer the actual wish? (Can be deferred to phase-3
+   monolithic hardware-mirror sequencer the actual wish? (Deferred to phase-3
    kickoff.)
 
 ## 9. Sources

@@ -764,6 +764,32 @@ GitHub Actions CI.
   the analog section with measured numbers, the honest Moog recipe), published to Pages by
   the kernel repo's new `docs.yml`.
 
+- ✅ **`tap.808.kick~` added (2026-07-17)** — the first of the **`tap.808.*` drum-voice
+  family** (plan: **`plans/tap.808.md`**): a **circuit-informed TR-808 bass drum**, block for
+  block after Werner/Abel/Smith (DAFx-14) with component values read off the Service Notes
+  schematic in the paper's Fig. 1. Kernel-first, cross-repo: **`bridged_t.h`** (the op-amp
+  bridged-T resonator every 808 voice shares — trapezoidal companion-model solve on the
+  network states, so the time-varying leg resistance needs no per-sample coefficient redesign;
+  topology verified by re-deriving the paper's printed transfer functions, which it reproduces
+  exactly) + **`tr808_kick.h`** (pulse shaper + diode clamp, behavioral envelope generator,
+  Q43 attack shift ~49→~129 Hz for ~6 ms, retriggering pulse, the fitted pitch-sigh
+  nonlinearity — the paper's Eqn. 9 is garbled in print, so the leg formula is re-derived from
+  KCL and matches their stated limits — feedback-buffer decay loop, tone/level/output stages).
+  **Family contract established:** signal-rate trigger where the rising edge's amplitude
+  (0..1) *is* the accent (mapped to the hardware's 4–14 V trigger bus — harder excitation, not
+  post-gain), `bang`/`trigger <float>` convenience messages, panel knobs as 0..1 attributes,
+  circuit bends stock-neutral at defaults (`tuning`, `pulse`, `sigh`, `attack`). Measured along
+  the way: the attack shift is **where the punch comes from** — with it disconnected the same
+  trigger barely couples into the ~49 Hz resonator (~15× quieter), matching the hardware-mod
+  lore. Kernel: 14 Catch scenarios (~49 Hz ring, attack punch + disconnection, sigh +
+  disconnection, decay monotonicity — 0.15/0.63/2.4 s at pot 0.1/0.5/1.0, consistent with the
+  paper's "multi-second" top end — accent monotonicity, tone brightness, tuning bend, no
+  machine-gun retrigger, bit-exact determinism, long-tail silence). Wrapper: 5-scenario Min
+  test (defaults, clamping, silence-at-rest/bang, edge-amplitude accent, clear), maxref, help
+  patcher, runtime maxtest. Compile/ctest green on Linux/GCC in both repos; **audio needs
+  runtime validation in Max**. `swing_vca.h` deferred to slice 2 (the kick has none; the
+  snare/clap analysis should drive its design).
+
 ---
 
 ## 8. The `taptools-min` reconciliation (2026-06-17)
@@ -898,14 +924,16 @@ out to be a time-domain biquad filterbank, so it follows the `svf`/`ladder` `pre
 not the STFT scaffold.) DSP correctness is covered by the kernel's own Catch2 suite; the wrappers
 kept their behavior tests. No behavior change — same code, relocated.
 
-**10. Net-new object family — `tap.808.*` (2026-07-17).** 📋 **Plan drafted** — see
-**`plans/tap.808.md`**. Circuit-informed recreations of the Roland TR-808's analog drum
-voices (kick/snare/tom/rim/clap/hat/cymbal/cowbell, per hardware voice channel, shared
-kernel blocks: bridged-T resonator, metal bank, swing-VCA), with a flagged WDF
+**10. Net-new object family — `tap.808.*` (2026-07-17).** 📋 **Plan drafted, slice 1
+shipped** — see **`plans/tap.808.md`**. Circuit-informed recreations of the Roland TR-808's
+analog drum voices (kick/snare/tom/rim/clap/hat/cymbal/cowbell, per hardware voice channel,
+shared kernel blocks: bridged-T resonator, metal bank, swing-VCA), with a flagged WDF
 circuit-simulation upgrade path (`@circuit`, the `svf.h` two-circuit pattern) and a
 potential later sequencer phase (`tap.808.seq~`). Provenance: the Werner–Abel–Smith
-DAFx-14 papers + service-manual schematics. Awaiting author sign-off on the plan's §8
-questions (naming, trigger-as-accent convention, mode-attribute pairing) before slice 1.
+DAFx-14 papers + service-manual schematics. The plan's blocking §8 questions (naming,
+trigger-as-accent convention, mode-attribute pairing) are **answered** (author,
+2026-07-17), and **`tap.808.kick~` shipped the same day** (see the §7 progress-log entry).
+Next: slice 2 (snare + clap/maracas, `swing_vca.h`), then the metal voices.
 
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
