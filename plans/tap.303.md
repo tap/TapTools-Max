@@ -1,9 +1,13 @@
 # Plan — `tap.303.*` (TB-303-style acid bass voice, a diode-ladder filter, and later a sequencer)
 
-> Status: **slices 0–1 shipped 2026-07-17** (source sweep done — constants pinned below;
-> `diode_ladder.h` in the kernel + the full `tap.diode~` vertical slice here — see the
-> REVIVAL.md §7 progress-log entry). §8 blocking decisions approved by the author same day.
-> Remaining: runtime validation in Max, then slice 2 (`tb303_voice.h` → `tap.303~`).
+> Status: **slices 0–2 shipped 2026-07-17** (source sweep done — constants pinned below;
+> `diode_ladder.h` + `tap.diode~`, then `tb303_voice.h` + `tap.303~` — see the REVIVAL.md §7
+> progress-log entries). §8 blocking decisions approved by the author same day. Slice-2 notes:
+> slide/legato was pulled forward from slice 3 (the note contract requires it); slice-2 accent
+> is the routing level only (louder + accent-clock MEG) — the C13 sweep and its resonance
+> scaling remain slice 3's work, and the square-from-saw shaper is a polyBLEP-pulse baseline
+> flagged for refinement. Remaining: slice 3 (the wow + Open303 A/B renders), slice 4 polish,
+> runtime validation in Max for both objects.
 > Slice-0 findings now pinned: Stinchcombe's normalized TF is reproduced *exactly* by the
 > equal-RC chain with the top cap halved (k_osc = 17, oscillation at √2× the stage rate —
 > derived in the kernel header); feedback HPF 150 Hz, slide 60 ms, MEG 3 ms attack /

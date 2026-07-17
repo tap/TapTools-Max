@@ -889,6 +889,30 @@ GitHub Actions CI.
   green on Linux/GCC in both repos; **audio needs runtime validation in Max**. Next
   (slice 2): `tb303_voice.h` — oscillator + envelopes around this filter → `tap.303~`.
 
+- ✅ **`tap.303~` added (2026-07-17, tap.303 slice 2)** — the **acid-bass voice**, TapTools'
+  first pitched, note-driven instrument, implementing the approved **melodic-voice contract**:
+  pitch as a MIDI-note signal (left inlet, per-sample; floats accepted), a gate signal whose
+  **edge amplitude encodes accent** (1 = plain, 2 = full — the 808 trigger convention's
+  melodic sibling), and **slide as legato** — a pitch change while the gate is held glides
+  through the hardware's ~60 ms RC without retriggering, no separate slide input (pulled
+  forward from plan slice 3: the contract requires legato semantics from day one). Kernel
+  (`tb303_voice.h`, `taptools::tb303::voice`) composes the existing kernels — `vco.h`'s
+  polyBLEP saw/square driven per sample, `diode_ladder.h` with per-sample envelope-modulated
+  cutoff — around the voice circuits with **Open303-calibrated constants**: decay-only MEG
+  (3 ms rise; 200–2000 ms knob; accent bypasses it to ~200 ms), the 2/3-up env-mod cutoff law
+  with the "gimmick" resting-point offset, fixed VCA envelope (~1.23 s decay, no sustain,
+  ~2 ms gate-off chop), 44.5/24 Hz coupling high-passes. **Deliberately deferred to slice 3:**
+  the C13 accent-sweep capacitor (the across-notes "wow") and its resonance-pot scaling —
+  slice-2 accent is the routing level only (louder + faster MEG). The 303's square-from-saw
+  shaper is approximated by the polyBLEP pulse this slice (flagged; cf. Open303's tables).
+  Kernel: 8 Catch scenarios (gate/legato/retrigger semantics, pitch + tuning accuracy to 1%,
+  envmod brightness sweep + decay-knob scaling, VCA decay profile, slice-2 accent scope,
+  saw/square spectra, determinism, tail hygiene — suite 103/103 green) and `tb303_render`
+  (16-step accent/slide pattern demos — the §7.2 calibration material). Wrapper: full slice —
+  `note <pitch> [accent] [slide]` / `bang` / `release` messages, panel attributes, maxref,
+  help patcher, runtime maxtest. Compile/ctest green on Linux/GCC in both repos; **audio
+  needs runtime validation in Max**. Next (slice 3): the accent-sweep circuit — the wow.
+
 ---
 
 ## 8. The `taptools-min` reconciliation (2026-06-17)
@@ -1036,16 +1060,17 @@ potential later sequencer phase (`tap.808.seq~`) remain. See the §7 progress-lo
 entries (slices 1–5). Next: runtime validation in Max, §7.2 sample-pack calibration,
 then the Phase 2 WDF go/no-go on the kick.
 
-**11. Net-new object family — `tap.303.*` (2026-07-17).** 📋 **Plan drafted + approved, slice 1
+**11. Net-new object family — `tap.303.*` (2026-07-17).** 📋 **Plan approved; slices 1–2
 shipped** — see **`plans/tap.303.md`**. The TB-303 recreation, companion to the `tap.808.*`
-program: a standalone diode-ladder filter (**`tap.diode~`** — ✅ shipped, see the §7 progress-log
-entry), then the full voice (`tap.303~`: saw/square shaper → the diode ladder → VCA, with the
-accent/slide coupling circuits that make the machine), and a deferred sequencer phase
-(`tap.303.seq~`, coordinated with `tap.808.seq~`). Provenance: Stinchcombe's filter analysis,
-the Devil Fish circuit documentation, Open303, x0xb0x schematics, Service Notes. The plan's
-blocking §8 decisions (naming; the melodic-voice note contract — MIDI-note pitch signal +
-amplitude-as-accent gate + legato-as-slide) are **answered** (author, 2026-07-17). Next:
-slice 2 (`tb303_voice.h` — oscillator, MEG + VCA envelopes, gate logic → `tap.303~`).
+program: the standalone diode-ladder filter (**`tap.diode~`** — ✅) and the voice
+(**`tap.303~`** — ✅, TapTools' first pitched instrument, carrying the package-wide
+melodic-voice contract: MIDI-note pitch signal + amplitude-as-accent gate + legato-as-slide);
+see the §7 progress-log entries. Provenance: Stinchcombe's filter analysis, the Devil Fish
+circuit documentation, Open303, x0xb0x schematics, Service Notes. Remaining: **slice 3** —
+the C13 accent-sweep circuit (the across-notes "wow") with its resonance-pot scaling, plus
+golden renders A/B'd against Open303; **slice 4** polish (square-shaper refinement, seed/
+tolerance, presets); the deferred sequencer phase (`tap.303.seq~`, coordinated with
+`tap.808.seq~`); and runtime validation in Max for both objects.
 
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
