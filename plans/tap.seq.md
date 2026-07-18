@@ -10,7 +10,10 @@
 > `AcidPattern::stepLength`), slide flag on the *target* step (the package `note`
 > convention; the hardware's source-note storage documented as a divergence in the
 > kernel header). The non-blocking recommendations (§6 Q4–Q7) all shipped as
-> recommended. Remaining: **runtime validation in Max** (the maxtest starters want
+> recommended. The kernel repo also carries **`notebooks/step_seq.ipynb`** — the
+> executed, asserted verification notebook (C ABI extended with the rows + a minimal
+> kick), ending in four bars of acid + kick rendered from the shipping voices off one
+> phasor ramp. Remaining: **runtime validation in Max** (the maxtest starters want
 > extending on a licensed install), per the package-wide gate.
 >
 > Original preconditions, for the record: both voice families shipped (808 slices 0–5 +

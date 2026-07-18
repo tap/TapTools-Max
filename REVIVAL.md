@@ -1035,6 +1035,17 @@ GitHub Actions CI.
   `tap.303~-pattern.maxpat` dry run (which stays as the event-domain alternative).
   **Runtime validation in Max still pending**, as everywhere.
 
+- ✅ **The sequencer verification notebook (2026-07-18).** **`notebooks/step_seq.ipynb`**
+  (kernel repo), house pattern: the shipping `step_seq.h` driven through the C ABI
+  (extended with `taptools_seqtrig`/`taptools_seqnote` + a minimal `taptools_kick`).
+  Six executed, asserted sections: the analytic grid (≤ 1 sample; polymeter), the swing
+  warp (odd-step delay = swing/2), the trigger-bus levels (0.01/0.5/1.0) + `pulse_ms`,
+  the 303 line signals (duty 0.5, accent 2.0, gate-hold slide — including the
+  full-step hold on a slide *source* step, a case the Catch2 suite's isolated-step
+  scenario didn't exhibit), **four bars of acid + kick rendered from the real
+  `tb303_voice.h`/`tr808_kick.h` off one phasor ramp** (embedded audio), and
+  cycle-quantized recall swapping exactly on the wrap sample.
+
 ---
 
 ## 8. The `taptools-min` reconciliation (2026-06-17)
