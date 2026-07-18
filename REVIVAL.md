@@ -959,6 +959,55 @@ GitHub Actions CI.
   `k_accent_sweep_oct`/direct-weight calibration against Open303 renders, the square shaper,
   seed/tolerance. **Runtime validation in Max still pending**, as everywhere.
 
+- ✅ **`tap.303~` slice 4 — Open303 calibration + the bends (2026-07-17).** Phase 1 of the 303
+  plan is complete. **Open303 was built and rendered side by side** (its 2008-era DSPCode
+  compiles standalone with two forced includes) and the calibration is measured, not guessed:
+  - The envmod law is now **Open303's hardware-measured mapping verbatim** (their
+    `calculateEnvModScalerAndOffset` constants): ~4.5–5 octaves at full envmod, 2/3 above the
+    knob, a residual ~0.8-octave sweep at envmod 0, cutoff-dependent depth.
+  - The square is the real thing: **−tanh(10^(36.9/20)·saw_shifted + 4.37)** — Open303's
+    measured transistor-shaper constants applied to our polyBLEP saw (keeping the edges
+    bandlimited); `waveform` becomes a continuous saw↔square blend. Measured h2/h1 = 0.076
+    vs Open303's 0.108 (both an order under their saws' ~0.4–0.55) — the same shaped duty.
+  - Their accent path turned out to be a **memoryless 15 ms integrator** — no across-notes
+    wow — so our Devil-Fish C13 model stays (deliberate, documented divergence).
+  - **Devil-Fish bends** as morphable params, stock at defaults: `slide` (10–500 ms),
+    `attack` (0.3–30 ms Soft Attack), `accdecay` (50–2000 ms accent clock), `drive`
+    (±24 dB into the diode ladder — measured: 9.2× RMS growth for a 15.85× gain increase,
+    the diodes compress).
+  - **`seed`/`tolerance`** per-unit spread (tuning trim, VCF tracking, envelope/slide/C13
+    RCs, osc imperfection; tolerance 0 = bit-exact nominal — pinned by test) and **factory
+    presets** in slots 1–8 (squelch/sub/screamer/rubber/knock/bloom/overdriven/glass).
+  - Tests: three scenarios recalibrated for the measured law (the wow's brightness probe
+    moved above the swept range where it is monotone in cutoff), three new (bends,
+    seed/tolerance, presets); kernel suite **108/108 green**. Wrapper: six new attributes,
+    maxref updated, and **`help/tap.303~-pattern.maxpat`** — a Max-patched 16-step
+    sequencer driving the `note` contract, the phase-3 `tap.303.seq~` interface dry run
+    (headless-authored; wants an open-in-Max check). **Runtime validation in Max still
+    pending**, as everywhere.
+
+- ✅ **`tap.303~` phase 2 + the verification notebook (2026-07-18).** The 303 program's
+  fidelity phase, closed on evidence:
+  - **The transistor VCA** shipped as **`vca clean|warm`** (the `svf.h` two-circuit pattern):
+    the one-transistor class-A stage as a slope-normalized biased saturator (d = 2.0, b = 0.3,
+    probe-calibrated) in the hardware order — post-envelope-gain, pre-output-coupling, the
+    24 Hz coupling HPF absorbing the shaper's DC. The distortion tracks the envelope
+    (measured 5.4% difference signal quiet vs 11.5% on hot accents); `clean` stays the
+    default, bit-identical to phase 1. Kernel scenario + `tb303_vca_ab.wav`; wrapper `vca`
+    attribute + maxref.
+  - **`notebooks/tb303.ipynb`** (kernel repo) — the tap.303/tap.diode verification notebook,
+    house pattern: the shipping kernels driven through the C ABI (extended with
+    `taptools_diode` + `taptools_tb303`, including the full note interface and a direct C13
+    `accent_charge` readout). Seven executed, asserted sections: Stinchcombe TF to
+    **0.028 dB**, the stock-never-self-oscillates trait, the solver fast/exact A/B matrix
+    (≤ **−44.9 dBr** worst case) + CPU, the measured envmod law, the wow (×1.94 build,
+    ×0.998 reset), the warm VCA.
+  - **WDF: documented no-go, author-approved (2026-07-18)** on the notebook's §3 evidence —
+    `solver exact` already converges the circuit's nonlinear equations; a WDF would re-solve
+    the same network with only the diode-curve shape as the delta. Recorded in the plan §5.
+  Phase 2 of `plans/tap.303.md` is **complete**; what remains for the 303 program is runtime
+  validation in Max and the deferred phase-3 sequencer.
+
 ---
 
 ## 8. The `taptools-min` reconciliation (2026-06-17)
@@ -1112,11 +1161,14 @@ program: the standalone diode-ladder filter (**`tap.diode~`** — ✅) and the v
 (**`tap.303~`** — ✅, TapTools' first pitched instrument, carrying the package-wide
 melodic-voice contract: MIDI-note pitch signal + amplitude-as-accent gate + legato-as-slide);
 see the §7 progress-log entries. Provenance: Stinchcombe's filter analysis, the Devil Fish
-circuit documentation, Open303, x0xb0x schematics, Service Notes. **Slice 3 (the C13
-accent-sweep "wow") is also ✅ shipped** — see the §7 entry. Remaining: **slice 4** polish
-(the Open303 A/B render calibration — sweep-depth constants, the square shaper — plus
-seed/tolerance and factory presets); the deferred sequencer phase (`tap.303.seq~`,
-coordinated with `tap.808.seq~`); and runtime validation in Max for both objects.
+circuit documentation, Open303, x0xb0x schematics, Service Notes. **Phases 1 and 2 are ✅ complete**
+(phase 1: the filter, the voice, the C13 wow, the slice-4 Open303 calibration + bends +
+seed/tolerance + factory presets; phase 2: the `vca clean|warm` transistor stage, the
+square shaper resolved via Open303's measured constants, and the author-approved WDF no-go
+— grounded in the kernel repo's **`notebooks/tb303.ipynb`** verification notebook; see the
+§7 entries). Remaining: the deferred sequencer phase (`tap.303.seq~`, coordinated with
+`tap.808.seq~`) and **runtime validation in Max** for both objects (help patchers,
+maxtests, the render WAVs, and the notebook as the evaluation material).
 
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as

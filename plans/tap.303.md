@@ -1,14 +1,20 @@
 # Plan — `tap.303.*` (TB-303-style acid bass voice, a diode-ladder filter, and later a sequencer)
 
-> Status: **slices 0–3 shipped 2026-07-17** (source sweep; `diode_ladder.h` + `tap.diode~`;
-> `tb303_voice.h` + `tap.303~`; the C13 accent-sweep circuit — see the REVIVAL.md §7
-> progress-log entries). §8 blocking decisions approved by the author same day. Scope notes:
-> slide/legato came forward into slice 2 (the note contract requires it); the slice-3 sweep's
-> RC taus are component-derived (47 ms charge / ~150 ms drain) while `k_accent_sweep_oct` and
-> the direct weight are informed approximations; the square-from-saw shaper is a
-> polyBLEP-pulse baseline. Remaining: slice 4 polish — the Open303 A/B render calibration
-> (sweep constants + square shaper), seed/tolerance, factory presets — then runtime
-> validation in Max for both objects; phase 3 (the sequencer) stays deferred.
+> Status: **phase 1 complete — slices 0–4 shipped 2026-07-17** (source sweep;
+> `diode_ladder.h` + `tap.diode~`; `tb303_voice.h` + `tap.303~`; the C13 accent-sweep wow;
+> and the slice-4 calibration pass — see the REVIVAL.md §7 progress-log entries). §8
+> blocking decisions approved by the author same day. The §7.2 A/B was done for real:
+> Open303 was built and rendered side by side, its measured envmod mapping and square-shaper
+> constants adopted verbatim, and its accent path found to be a memoryless 15 ms integrator —
+> so the Devil-Fish C13 model (across-notes wow) stays as a documented divergence. Slice 4
+> also shipped the Devil-Fish bends (slide/attack/accdecay/drive), seed/tolerance,
+> factory presets 1–8, and the phase-3 interface dry run (`help/tap.303~-pattern.maxpat`).
+> **Phase 2 is also complete (2026-07-18)**: the transistor VCA shipped as `vca clean|warm`,
+> the square shaper was resolved in slice 4, and the WDF got its documented no-go —
+> author-approved on the evidence in the kernel repo's **`notebooks/tb303.ipynb`** (the
+> verification notebook: Stinchcombe TF to 0.028 dB, solver A/B matrix, envmod law, the wow
+> with the C13 charge read out, the warm VCA). Remaining: **runtime validation in Max** for
+> both objects; **phase 3** (`tap.303.seq~`), deferred.
 > Slice-0 findings now pinned: Stinchcombe's normalized TF is reproduced *exactly* by the
 > equal-RC chain with the top cap halved (k_osc = 17, oscillation at √2× the stage rate —
 > derived in the kernel header); feedback HPF 150 Hz, slide 60 ms, MEG 3 ms attack /
@@ -235,17 +241,28 @@ Each slice independently shippable, ending with the full definition of done (§7
   slots, an overview help patcher sequencing `tap.303~` from a Max-patched step
   sequencer (dry run for the phase-3 interface), REVIVAL.md progress-log entries.
 
-## 5. Phase 2 — fidelity upgrades
+## 5. Phase 2 — fidelity upgrades ✅ **complete (2026-07-18)**
 
 The `ladder.h` precedent already puts a `solver fast|exact` (Newton) choice in
-slice 1, so the classic "phase 2" item is in phase 1. What remains, each gated by
-A/B renders + the kernel bench harness (the 808 plan's go/no-go discipline):
+slice 1, so the classic "phase 2" item is in phase 1. The three remaining items,
+each gated by A/B evidence (the 808 plan's go/no-go discipline) — all resolved:
 
-- **Transistor VCA nonlinearity** (the informed model's VCA is linear-first).
-- **Square-shaper exactness** — measured-curve waveshaper vs. the slice-2 model.
-- **WDF pass on the filter** only if the informed model demonstrably falls short of
-  the references at extreme settings; Stinchcombe's analysis suggests the informed
-  model can get very close, so the expected outcome is "documented no-go".
+- **Transistor VCA nonlinearity** — ✅ **shipped** as `vca clean|warm` on `tap.303~`
+  (the `svf.h` two-circuit pattern): the one-transistor class-A stage as a
+  slope-normalized biased saturator in the hardware order (post-envelope-gain,
+  pre-output-coupling). Measured: 5.4% difference signal on quiet notes vs 11.5%
+  on hot accents — the distortion tracks the envelope. `clean` stays the default,
+  bit-identical to phase 1.
+- **Square-shaper exactness** — ✅ **resolved in slice 4**: Open303's measured
+  shaper constants adopted verbatim (−tanh(10^(36.9/20)·saw + 4.37)).
+- **WDF pass on the filter** — ✅ **documented no-go, author-approved
+  (2026-07-18)**. Evidence in **`notebooks/tb303.ipynb` §3** (kernel repo): the
+  linearized filter matches Stinchcombe's published TF to 0.028 dB; `solver exact`
+  converges the true nonlinear loop, and the fast/exact difference is ≤ −44.9 dBr
+  even at resonance 1.4 / drive +24 dB (beyond hardware reach), at 1.6–3.3× CPU. A
+  WDF would re-solve the same component network, differing only through the
+  Shockley-vs-tanh diode curve, with no measured reference showing an audible
+  delta to chase.
 
 ## 6. Phase 3 — the sequencer (own object, deferred)
 

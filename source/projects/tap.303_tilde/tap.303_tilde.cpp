@@ -86,8 +86,45 @@ class voice303 : public object<voice303>, public vector_operator<> {
                  "resonance knob, then drains during rests.")
     TAP_303_ATTR(tuning, kernel::p_tuning, 0.0, "Master tuning in cents (-1200..1200).")
     TAP_303_ATTR(gain, kernel::p_gain, 0.0, "Output gain in dB.")
+    TAP_303_ATTR(slide, kernel::p_slide, 60.0,
+                 "Slide (glide) time in ms (10..500; stock 60 — longer is the Devil-Fish-style bend).")
+    TAP_303_ATTR(attack, kernel::p_attack, 3.0,
+                 "VCA attack in ms (0.3..30; stock ~3 — the Devil Fish Soft Attack bend).")
+    TAP_303_ATTR(accdecay, kernel::p_accdecay, 200.0,
+                 "Accent envelope clock in ms (50..2000; stock ~200 — accented notes run the Main "
+                 "Envelope at this instead of the decay knob).")
+    TAP_303_ATTR(drive, kernel::p_drive, 0.0,
+                 "Drive in dB (-24..24) into the diode ladder's saturation — the diodes compress and "
+                 "thicken; 0 is stock.")
 
 #undef TAP_303_ATTR
+
+    attribute<int> seed{this, "seed", 1, setter{ MIN_FUNCTION {
+                            const int v = std::max(0, static_cast<int>(args[0]));
+                            m_voice.set_seed(static_cast<uint32_t>(v));
+                            return {v};
+                        }},
+                        description{"Per-unit component-spread seed. With tolerance above 0, every seed is a "
+                                    "different 303 off the production line; mc. instances decorrelate by seed."}};
+
+    attribute<number> tolerance{this, "tolerance", 0.0, setter{ MIN_FUNCTION {
+                                    const double v = std::clamp(static_cast<double>(args[0]), 0.0, 1.0);
+                                    m_voice.set_tolerance(v);
+                                    return {v};
+                                }},
+                                description{"Component tolerance (0..1): how far off the nominal schematic this "
+                                            "unit drifts (tuning, filter tracking, envelope and sweep timing, "
+                                            "waveform imperfection). 0 is the exact nominal circuit."}};
+
+    attribute<symbol> vca{this, "vca", "clean", setter{ MIN_FUNCTION {
+                              const symbol s = args[0];
+                              m_voice.set_vca(s == symbol("warm") ? kernel::vca_warm : kernel::vca_clean);
+                              return {m_voice.vca() == kernel::vca_warm ? symbol("warm") : symbol("clean")};
+                          }},
+                          description{"VCA circuit (phase 2): clean (default, the linear multiply) or warm — the "
+                                      "303's one-transistor stage modeled as envelope-tracking saturation: quiet "
+                                      "notes stay clean, hot accents pick up even-harmonic warmth and gentle "
+                                      "compression."}};
 
     attribute<symbol> waveform{this, "waveform", "saw", setter{ MIN_FUNCTION {
                                    const symbol s = args[0];
@@ -185,8 +222,10 @@ class voice303 : public object<voice303>, public vector_operator<> {
                     }};
 
     message<> recall{this, "recall",
-                     "Morph all parameters to a stored preset (1..16). An optional second argument overrides "
-                     "the morph time in ms (default: the interp attribute).",
+                     "Morph all parameters to a stored preset (1..16). Slots 1..8 ship with factory acid "
+                     "presets (squelch, sub, screamer, rubber, knock, bloom, overdriven, glass); store "
+                     "overwrites any slot. An optional second argument overrides the morph time in ms "
+                     "(default: the interp attribute).",
                      MIN_FUNCTION {
                          if (!args.empty()) {
                              const double ms =
