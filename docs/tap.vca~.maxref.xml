@@ -60,18 +60,20 @@
 	<attributelist>
 		<attribute name="circuit" get="1" set="1" type="symbol" size="1">
 			<description>Amplifier circuit: clean (default, the pure linear multiply,
-			bit-identical to *~) or warm (the TB-303 one-transistor class-A stage — biased-tanh
-			saturation applied after the gain, with even-harmonic warmth and compression that
-			ride the control voltage, plus the output DC block).</description>
+			bit-identical to *~), warm (the TB-303 one-transistor class-A stage — asymmetric
+			biased-tanh saturation with even harmonics, plus the output DC block), or swing (the
+			TR-808 swing-type VCA — symmetric saturation with odd harmonics and no DC, the same
+			stage the 808 noise voices use). In warm and swing the warmth and compression ride the
+			control voltage; bias is ignored by swing.</description>
 		</attribute>
 		<attribute name="gain" get="1" set="1" type="float" size="1">
 			<description>Linear gain applied when no signal is connected to the right inlet. A
 			signal in the right inlet overrides this per sample.</description>
 		</attribute>
 		<attribute name="drive" get="1" set="1" type="float" size="1">
-			<description>Warm-circuit drive into the transistor stage's tanh (0.1-12; default 2,
-			the stock 303 value). Higher drive means more harmonics and more compression. Ignored
-			by the clean circuit.</description>
+			<description>Drive into the transistor stage's tanh for the warm and swing circuits
+			(0.1-12; default 2, the stock 303 value). Higher drive means more harmonics and more
+			compression. Ignored by the clean circuit.</description>
 		</attribute>
 		<attribute name="bias" get="1" set="1" type="float" size="1">
 			<description>Warm-circuit operating-point bias (-2..2; default 0.3, the stock 303

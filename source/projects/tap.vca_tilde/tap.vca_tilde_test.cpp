@@ -55,6 +55,16 @@ SCENARIO("the warm circuit adds tracking saturation but leaves quiet signals nea
     }
 }
 
+SCENARIO("the swing circuit is the TR-808 symmetric saturator (odd harmonics, no DC)") {
+    auto a = make_stage(taptools::vca::mode_swing);
+    a.set_drive(3.0);
+    THEN("drive 0 is the exact linear passthru; drive > 0 is a compressing odd function") {
+        REQUIRE(taptools::vca::swing_shape(0.6, 0.0) == 0.6);
+        REQUIRE(std::abs(a.shape(0.7) + a.shape(-0.7)) < 1e-12); // symmetric
+        REQUIRE(std::abs(a.shape(1.4)) < 1.4);                   // compresses hot signals
+    }
+}
+
 SCENARIO("the Min wrapper instantiates and takes its attributes") {
     ext_main(nullptr);
     GIVEN("an instance of tap.vca~") {
@@ -75,6 +85,14 @@ SCENARIO("the Min wrapper instantiates and takes its attributes") {
             THEN("the stage follows") {
                 REQUIRE(my_object.circuit == symbol("warm"));
                 REQUIRE(my_object.stage().circuit() == taptools::vca::mode_warm);
+            }
+        }
+
+        WHEN("the circuit is switched to swing") {
+            my_object.circuit = "swing";
+            THEN("the stage follows (the TR-808 symmetric saturator)") {
+                REQUIRE(my_object.circuit == symbol("swing"));
+                REQUIRE(my_object.stage().circuit() == taptools::vca::mode_swing);
             }
         }
 

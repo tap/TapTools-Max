@@ -101,10 +101,11 @@ selecting between two related sounds sharing one circuit):
    rapid pulses — the "multiple hands" transient — plus a parallel slower noise decay),
    and MA (high-passed noise burst with a very fast envelope).
 4. **Swing-type VCAs and RC decay envelopes** — the percussive gain shapes are simple
-   discharge curves and one-transistor VCAs, not ADSRs. Modeled linearly today
-   (`swing_vca()` = `x·env`); when the flagged circuit-sim phase models the swing VCA's
-   "many high harmonics" (Service Notes), that nonlinearity lands in the shared `vca.h`
-   kernel as a third circuit mode — the home the standalone `tap.vca~` set up for it.
+   discharge curves and one-transistor VCAs, not ADSRs. The swing VCA's "many high
+   harmonics" (Service Notes) shipped 2026-07-18 as `vca.h`'s `swing` mode (a symmetric
+   `swing_shape`), wired into the noise voices (snare/clap/tom) behind an opt-in `drive`
+   attribute that defaults to 0 → the calibrated linear model, bit-identical. The heavier
+   WDF `@circuit` pass on the resonant voices remains A/B-gated (see the field guide).
 5. **The accent bus** — a shared voltage, scaled by the AC level knob, that raises the
    trigger pulse amplitude of every voice sounding on an accented step (and thereby,
    on some voices, subtly shifts timbre — the excitation is hotter, not just louder).

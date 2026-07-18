@@ -1071,10 +1071,23 @@ GitHub Actions CI.
   (pinned by `tests/vca_test.cpp`, which matches `shape()` to the old inline formula and re-runs the
   303 warm-vs-clean scenarios). Wrapper `tap.vca_tilde` (audio in + signal/float gain CV in),
   `circuit clean|warm` + `drive`/`bias`/`dcblock`/`bypass`/`mute`, the full vertical slice (maxref +
-  help patcher). The 808's swing-type VCA is still modeled linearly (`swing_vca()` = `x·env`); when
-  the flagged 808 circuit-sim phase models its "many high harmonics," that two-transistor character
-  lands here as a third circuit mode rather than inside eight drum voices. Remaining: runtime
-  validation in Max.
+  help patcher). Remaining: runtime validation in Max.
+- ✅ **The 808 swing-VCA harmonics — `vca.h` `swing` mode + the noise voices (2026-07-18).** The
+  first piece of the flagged 808 circuit-sim work, and the lowest-risk one: the swing-type VCA's
+  "many high harmonics" (Service Notes, RS/CL VCA), which `swing_vca()` had modeled as a flat
+  `x·env`. Kernel: **`vca.h` gains `mode_swing`** — a symmetric (odd-harmonic) `tanh(d·v)/d`
+  saturator, unity-slope-at-0 so quiet tails stay clean and hot transients pick up grit and
+  compression, no DC (symmetric → no coupling block needed). One implementation: a static
+  `vca::swing_shape(v, drive)` that both `mode_swing` and **`swing_vca(x, env, drive)`** route
+  through. **`drive` defaults to 0 → the exact linear passthru**, so every calibrated 808 voice
+  stays **bit-identical** until it opts in (the full existing `tr808_*` suite passes unchanged; the
+  snare test adds an explicit off-is-bit-identical / on-saturates-and-compresses scenario). Wired
+  into the three noise-path voices — **snare** (snappy), **clap** (CP + maracas output), **tom**
+  (noise "reverberation") — each exposing a `drive` circuit-bend attribute (0..12). `tap.vca~` gains
+  the matching `circuit swing`. The heavier WDF `@circuit` pass (the kick bridged-T etc.) stays
+  where the field guide left it — gated on an A/B showing an audible delta the informed model misses,
+  which the DAFx-14 finding suggests may never open. Remaining: A/B calibration of the swing `drive`
+  against reference, and runtime validation in Max.
 
 ---
 

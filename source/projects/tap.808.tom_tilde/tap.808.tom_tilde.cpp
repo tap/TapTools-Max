@@ -82,6 +82,16 @@ class tom808 : public object<tom808>, public sample_operator<1, 1> {
                             }},
                             description{"Output level, 0..1."}};
 
+    attribute<number> drive{this, "drive", 0.0, setter{MIN_FUNCTION{
+                                 const double v = MIN_CLAMP(static_cast<double>(args[0]), 0.0, 12.0);
+                                 m_tom.set_drive(v);
+                                 return {v};
+                             }},
+                             description{"Circuit bend: swing-VCA drive on the noise 'reverberation' layer (0..12; "
+                                         "toms only — congas have no noise layer). 0 is the calibrated linear model "
+                                         "(default); higher engages the swing VCA's symmetric harmonic saturation "
+                                         "riding the noise envelope."}};
+
     attribute<int> seed{this, "seed", 1, setter{MIN_FUNCTION{
                             const int v = std::max(1, static_cast<int>(args[0]));
                             m_tom.set_seed(static_cast<uint64_t>(v));

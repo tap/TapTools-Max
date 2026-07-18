@@ -40,10 +40,12 @@ class vca : public object<vca>, public vector_operator<> {
                     "biased, slope-normalized tanh applied after the gain, so quiet signals stay "
                     "essentially clean while hot signals pick up even-harmonic warmth and gentle "
                     "compression that track the control voltage; an output DC block removes the "
-                    "stage's signal-dependent offset. Single-channel: wrap in mc. for multichannel."};
+                    "stage's signal-dependent offset. The swing circuit is the TR-808 swing-type "
+                    "VCA — symmetric (odd-harmonic) saturation, the same stage the 808 noise voices "
+                    "use. Single-channel: wrap in mc. for multichannel."};
     MIN_TAGS{"filters"};
     MIN_AUTHOR{"Timothy Place"};
-    MIN_RELATED{"tap.303~, tap.crossfade~, tap.pan~, *~, gain~, matrix~"};
+    MIN_RELATED{"tap.303~, tap.808.snare~, tap.crossfade~, tap.pan~, *~, gain~, matrix~"};
 
     inlet<>  m_in{this, "(signal) audio input"};
     inlet<>  m_in_gain{this, "(signal/float) gain / control voltage (linear)"};
@@ -52,15 +54,23 @@ class vca : public object<vca>, public vector_operator<> {
     vca(const atoms& args = {}) { m_vca.prepare(samplerate()); }
 
     attribute<symbol> circuit{
-        this, "circuit", "clean", range{"clean", "warm"},
+        this, "circuit", "clean", range{"clean", "warm", "swing"},
         setter{ MIN_FUNCTION {
-            m_vca.set_mode(args[0] == "warm" ? taptools::vca::mode_warm : taptools::vca::mode_clean);
+            int m = taptools::vca::mode_clean;
+            if (args[0] == "warm")
+                m = taptools::vca::mode_warm;
+            else if (args[0] == "swing")
+                m = taptools::vca::mode_swing;
+            m_vca.set_mode(m);
             return args;
         }},
         description{"clean: the pure linear multiply (transparent, bit-identical to *~). "
-                    "warm: the TB-303 one-transistor class-A stage — biased-tanh saturation applied "
-                    "after the gain, with even-harmonic warmth and compression that ride the control "
-                    "voltage, plus the output DC block (see the dcblock attribute)."}};
+                    "warm: the TB-303 one-transistor class-A stage — asymmetric biased-tanh "
+                    "saturation (even harmonics) applied after the gain, plus the output DC block "
+                    "(see dcblock). swing: the TR-808 swing-type VCA — symmetric saturation "
+                    "(odd harmonics, no DC), the same stage the 808 noise voices use. In warm and "
+                    "swing the warmth and compression ride the control voltage; bias is ignored by "
+                    "swing (symmetric by construction)."}};
 
     attribute<number> gain{this, "gain", 1.0,
                            description{"Linear gain applied when no signal is connected to the right "
@@ -73,9 +83,9 @@ class vca : public object<vca>, public vector_operator<> {
             m_vca.set_drive(v);
             return {v};
         }},
-        description{"Warm-circuit drive into the transistor stage's tanh (0.1..12; default 2.0, the "
-                    "stock 303 value). Higher drive means more harmonics and more compression. "
-                    "Ignored by the clean circuit."}};
+        description{"Drive into the transistor stage's tanh for the warm and swing circuits "
+                    "(0.1..12; default 2.0, the stock 303 value). Higher drive means more harmonics "
+                    "and more compression. Ignored by the clean circuit."}};
 
     attribute<number> bias{
         this, "bias", taptools::vca::k_default_bias, range{-2.0, 2.0},
