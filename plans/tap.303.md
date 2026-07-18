@@ -252,7 +252,10 @@ each gated by A/B evidence (the 808 plan's go/no-go discipline) — all resolved
   slope-normalized biased saturator in the hardware order (post-envelope-gain,
   pre-output-coupling). Measured: 5.4% difference signal on quiet notes vs 11.5%
   on hot accents — the distortion tracks the envelope. `clean` stays the default,
-  bit-identical to phase 1.
+  bit-identical to phase 1. **Extracted to the shared `vca.h` kernel (`taptools::vca`)
+  (2026-07-18)** — the voice now composes `vca::shape()`, one implementation shared with
+  the standalone `tap.vca~` object; the refactor is bit-identical (pinned by the kernel's
+  `vca_test.cpp`).
 - **Square-shaper exactness** — ✅ **resolved in slice 4**: Open303's measured
   shaper constants adopted verbatim (−tanh(10^(36.9/20)·saw + 4.37)).
 - **WDF pass on the filter** — ✅ **documented no-go, author-approved

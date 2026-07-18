@@ -1058,6 +1058,23 @@ GitHub Actions CI.
   network, eight voices* (the `tr808_*` headers — the bridged-T solved on its states,
   the calibration lesson), and *Time as a function of phase* (`step_seq.h` — the O(1)
   derivation, gate-hold look-ahead, armed-recall re-derivation).
+- ✅ **Net-new object — `tap.vca~` (2026-07-18).** The 303's transistor VCA stage, lifted out
+  where it can amplify anything. Kernel: **`vca.h`** (`taptools::vca`) — the two-circuit `svf.h`
+  idiom applied to a gain stage: `clean` is the pure linear multiply (bit-identical to `*~`),
+  `warm` is the one-transistor class-A saturator `S(v) = (tanh(d·v+b) − tanh(b)) / (d·sech²(b))`
+  (stock `d=2.0`, `b=0.3` — the probe-calibrated 303 constants, now exposed as `drive`/`bias`),
+  applied to the post-gain signal so the even-harmonic warmth and compression **track the control
+  voltage** the way a discrete VCA does and a multiply cannot, plus an optional output-coupling DC
+  block (`dcblock`) for the shaper's signal-dependent offset. **`tb303_voice.h` was refactored to
+  compose `vca::shape()`** — one implementation shared between `tap.303~` and the standalone; the
+  voice keeps its own Open303 output high-pass and gain, so the extraction left it **bit-identical**
+  (pinned by `tests/vca_test.cpp`, which matches `shape()` to the old inline formula and re-runs the
+  303 warm-vs-clean scenarios). Wrapper `tap.vca_tilde` (audio in + signal/float gain CV in),
+  `circuit clean|warm` + `drive`/`bias`/`dcblock`/`bypass`/`mute`, the full vertical slice (maxref +
+  help patcher). The 808's swing-type VCA is still modeled linearly (`swing_vca()` = `x·env`); when
+  the flagged 808 circuit-sim phase models its "many high harmonics," that two-transistor character
+  lands here as a third circuit mode rather than inside eight drum voices. Remaining: runtime
+  validation in Max.
 
 ---
 
