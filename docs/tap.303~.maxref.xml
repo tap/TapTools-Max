@@ -22,11 +22,15 @@
 		cents). The right inlet is a gate signal whose rising edge triggers the note —
 		<b>edge amplitude encodes accent</b>: 1.0 is a plain note, up to 2.0 fully
 		accented. Slide is legato, exactly like the hardware: change the pitch while the
-		gate is held and it glides through the 303's ~60 ms lag without retriggering — no
+		gate is held and it glides through the 303's slide lag without retriggering — no
 		separate slide input. The note/bang/release messages provide the same control
-		without signals. Envelope constants and the filter's feedback behavior follow
-		measured hardware values (via the Open303 project and the Devil Fish
-		documentation). One voice per object; wrap in mc. for polyphony.
+		without signals. The envmod law and the square-wave shaper follow the Open303
+		project's hardware measurements verbatim; the envelope constants and the accent
+		circuit follow the measured values and the Devil Fish circuit documentation. The
+		slide/attack/accdecay/drive attributes are the documented circuit bends (stock at
+		their defaults), seed/tolerance dial in per-unit component spread, and preset
+		slots 1-8 ship with factory acid patches for the recall message. One voice per
+		object; wrap in mc. for polyphony.
 	</description>
 
 
@@ -119,6 +123,32 @@
 		</attribute>
 		<attribute name="tuning" get="1" set="1" type="float" size="1">
 			<description>Master tuning in cents (-1200..1200).</description>
+		</attribute>
+		<attribute name="slide" get="1" set="1" type="float" size="1">
+			<description>Slide (glide) time in ms (10-500; stock 60 — longer is the
+			Devil-Fish-style bend).</description>
+		</attribute>
+		<attribute name="attack" get="1" set="1" type="float" size="1">
+			<description>VCA attack in ms (0.3-30; stock ~3 — the Devil Fish Soft Attack
+			bend).</description>
+		</attribute>
+		<attribute name="accdecay" get="1" set="1" type="float" size="1">
+			<description>Accent envelope clock in ms (50-2000; stock ~200): accented notes run
+			the Main Envelope at this instead of the decay knob.</description>
+		</attribute>
+		<attribute name="drive" get="1" set="1" type="float" size="1">
+			<description>Drive in dB (-24..24) into the diode ladder's saturation — the diodes
+			compress and thicken; 0 is stock.</description>
+		</attribute>
+		<attribute name="seed" get="1" set="1" type="int" size="1">
+			<description>Per-unit component-spread seed. With tolerance above 0, every seed is
+			a different 303 off the production line; mc. instances decorrelate by
+			seed.</description>
+		</attribute>
+		<attribute name="tolerance" get="1" set="1" type="float" size="1">
+			<description>Component tolerance (0-1): how far off the nominal schematic this unit
+			drifts (tuning, filter tracking, envelope and sweep timing, waveform imperfection).
+			0 is the exact nominal circuit.</description>
 		</attribute>
 		<attribute name="waveform" get="1" set="1" type="symbol" size="1">
 			<description>Oscillator waveform: saw or square (the hardware's two). Switching

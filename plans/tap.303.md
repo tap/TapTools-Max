@@ -1,14 +1,16 @@
 # Plan — `tap.303.*` (TB-303-style acid bass voice, a diode-ladder filter, and later a sequencer)
 
-> Status: **slices 0–3 shipped 2026-07-17** (source sweep; `diode_ladder.h` + `tap.diode~`;
-> `tb303_voice.h` + `tap.303~`; the C13 accent-sweep circuit — see the REVIVAL.md §7
-> progress-log entries). §8 blocking decisions approved by the author same day. Scope notes:
-> slide/legato came forward into slice 2 (the note contract requires it); the slice-3 sweep's
-> RC taus are component-derived (47 ms charge / ~150 ms drain) while `k_accent_sweep_oct` and
-> the direct weight are informed approximations; the square-from-saw shaper is a
-> polyBLEP-pulse baseline. Remaining: slice 4 polish — the Open303 A/B render calibration
-> (sweep constants + square shaper), seed/tolerance, factory presets — then runtime
-> validation in Max for both objects; phase 3 (the sequencer) stays deferred.
+> Status: **phase 1 complete — slices 0–4 shipped 2026-07-17** (source sweep;
+> `diode_ladder.h` + `tap.diode~`; `tb303_voice.h` + `tap.303~`; the C13 accent-sweep wow;
+> and the slice-4 calibration pass — see the REVIVAL.md §7 progress-log entries). §8
+> blocking decisions approved by the author same day. The §7.2 A/B was done for real:
+> Open303 was built and rendered side by side, its measured envmod mapping and square-shaper
+> constants adopted verbatim, and its accent path found to be a memoryless 15 ms integrator —
+> so the Devil-Fish C13 model (across-notes wow) stays as a documented divergence. Slice 4
+> also shipped the Devil-Fish bends (slide/attack/accdecay/drive), seed/tolerance,
+> factory presets 1–8, and the phase-3 interface dry run (`help/tap.303~-pattern.maxpat`).
+> Remaining: **runtime validation in Max** for both objects; **phase 2** fidelity gates
+> (transistor-VCA nonlinearity, WDF go/no-go); **phase 3** (`tap.303.seq~`), deferred.
 > Slice-0 findings now pinned: Stinchcombe's normalized TF is reproduced *exactly* by the
 > equal-RC chain with the top cap halved (k_osc = 17, oscillation at √2× the stage rate —
 > derived in the kernel header); feedback HPF 150 Hz, slide 60 ms, MEG 3 ms attack /

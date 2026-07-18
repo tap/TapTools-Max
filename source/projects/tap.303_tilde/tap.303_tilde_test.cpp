@@ -81,6 +81,30 @@ SCENARIO("the Min wrapper instantiates with the documented defaults") {
             my_object.waveform = symbol("saw");
             REQUIRE(my_object.voice().wave() == ktb::wave_saw);
         }
+        THEN("the slice-4 bends default to stock and clamp to their ranges") {
+            REQUIRE(static_cast<double>(my_object.slide) == 60.0);
+            REQUIRE(static_cast<double>(my_object.attack) == 3.0);
+            REQUIRE(static_cast<double>(my_object.accdecay) == 200.0);
+            REQUIRE(static_cast<double>(my_object.drive) == 0.0);
+            REQUIRE(static_cast<double>(my_object.tolerance) == 0.0);
+            my_object.slide = 9999.0;
+            REQUIRE(static_cast<double>(my_object.slide) == ktb::k_slide_max_ms);
+            my_object.attack = 0.0;
+            REQUIRE(static_cast<double>(my_object.attack) == ktb::k_attack_min_ms);
+            my_object.accdecay = 1.0;
+            REQUIRE(static_cast<double>(my_object.accdecay) == ktb::k_accdecay_min_ms);
+            my_object.drive = 99.0;
+            REQUIRE(static_cast<double>(my_object.drive) == ktb::k_drive_range_db);
+            my_object.tolerance = 5.0;
+            REQUIRE(static_cast<double>(my_object.tolerance) == 1.0);
+            my_object.seed = 42;
+            REQUIRE(my_object.voice().seed() == 42u);
+        }
+        THEN("factory presets are recallable out of the box") {
+            my_object.recall(atoms{2, 0.0}); // deep sub
+            REQUIRE(my_object.voice().snap_targets().v[ktb::p_cutoff] == 250.0);
+            REQUIRE(my_object.voice().snap_targets().v[ktb::p_waveform] == 1.0);
+        }
     }
 }
 
