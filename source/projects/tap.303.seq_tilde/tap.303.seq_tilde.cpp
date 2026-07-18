@@ -201,18 +201,18 @@ class seq303 : public object<seq303>, public vector_operator<> {
                          }
                          dict  d{symbol(args[0])};
                          auto& p = m_row.clock().data();
-                         atoms pitches_, gates_, accents_, slides_;
+                         atoms pitch_list, gate_list, accent_list, slide_list;
                          for (int k = 0; k < p.length; ++k) {
-                             pitches_.push_back(p.steps[k].pitch);
-                             gates_.push_back(p.steps[k].gate ? 1 : 0);
-                             accents_.push_back(p.steps[k].accent ? 1 : 0);
-                             slides_.push_back(p.steps[k].slide ? 1 : 0);
+                             pitch_list.push_back(p.steps[k].pitch);
+                             gate_list.push_back(p.steps[k].gate ? 1 : 0);
+                             accent_list.push_back(p.steps[k].accent ? 1 : 0);
+                             slide_list.push_back(p.steps[k].slide ? 1 : 0);
                          }
                          set_key(d, "length", atoms{p.length});
-                         set_key(d, "pitches", pitches_);
-                         set_key(d, "gates", gates_);
-                         set_key(d, "accents", accents_);
-                         set_key(d, "slides", slides_);
+                         set_key(d, "pitches", pitch_list);
+                         set_key(d, "gates", gate_list);
+                         set_key(d, "accents", accent_list);
+                         set_key(d, "slides", slide_list);
                          d.touch();
                          return {};
                      }};
