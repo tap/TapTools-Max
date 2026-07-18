@@ -255,6 +255,10 @@ tolerances — using **wave digital filters** over the actual schematic.
 
 ## 6. Phase 3 — the sequencer (potential, own objects)
 
+> ✅ **Designed and shipped via `plans/tap.seq.md`** (2026-07-18): option (b) below,
+> unified with the 303's emitter over one shared kernel engine (`step_seq.h`).
+> `tap.808.seq~` is in the package; the §8 Q5 decision is resolved by that plan.
+
 The hardware's other half: 16 steps × A/B pattern halves, basic/fill patterns with
 chaining, 12 instrument rows + the accent row, and "pre-scale" step resolutions
 (including triplet grids). Deliberately **deferred until phase 1 has shipped** and the

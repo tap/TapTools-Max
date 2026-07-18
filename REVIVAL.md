@@ -1008,6 +1008,57 @@ GitHub Actions CI.
   Phase 2 of `plans/tap.303.md` is **complete**; what remains for the 303 program is runtime
   validation in Max and the deferred phase-3 sequencer.
 
+- ✅ **The sequencers — `tap.808.seq~` + `tap.303.seq~` (2026-07-18).** The coordinated
+  phase 3 both family plans deferred, designed and author-approved same day as
+  **`plans/tap.seq.md`** and shipped end to end: **one shared kernel engine**
+  (`step_seq.h`, `taptools::seq`) — phase-clocked from a `phasor~` ramp
+  (floor(phase × length), swing warping the odd steps, sample-accurate entries,
+  stateless against phase), 16 slots with cycle/step/now-quantized recall — with two
+  thin emitters speaking the shipped voice contracts verbatim. **`tap.808.seq~`**: one
+  drum row, impulses whose amplitude 0..1 is the accent (plain 0.01 = the 4 V base bus,
+  accented 0.5 = the accent knob at noon; provenance `tr808_kick.h`'s 4–14 V mapping),
+  `hits`/`accents`/`velocities` surfaces, `pulse` widening for envelope consumers.
+  **`tap.303.seq~`**: the acid line emitting the `tap.303~` pitch + gate pair (1.0/2.0
+  accent amplitudes; gate duty 0.5 per Open303's `AcidPattern`), **slide as gate-hold**
+  across the boundary — chained slides and the across-the-wrap slide pinned by test —
+  with per-step pitch/gate/accent/slide, live `transpose`, and the slide flag on the
+  *target* step per the package `note` convention (hardware stores it on the source;
+  divergence documented in the kernel header). Both rows: `length` 1..64 (polymeter off
+  one phasor — the triplet pre-scale generalized), swing (beyond-hardware, default 0),
+  `store`/`recall`, `todict`/`fromdict` dictionary patterns, a 1-based step-index UI
+  outlet (coalescing audio→scheduler handoff, the `tap.sift~` idiom). Kernel: 19 new
+  scenarios (suite 129/129), including the tb303-voice pairing test asserting slid
+  steps glide without retrigger. Wrappers: min-api unittests (compiled and run against
+  the mock kernel), maxrefs, help patchers, maxtest starters — and
+  **`help/tap.808.maxhelp` rebuilt on real rows** (one phasor, nine rows, the old
+  metro/counter/sel pattern retired), with `help/tap.303.seq~.maxhelp` superseding the
+  `tap.303~-pattern.maxpat` dry run (which stays as the event-domain alternative).
+  **Runtime validation in Max still pending**, as everywhere.
+
+- ✅ **The sequencer verification notebook (2026-07-18).** **`notebooks/step_seq.ipynb`**
+  (kernel repo), house pattern: the shipping `step_seq.h` driven through the C ABI
+  (extended with `taptools_seqtrig`/`taptools_seqnote` + a minimal `taptools_kick`).
+  Six executed, asserted sections: the analytic grid (≤ 1 sample; polymeter), the swing
+  warp (odd-step delay = swing/2), the trigger-bus levels (0.01/0.5/1.0) + `pulse_ms`,
+  the 303 line signals (duty 0.5, accent 2.0, gate-hold slide — including the
+  full-step hold on a slide *source* step, a case the Catch2 suite's isolated-step
+  scenario didn't exhibit), **four bars of acid + kick rendered from the real
+  `tb303_voice.h`/`tr808_kick.h` off one phasor ramp** (embedded audio), and
+  cycle-quantized recall swapping exactly on the wrap sample.
+
+- ✅ **"Tools on Tap" Part V — The rhythm section (2026-07-18).** Two field-guide
+  chapters in the kernel repo's book: *The acid machine* (`tap.diode~`/`tap.303~`/
+  `tap.303.seq~`) and *The drum machine* (the eight `tap.808.*` channels +
+  `tap.808.seq~`), every number sourced from the executed notebooks or the kernel
+  suite per the book's own rules; the machine deep-dives renumber to Part VI —
+  which same-day gained its own four rhythm-section chapters: *Seventeen, not four*
+  (`diode_ladder.h` — the k = 17 threshold derived, the closed-form coupled ZDF solve,
+  the WDF no-go), *The couplings are the instrument* (`tb303_voice.h` — the C13 wow as
+  three lines, the measured envmod law, the documented Open303 divergence), *One
+  network, eight voices* (the `tr808_*` headers — the bridged-T solved on its states,
+  the calibration lesson), and *Time as a function of phase* (`step_seq.h` — the O(1)
+  derivation, gate-hold look-ahead, armed-recall re-derivation).
+
 ---
 
 ## 8. The `taptools-min` reconciliation (2026-06-17)
@@ -1149,11 +1200,12 @@ Roland TR-808's analog drum voices: the eight voice channels
 shared kernel blocks: bridged-T resonator, metal bank, swing-VCA), the family accent-bus
 contract (signal-edge amplitude = accent on the 4–14 V trigger bus), the family overview
 patcher, and the kernel's `tr808_render` tool. Provenance: the Werner–Abel–Smith
-DAFx-14/ICMC papers + the TR-808 Service Notes schematics, read directly. Flagged WDF
-circuit-simulation upgrade path (`@circuit`, the `svf.h` two-circuit pattern) and a
-potential later sequencer phase (`tap.808.seq~`) remain. See the §7 progress-log
-entries (slices 1–5). Next: runtime validation in Max, §7.2 sample-pack calibration,
-then the Phase 2 WDF go/no-go on the kick.
+DAFx-14/ICMC papers + the TR-808 Service Notes schematics, read directly. **The phase-3
+sequencer shipped 2026-07-18** as `tap.808.seq~` (see `plans/tap.seq.md` and the §7
+entry — one row per voice, phase-clocked, sharing its engine with `tap.303.seq~`).
+Flagged WDF circuit-simulation upgrade path (`@circuit`, the `svf.h` two-circuit
+pattern) remains. See the §7 progress-log entries (slices 1–5, §7.2 calibration).
+Next: runtime validation in Max, then the Phase 2 WDF go/no-go on the kick.
 
 **11. Net-new object family — `tap.303.*` (2026-07-17).** 📋 **Plan approved; slices 1–2
 shipped** — see **`plans/tap.303.md`**. The TB-303 recreation, companion to the `tap.808.*`
@@ -1166,9 +1218,10 @@ circuit documentation, Open303, x0xb0x schematics, Service Notes. **Phases 1 and
 seed/tolerance + factory presets; phase 2: the `vca clean|warm` transistor stage, the
 square shaper resolved via Open303's measured constants, and the author-approved WDF no-go
 — grounded in the kernel repo's **`notebooks/tb303.ipynb`** verification notebook; see the
-§7 entries). Remaining: the deferred sequencer phase (`tap.303.seq~`, coordinated with
-`tap.808.seq~`) and **runtime validation in Max** for both objects (help patchers,
-maxtests, the render WAVs, and the notebook as the evaluation material).
+§7 entries). **The phase-3 sequencer shipped 2026-07-18** as `tap.303.seq~` (see
+`plans/tap.seq.md` and the §7 entry — the acid line on the shared step engine, slide as
+gate-hold). Remaining: **runtime validation in Max** for all three objects (help
+patchers, maxtests, the render WAVs, and the notebook as the evaluation material).
 
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as

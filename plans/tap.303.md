@@ -266,6 +266,10 @@ each gated by A/B evidence (the 808 plan's go/no-go discipline) — all resolved
 
 ## 6. Phase 3 — the sequencer (own object, deferred)
 
+> ✅ **Designed and shipped via `plans/tap.seq.md`** (2026-07-18): a shared kernel step
+> engine (`step_seq.h`) with `tap.303.seq~` and `tap.808.seq~` as thin per-family
+> emitters, phase-clocked from `phasor~`. `tap.303.seq~` is in the package.
+
 `tap.303.seq~`: a signal-clocked step sequencer emitting **exactly the voice's inlet
 contract** — a pitch signal and a gate signal with amplitude-encoded accent, with
 slide realized as gate-hold + stepped pitch (the voice's legato detection does the
