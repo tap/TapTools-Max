@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.303.seq~" module="msp" category="TapTools, MSP Sequencing">
+
+	<digest>
+		Phase-clocked acid-line sequencer for tap.303~
+	</digest>
+
+	<description>
+		The <o>tap.303.seq~</o> object is a step-sequenced bass line speaking exactly the
+		<o>tap.303~</o> note contract: feed it a phase ramp (0..1 per pattern cycle — a
+		<o>phasor~</o>) and it emits the voice's inlet pair, a pitch signal (MIDI note number,
+		held between notes) and a gate signal whose edge amplitude encodes accent (1.0 plain,
+		2.0 accented; the accent amount stays on the voice's knob, like the hardware). The gate
+		opens at the step start and closes halfway through the step (Open303's measured duty).
+		A step with the slide flag is approached legato: the gate holds through the boundary
+		while the pitch steps, and the voice's ~60 ms glide does the rest — no retrigger,
+		chained slides chain, and a slide across the pattern wrap works. Per-step data mirrors
+		the hardware pattern memory (pitch, gate/rest, accent, slide; pitch as a MIDI float
+		subsumes the octave up/down flags), without recreating the 1981 entry workflow:
+		patterns are lists, step messages, sixteen slots with boundary-quantized recall, and
+		dictionaries. Rows share the phase-clock idiom with <o>tap.808.seq~</o> — one phasor
+		runs a whole rhythm section in sample lock, and this row's gate edge also triggers any
+		tap.808.* voice directly. The design of record is plans/tap.seq.md.
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Sequencing</metadata>
+		<metadata name="tag">Synthesis</metadata>
+	</metadatalist>
+
+
+	<!--INLETS/OUTLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Phase ramp: 0..1 per pattern cycle (connect phasor~)</digest>
+		</inlet>
+	</inletlist>
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>Pitch as MIDI note number — to tap.303~'s left inlet</digest>
+		</outlet>
+		<outlet id="1" type="signal">
+			<digest>Gate; edge amplitude 1..2 encodes accent — to tap.303~'s right inlet</digest>
+		</outlet>
+		<outlet id="2" type="int">
+			<digest>Current step number (1-based), sent at each step change</digest>
+		</outlet>
+	</outletlist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<arglist/>
+			<description>
+				The phase ramp. The row derives the current step from the phase (swing warps the
+				odd-step starts) and plays the pattern sample-accurately. Stateless against
+				phase: jump, scrub, or reverse the ramp and the line follows.
+			</description>
+		</method>
+		<method name="step">
+			<arglist>
+				<arg name="step-number" type="int" optional="0"/>
+				<arg name="pitch" type="float" optional="0"/>
+				<arg name="accent" type="int" optional="1"/>
+				<arg name="slide" type="int" optional="1"/>
+			</arglist>
+			<description>
+				Set one step and gate it on: step number (1..64), pitch as a MIDI note number
+				(fractional = cents), then optional accent and slide flags (0/1). A slide flag
+				means the step is approached legato from the note before it.
+			</description>
+		</method>
+		<method name="rest">
+			<arglist>
+				<arg name="step-number" type="int" optional="0"/>
+			</arglist>
+			<description>
+				Silence one step (its pitch and flags are kept).
+			</description>
+		</method>
+		<method name="pitches">
+			<arglist>
+				<arg name="notes" type="list" optional="0"/>
+			</arglist>
+			<description>
+				Set per-step pitches as MIDI note numbers (fractional = cents).
+			</description>
+		</method>
+		<method name="gates">
+			<arglist>
+				<arg name="steps" type="list" optional="0"/>
+			</arglist>
+			<description>
+				Set which steps sound: one 0/1 per step (0 = rest).
+			</description>
+		</method>
+		<method name="accents">
+			<arglist>
+				<arg name="steps" type="list" optional="0"/>
+			</arglist>
+			<description>
+				Set per-step accent flags: accented steps gate at 2.0 (the voice reads accent
+				depth = amplitude - 1).
+			</description>
+		</method>
+		<method name="slides">
+			<arglist>
+				<arg name="steps" type="list" optional="0"/>
+			</arglist>
+			<description>
+				Set per-step slide flags. A flagged step is approached legato: the gate holds
+				through the boundary and the voice glides to it without retriggering.
+			</description>
+		</method>
+		<method name="store">
+			<arglist>
+				<arg name="slot" type="int" optional="0"/>
+			</arglist>
+			<description>
+				Store the pattern in a slot (1..16).
+			</description>
+		</method>
+		<method name="recall">
+			<arglist>
+				<arg name="slot" type="int" optional="0"/>
+			</arglist>
+			<description>
+				Recall a slot (1..16); it takes over at the quantize boundary (default: the next
+				pattern top).
+			</description>
+		</method>
+		<method name="todict">
+			<arglist>
+				<arg name="dictionary-name" type="symbol" optional="0"/>
+			</arglist>
+			<description>
+				Write the pattern (length, pitches, gates, accents, slides) into a named
+				dictionary, for saving with the patcher or passing around as data.
+			</description>
+		</method>
+		<method name="fromdict">
+			<arglist>
+				<arg name="dictionary-name" type="symbol" optional="0"/>
+			</arglist>
+			<description>
+				Restore a pattern previously written with todict.
+			</description>
+		</method>
+		<method name="clear">
+			<arglist/>
+			<description>
+				Empty the pattern (all rests) and reset the clock state.
+			</description>
+		</method>
+	</methodlist>
+
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="length" get="1" set="1" type="int" size="1">
+			<digest>Steps per pattern cycle (1..64, default 16)</digest>
+			<description>
+				Steps per pattern cycle. A different length than the other rows on the same
+				phasor is polymeter.
+			</description>
+		</attribute>
+		<attribute name="swing" get="1" set="1" type="float" size="1">
+			<digest>Swing 0..1 (0 = straight; 0.67 = triplet shuffle)</digest>
+			<description>
+				Odd-numbered steps play late by up to half a step. The hardware had no swing —
+				0 is stock.
+			</description>
+		</attribute>
+		<attribute name="transpose" get="1" set="1" type="float" size="1">
+			<digest>Live transposition in semitones (-48..48)</digest>
+			<description>
+				Applied as notes fire — what the hardware's transpose mode did, without the mode.
+			</description>
+		</attribute>
+		<attribute name="quantize" get="1" set="1" type="symbol" size="1">
+			<digest>When a recalled pattern takes over: cycle (default), step, or now</digest>
+			<description>
+				cycle swaps at the next pattern top, step at the next step boundary, now
+				immediately.
+			</description>
+		</attribute>
+		<attribute name="mute" get="1" set="1" type="int" size="1">
+			<digest>Force the gate low (the clock keeps running; pitch holds)</digest>
+			<description>
+				Mutes the gate without stopping the row, so unmuting re-enters in place.
+			</description>
+		</attribute>
+	</attributelist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.303~"/>
+		<seealso name="tap.808.seq~"/>
+		<seealso name="tap.adsr~"/>
+		<seealso name="phasor~"/>
+	</seealsolist>
+
+</c74object>

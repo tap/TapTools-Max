@@ -1,15 +1,21 @@
 # Plan — `tap.808.seq~` / `tap.303.seq~` (the shared step-sequencer engine)
 
-> Status: **drafted 2026-07-18; §6 decisions approved by the author same day** — the
-> coordinated phase-3 design that `plans/tap.808.md` §6 and `plans/tap.303.md` §6 both
-> deferred to. Both voice families have shipped (808 slices 0–5 + §7.2 calibration; 303
-> phases 1–2 + the approved WDF no-go), the trigger and note contracts have survived their
-> family patchers, and the phase-3 interface dry run (`help/tap.303~-pattern.maxpat`, a
-> Max-patched 16-step sequencer driving the `note` message) exists — the preconditions
-> both plans set. The three blocking decisions (shape, clocking, slots) are ✅ approved,
-> and the non-blocking recommendations accepted in principle — implementation can start at
-> slice 0. As always, the engine lands in the kernel repo (`tap/taptools`) first, then the
-> Min wrappers + vertical slices here.
+> Status: **shipped 2026-07-18** — drafted, §6-approved by the author, and implemented
+> the same day (slices 0–3; see the REVIVAL.md §7 entry). The engine lives in the kernel
+> repo as `step_seq.h` (`taptools::seq`: the phase→step engine + `trigger_row` +
+> `note_row`, 19 test scenarios including the tb303-voice pairing); the wrappers,
+> unittests, maxrefs, help patchers, and maxtest starters are here, and
+> `help/tap.808.maxhelp` is rebuilt on real rows. Slice-0 pins: 808 trigger levels
+> plain 0.01 / accented 0.5 (the 4–14 V bus mapping), 303 gate duty 0.5 (Open303
+> `AcidPattern::stepLength`), slide flag on the *target* step (the package `note`
+> convention; the hardware's source-note storage documented as a divergence in the
+> kernel header). The non-blocking recommendations (§6 Q4–Q7) all shipped as
+> recommended. Remaining: **runtime validation in Max** (the maxtest starters want
+> extending on a licensed install), per the package-wide gate.
+>
+> Original preconditions, for the record: both voice families shipped (808 slices 0–5 +
+> §7.2 calibration; 303 phases 1–2 + the approved WDF no-go), the contracts proven in
+> their family patchers, and the `help/tap.303~-pattern.maxpat` dry run.
 
 ## 0. The headline answer, up front
 
@@ -204,21 +210,22 @@ as the event-domain alternative it demonstrates).
 
 Each slice independently shippable, ending with the full definition of done (§5.4).
 
-- **Slice 0 — decisions + constants.** §8 sign-off. Pin from the service notes (both
+- ✅ **Slice 0 — decisions + constants** (2026-07-18). §8 sign-off. Pin from the service notes (both
   already in hand from the voice phases): the 808 trigger-bus plain/accented levels as
   emitted 0..1 amplitudes (consistent with the voices' 4–14 V mapping), and the 303's
   gate duty fraction (`gatetime` stock value). Pin the swing convention and the
   quantized-recall semantics in the header comment.
-- **Slice 1 — the engine + the drum row, end to end.** `step_seq.h` (engine +
-  `trigger_row`) + kernel tests + bench entry, then `tap.808.seq~` with the full
+- ✅ **Slice 1 — the engine + the drum row, end to end** (2026-07-18). `step_seq.h` (engine +
+  `trigger_row`) + kernel tests (no bench entry — the engine is a handful of arithmetic
+  ops per sample, below the bench harness's noise floor), then `tap.808.seq~` with the full
   vertical slice, and the `tap.808.maxhelp` overview rebuilt on real rows. De-risks
   the clock/step derivation (the only genuinely new machinery) on the simpler emitter.
-- **Slice 2 — the bass line.** `note_row` (gate-hold slide, accent amplitudes,
+- ✅ **Slice 2 — the bass line** (2026-07-18). `note_row` (gate-hold slide, accent amplitudes,
   gatetime) + kernel tests, then `tap.303.seq~` with the full vertical slice, the
   successor pattern patcher, and a cross-family demo patch (one phasor, a 303 line +
   808 rows; the 303 row's gate doubling the kick). The slide-across-the-wrap and
   chained-slide cases get explicit tests.
-- **Slice 3 — patterns as data.** Slots + quantized recall + `dictionary` save/recall
+- ✅ **Slice 3 — patterns as data** (2026-07-18). Slots + quantized recall + `dictionary` save/recall
   on both objects (one implementation, two surfaces), the A/B-fill idiom documented in
   both help patchers, REVIVAL.md progress-log entries, and the two family plans' §6
   sections marked resolved (pointing here).

@@ -48,7 +48,7 @@ class voice303 : public object<voice303>, public vector_operator<> {
                     "in mc. for more 303s than anyone needs."};
     MIN_TAGS{"synthesis"};
     MIN_AUTHOR{"Timothy Place"};
-    MIN_RELATED{"tap.diode~, tap.vco~, tap.808.kick~, tap.adsr~, mc.noteallocator~"};
+    MIN_RELATED{"tap.303.seq~, tap.diode~, tap.vco~, tap.808.kick~, tap.adsr~"};
 
     inlet<>  m_in_pitch{this, "(signal/float) pitch as MIDI note number"};
     inlet<>  m_in_gate{this, "(signal) gate; edge amplitude 1..2 = accent"};

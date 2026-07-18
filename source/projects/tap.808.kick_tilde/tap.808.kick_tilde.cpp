@@ -43,7 +43,7 @@ class kick808 : public object<kick808>, public sample_operator<1, 1> {
                     "defaults."};
     MIN_TAGS{"generators, drums"};
     MIN_AUTHOR{"Timothy Place"};
-    MIN_RELATED{"tap.808.snare~, tap.808.tom~, tap.808.hat~, click~, kick~"};
+    MIN_RELATED{"tap.808.seq~, tap.808.snare~, tap.808.tom~, tap.808.hat~, click~"};
 
     inlet<>  m_in{this, "(signal) trigger: rising edge fires, edge amplitude 0..1 is the accent"};
     outlet<> m_out{this, "(signal) bass drum output", "signal"};

@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.808.seq~" module="msp" category="TapTools, MSP Sequencing">
+
+	<digest>
+		Phase-clocked step-sequencer drum row for the tap.808 family
+	</digest>
+
+	<description>
+		The <o>tap.808.seq~</o> object is one drum row of a step sequencer: feed it a phase
+		ramp (0..1 per pattern cycle — a <o>phasor~</o>, transport-locked if you like) and it
+		emits a trigger impulse at each sounding step whose amplitude 0..1 is the accent.
+		That is exactly the tap.808.* family trigger contract (amplitude maps onto the
+		hardware's common 4-14 V bus), so a row wires straight into any of the eight voices —
+		or into <o>tap.adsr~</o> and anything else edge-triggered (the pulse attribute widens
+		the impulse into a held gate for envelope consumers). Because the row derives its step
+		from the phase, every row fed by one phasor stays sample-locked forever; a row with a
+		different length runs in polymeter, which subsumes the hardware's triplet pre-scale.
+		Steps are velocities 0..1 (0 = rest), or the hardware's on/accent view via the hits
+		and accents lists mapped onto the plain and accented trigger levels. Sixteen pattern
+		slots with store/recall, quantized to the next cycle boundary by default, are the
+		hardware's A/B-half and basic/fill switching as one message. The rightmost outlet
+		reports the current step number (1-based) for displays. The design of record is
+		plans/tap.seq.md; the engine is shared with <o>tap.303.seq~</o>.
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Sequencing</metadata>
+		<metadata name="tag">Drums</metadata>
+	</metadatalist>
+
+
+	<!--INLETS/OUTLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Phase ramp: 0..1 per pattern cycle (connect phasor~)</digest>
+		</inlet>
+	</inletlist>
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>Trigger impulses; amplitude 0..1 is the accent (the tap.808.* contract)</digest>
+		</outlet>
+		<outlet id="1" type="int">
+			<digest>Current step number (1-based), sent at each step change</digest>
+		</outlet>
+	</outletlist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<arglist/>
+			<description>
+				The phase ramp. The row derives the current step as floor(phase x length), with
+				swing warping the odd-step starts, and fires each sounding step's trigger on the
+				sample its boundary crosses. The row is stateless against phase: jump, scrub, or
+				reverse the ramp and the steps follow.
+			</description>
+		</method>
+		<method name="velocities">
+			<arglist>
+				<arg name="levels" type="list" optional="0"/>
+			</arglist>
+			<description>
+				Set per-step trigger levels directly: one float 0..1 per step, 0 for a rest.
+			</description>
+		</method>
+		<method name="hits">
+			<arglist>
+				<arg name="steps" type="list" optional="0"/>
+			</arglist>
+			<description>
+				The hardware view: one 0/1 per step — which steps sound. Sounding steps take the
+				plain trigger level (or the accented level where the accent flag is set).
+				Overwrites the row's velocities.
+			</description>
+		</method>
+		<method name="accents">
+			<arglist>
+				<arg name="steps" type="list" optional="0"/>
+			</arglist>
+			<description>
+				The hardware view: one 0/1 per step — which sounding steps are accented (the
+				accented trigger level). Overwrites the row's velocities.
+			</description>
+		</method>
+		<method name="step">
+			<arglist>
+				<arg name="step-number" type="int" optional="0"/>
+				<arg name="velocity" type="float" optional="0"/>
+			</arglist>
+			<description>
+				Set one step's velocity: step number (1..64) then level (0..1, 0 = rest).
+			</description>
+		</method>
+		<method name="store">
+			<arglist>
+				<arg name="slot" type="int" optional="0"/>
+			</arglist>
+			<description>
+				Store the pattern in a slot (1..16).
+			</description>
+		</method>
+		<method name="recall">
+			<arglist>
+				<arg name="slot" type="int" optional="0"/>
+			</arglist>
+			<description>
+				Recall a slot (1..16). The new pattern takes over at the quantize boundary —
+				by default the next pattern top, which is the hardware's A/B-half and fill move.
+			</description>
+		</method>
+		<method name="todict">
+			<arglist>
+				<arg name="dictionary-name" type="symbol" optional="0"/>
+			</arglist>
+			<description>
+				Write the pattern (length and velocities) into a named dictionary, for saving
+				with the patcher or passing around as data.
+			</description>
+		</method>
+		<method name="fromdict">
+			<arglist>
+				<arg name="dictionary-name" type="symbol" optional="0"/>
+			</arglist>
+			<description>
+				Restore a pattern previously written with todict.
+			</description>
+		</method>
+		<method name="clear">
+			<arglist/>
+			<description>
+				Empty the pattern (all rests) and reset the clock state.
+			</description>
+		</method>
+	</methodlist>
+
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="length" get="1" set="1" type="int" size="1">
+			<digest>Steps per pattern cycle (1..64, default 16)</digest>
+			<description>
+				Steps per pattern cycle. Rows sharing one phasor with different lengths run in
+				polymeter — 12 against 16 is the hardware's triplet pre-scale and then some.
+			</description>
+		</attribute>
+		<attribute name="swing" get="1" set="1" type="float" size="1">
+			<digest>Swing 0..1 (0 = straight; 0.67 = triplet shuffle)</digest>
+			<description>
+				Odd-numbered steps play late by up to half a step. The hardware had no swing —
+				0 is stock.
+			</description>
+		</attribute>
+		<attribute name="plain" get="1" set="1" type="float" size="1">
+			<digest>Trigger level for un-accented hits (default 0.01 = the 4 V base)</digest>
+			<description>
+				The amplitude emitted for un-accented hits. The default is the hardware's 4 V
+				base trigger — accent ~0, kept just above the voices' edge threshold.
+			</description>
+		</attribute>
+		<attribute name="accented" get="1" set="1" type="float" size="1">
+			<digest>Trigger level for accented hits (default 0.5 = accent knob at noon)</digest>
+			<description>
+				The amplitude emitted for accented hits: 0.5 is the hardware's accent level knob
+				at noon, 1.0 the full 14 V bus.
+			</description>
+		</attribute>
+		<attribute name="pulse" get="1" set="1" type="float" size="1">
+			<digest>Impulse width in ms (0 = single-sample edge, the default)</digest>
+			<description>
+				Widths above 0 hold the trigger as a gate — useful for driving envelopes. Keep it
+				shorter than a step at your clock rate, or back-to-back triggers merge and
+				downstream edge detectors miss the second one.
+			</description>
+		</attribute>
+		<attribute name="quantize" get="1" set="1" type="symbol" size="1">
+			<digest>When a recalled pattern takes over: cycle (default), step, or now</digest>
+			<description>
+				cycle swaps at the next pattern top (the hardware feel), step at the next step
+				boundary, now immediately.
+			</description>
+		</attribute>
+		<attribute name="mute" get="1" set="1" type="int" size="1">
+			<digest>Silence the trigger output (the clock keeps running)</digest>
+			<description>
+				Mutes the output without stopping the row, so unmuting re-enters in place.
+			</description>
+		</attribute>
+	</attributelist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.303.seq~"/>
+		<seealso name="tap.808.kick~"/>
+		<seealso name="tap.808.hat~"/>
+		<seealso name="tap.adsr~"/>
+		<seealso name="phasor~"/>
+	</seealsolist>
+
+</c74object>
