@@ -1050,7 +1050,14 @@ GitHub Actions CI.
   chapters in the kernel repo's book: *The acid machine* (`tap.diode~`/`tap.303~`/
   `tap.303.seq~`) and *The drum machine* (the eight `tap.808.*` channels +
   `tap.808.seq~`), every number sourced from the executed notebooks or the kernel
-  suite per the book's own rules; the machine deep-dives renumber to Part VI.
+  suite per the book's own rules; the machine deep-dives renumber to Part VI —
+  which same-day gained its own four rhythm-section chapters: *Seventeen, not four*
+  (`diode_ladder.h` — the k = 17 threshold derived, the closed-form coupled ZDF solve,
+  the WDF no-go), *The couplings are the instrument* (`tb303_voice.h` — the C13 wow as
+  three lines, the measured envmod law, the documented Open303 divergence), *One
+  network, eight voices* (the `tr808_*` headers — the bridged-T solved on its states,
+  the calibration lesson), and *Time as a function of phase* (`step_seq.h` — the O(1)
+  derivation, gate-hold look-ahead, armed-recall re-derivation).
 
 ---
 
