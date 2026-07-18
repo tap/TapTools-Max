@@ -20,9 +20,9 @@
 /// @author     Timothy Place
 /// @copyright  Copyright 2026 Timothy Place. Distributed under the New BSD License.
 
-#include <taptools/step_seq.h>
-
 #include <atomic>
+
+#include <taptools/step_seq.h>
 
 #include "c74_min.h"
 
@@ -125,13 +125,13 @@ class seq808 : public object<seq808>, public vector_operator<> {
     message<> velocities{this, "velocities",
                          "Set per-step trigger levels directly: velocities <v1> ... <vN> (0..1 each, 0 = rest).",
                          MIN_FUNCTION {
-                             auto& p = m_row.clock().data();
+                             auto&        p = m_row.clock().data();
                              const size_t n = std::min(args.size(), static_cast<size_t>(kernel::k_max_steps));
                              for (size_t k = 0; k < n; ++k) {
-                                 const double v        = std::clamp(static_cast<double>(args[k]), 0.0, 1.0);
-                                 p.steps[k].velocity   = v;
-                                 m_hit[k]              = v > 0.0;
-                                 m_flag[k]             = v >= m_accented;
+                                 const double v      = std::clamp(static_cast<double>(args[k]), 0.0, 1.0);
+                                 p.steps[k].velocity = v;
+                                 m_hit[k]            = v > 0.0;
+                                 m_flag[k]           = v >= m_accented;
                              }
                              return {};
                          }};
@@ -141,8 +141,9 @@ class seq808 : public object<seq808>, public vector_operator<> {
                    "steps use the accented level). Overwrites the row's velocities.",
                    MIN_FUNCTION {
                        const size_t n = std::min(args.size(), static_cast<size_t>(kernel::k_max_steps));
-                       for (size_t k = 0; k < n; ++k)
+                       for (size_t k = 0; k < n; ++k) {
                            m_hit[k] = static_cast<int>(args[k]) != 0;
+                       }
                        sync_flag_velocities();
                        return {};
                    }};
@@ -152,30 +153,34 @@ class seq808 : public object<seq808>, public vector_operator<> {
                       "Overwrites the row's velocities.",
                       MIN_FUNCTION {
                           const size_t n = std::min(args.size(), static_cast<size_t>(kernel::k_max_steps));
-                          for (size_t k = 0; k < n; ++k)
+                          for (size_t k = 0; k < n; ++k) {
                               m_flag[k] = static_cast<int>(args[k]) != 0;
+                          }
                           sync_flag_velocities();
                           return {};
                       }};
 
     message<> step{this, "step", "Set one step: step <number 1..64> <velocity 0..1>.",
                    MIN_FUNCTION {
-                       if (args.size() < 2)
+                       if (args.size() < 2) {
                            return {};
+                       }
                        const int k = static_cast<int>(args[0]) - 1;
-                       if (k < 0 || k >= kernel::k_max_steps)
+                       if (k < 0 || k >= kernel::k_max_steps) {
                            return {};
-                       const double v                       = std::clamp(static_cast<double>(args[1]), 0.0, 1.0);
+                       }
+                       const double v                         = std::clamp(static_cast<double>(args[1]), 0.0, 1.0);
                        m_row.clock().data().steps[k].velocity = v;
-                       m_hit[k]                             = v > 0.0;
-                       m_flag[k]                            = v >= m_accented;
+                       m_hit[k]                               = v > 0.0;
+                       m_flag[k]                              = v >= m_accented;
                        return {};
                    }};
 
     message<> store{this, "store", "Store the pattern in a slot (1..16).",
                     MIN_FUNCTION {
-                        if (!args.empty())
+                        if (!args.empty()) {
                             m_row.clock().store(static_cast<int>(args[0]) - 1);
+                        }
                         return {};
                     }};
 
@@ -183,20 +188,23 @@ class seq808 : public object<seq808>, public vector_operator<> {
                      "Recall a slot (1..16); takes over at the quantize boundary (default: the next "
                      "pattern top — the A/B-half / fill switch).",
                      MIN_FUNCTION {
-                         if (!args.empty())
+                         if (!args.empty()) {
                              m_row.clock().recall(static_cast<int>(args[0]) - 1);
+                         }
                          return {};
                      }};
 
     message<> todict{this, "todict", "Write the pattern into a named dictionary: todict <name>.",
                      MIN_FUNCTION {
-                         if (args.empty())
+                         if (args.empty()) {
                              return {};
+                         }
                          dict  d{symbol(args[0])};
                          auto& p = m_row.clock().data();
                          atoms v;
-                         for (int k = 0; k < p.length; ++k)
+                         for (int k = 0; k < p.length; ++k) {
                              v.push_back(p.steps[k].velocity);
+                         }
                          set_key(d, "length", atoms{p.length});
                          set_key(d, "velocities", v);
                          d.touch();
@@ -205,16 +213,18 @@ class seq808 : public object<seq808>, public vector_operator<> {
 
     message<> fromdict{this, "fromdict", "Read a pattern written by todict: fromdict <name>.",
                        MIN_FUNCTION {
-                           if (args.empty())
+                           if (args.empty()) {
                                return {};
+                           }
                            try {
                                dict        d{symbol(args[0])};
                                const atoms ln = d.at("length");
                                const atoms v  = d.at("velocities");
-                               if (ln.empty() || v.empty())
+                               if (ln.empty() || v.empty()) {
                                    throw std::runtime_error("empty");
+                               }
                                const int n = std::clamp(static_cast<int>(ln[0]), 1, kernel::k_max_steps);
-                               auto&       p = m_row.clock().data();
+                               auto&     p = m_row.clock().data();
                                p.set_length(n);
                                length = n;
                                for (int k = 0; k < n && k < static_cast<int>(v.size()); ++k) {
@@ -233,10 +243,12 @@ class seq808 : public object<seq808>, public vector_operator<> {
     message<> clear{this, "clear", "Empty the pattern (all rests) and reset the clock state.",
                     MIN_FUNCTION {
                         m_row.clock().data().clear();
-                        for (auto& h : m_hit)
+                        for (auto& h : m_hit) {
                             h = false;
-                        for (auto& f : m_flag)
+                        }
+                        for (auto& f : m_flag) {
                             f = false;
+                        }
                         m_row.reset();
                         return {};
                     }};
@@ -289,17 +301,19 @@ class seq808 : public object<seq808>, public vector_operator<> {
   private:
     // Set a list value on a dictionary key (atom_reference only assigns scalars).
     static void set_key(dict& d, const char* key, const atoms& v) {
-        if (v.empty())
+        if (v.empty()) {
             return;
+        }
         c74::max::dictionary_appendatoms(reinterpret_cast<c74::max::t_dictionary*>(static_cast<c74::max::t_object*>(d)),
-                                    symbol(key), static_cast<long>(v.size()),
-                                    reinterpret_cast<c74::max::t_atom*>(const_cast<atom*>(v.data())));
+                                         symbol(key), static_cast<long>(v.size()),
+                                         reinterpret_cast<c74::max::t_atom*>(const_cast<atom*>(v.data())));
     }
 
     void sync_flag_velocities() {
         auto& p = m_row.clock().data();
-        for (int k = 0; k < kernel::k_max_steps; ++k)
+        for (int k = 0; k < kernel::k_max_steps; ++k) {
             p.steps[k].velocity = m_hit[k] ? (m_flag[k] ? m_accented : m_plain) : 0.0;
+        }
     }
 };
 

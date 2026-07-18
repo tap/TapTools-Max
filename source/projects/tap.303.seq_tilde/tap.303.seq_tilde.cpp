@@ -24,9 +24,9 @@
 /// @author     Timothy Place
 /// @copyright  Copyright 2026 Timothy Place. Distributed under the New BSD License.
 
-#include <taptools/step_seq.h>
-
 #include <atomic>
+
+#include <taptools/step_seq.h>
 
 #include "c74_min.h"
 
@@ -107,11 +107,13 @@ class seq303 : public object<seq303>, public vector_operator<> {
                    "Set one step and gate it on: step <number 1..64> <pitch> [accent 0/1] [slide 0/1]. "
                    "Pitch is a MIDI note number; fractional values are cents.",
                    MIN_FUNCTION {
-                       if (args.size() < 2)
+                       if (args.size() < 2) {
                            return {};
+                       }
                        const int k = static_cast<int>(args[0]) - 1;
-                       if (k < 0 || k >= kernel::k_max_steps)
+                       if (k < 0 || k >= kernel::k_max_steps) {
                            return {};
+                       }
                        auto& st  = m_row.clock().data().steps[k];
                        st.pitch  = args[1];
                        st.gate   = true;
@@ -122,11 +124,13 @@ class seq303 : public object<seq303>, public vector_operator<> {
 
     message<> rest{this, "rest", "Silence one step: rest <number 1..64>.",
                    MIN_FUNCTION {
-                       if (args.empty())
+                       if (args.empty()) {
                            return {};
+                       }
                        const int k = static_cast<int>(args[0]) - 1;
-                       if (k >= 0 && k < kernel::k_max_steps)
+                       if (k >= 0 && k < kernel::k_max_steps) {
                            m_row.clock().data().steps[k].gate = false;
+                       }
                        return {};
                    }};
 
@@ -134,8 +138,9 @@ class seq303 : public object<seq303>, public vector_operator<> {
                       MIN_FUNCTION {
                           auto&        p = m_row.clock().data();
                           const size_t n = std::min(args.size(), static_cast<size_t>(kernel::k_max_steps));
-                          for (size_t k = 0; k < n; ++k)
+                          for (size_t k = 0; k < n; ++k) {
                               p.steps[k].pitch = args[k];
+                          }
                           return {};
                       }};
 
@@ -143,8 +148,9 @@ class seq303 : public object<seq303>, public vector_operator<> {
                     MIN_FUNCTION {
                         auto&        p = m_row.clock().data();
                         const size_t n = std::min(args.size(), static_cast<size_t>(kernel::k_max_steps));
-                        for (size_t k = 0; k < n; ++k)
+                        for (size_t k = 0; k < n; ++k) {
                             p.steps[k].gate = static_cast<int>(args[k]) != 0;
+                        }
                         return {};
                     }};
 
@@ -152,8 +158,9 @@ class seq303 : public object<seq303>, public vector_operator<> {
                       MIN_FUNCTION {
                           auto&        p = m_row.clock().data();
                           const size_t n = std::min(args.size(), static_cast<size_t>(kernel::k_max_steps));
-                          for (size_t k = 0; k < n; ++k)
+                          for (size_t k = 0; k < n; ++k) {
                               p.steps[k].accent = static_cast<int>(args[k]) != 0;
+                          }
                           return {};
                       }};
 
@@ -163,15 +170,17 @@ class seq303 : public object<seq303>, public vector_operator<> {
                      MIN_FUNCTION {
                          auto&        p = m_row.clock().data();
                          const size_t n = std::min(args.size(), static_cast<size_t>(kernel::k_max_steps));
-                         for (size_t k = 0; k < n; ++k)
+                         for (size_t k = 0; k < n; ++k) {
                              p.steps[k].slide = static_cast<int>(args[k]) != 0;
+                         }
                          return {};
                      }};
 
     message<> store{this, "store", "Store the pattern in a slot (1..16).",
                     MIN_FUNCTION {
-                        if (!args.empty())
+                        if (!args.empty()) {
                             m_row.clock().store(static_cast<int>(args[0]) - 1);
+                        }
                         return {};
                     }};
 
@@ -179,15 +188,17 @@ class seq303 : public object<seq303>, public vector_operator<> {
                      "Recall a slot (1..16); takes over at the quantize boundary (default: the next "
                      "pattern top).",
                      MIN_FUNCTION {
-                         if (!args.empty())
+                         if (!args.empty()) {
                              m_row.clock().recall(static_cast<int>(args[0]) - 1);
+                         }
                          return {};
                      }};
 
     message<> todict{this, "todict", "Write the pattern into a named dictionary: todict <name>.",
                      MIN_FUNCTION {
-                         if (args.empty())
+                         if (args.empty()) {
                              return {};
+                         }
                          dict  d{symbol(args[0])};
                          auto& p = m_row.clock().data();
                          atoms pitches_, gates_, accents_, slides_;
@@ -208,8 +219,9 @@ class seq303 : public object<seq303>, public vector_operator<> {
 
     message<> fromdict{this, "fromdict", "Read a pattern written by todict: fromdict <name>.",
                        MIN_FUNCTION {
-                           if (args.empty())
+                           if (args.empty()) {
                                return {};
+                           }
                            try {
                                dict        d{symbol(args[0])};
                                const atoms ln = d.at("length");
@@ -217,22 +229,27 @@ class seq303 : public object<seq303>, public vector_operator<> {
                                const atoms gv = d.at("gates");
                                const atoms av = d.at("accents");
                                const atoms sv = d.at("slides");
-                               if (ln.empty())
+                               if (ln.empty()) {
                                    throw std::runtime_error("empty");
+                               }
                                const int n = std::clamp(static_cast<int>(ln[0]), 1, kernel::k_max_steps);
                                auto&     p = m_row.clock().data();
                                p.set_length(n);
                                length = n;
                                for (int k = 0; k < n; ++k) {
                                    auto& st = p.steps[k];
-                                   if (k < static_cast<int>(pv.size()))
+                                   if (k < static_cast<int>(pv.size())) {
                                        st.pitch = pv[k];
-                                   if (k < static_cast<int>(gv.size()))
+                                   }
+                                   if (k < static_cast<int>(gv.size())) {
                                        st.gate = static_cast<int>(gv[k]) != 0;
-                                   if (k < static_cast<int>(av.size()))
+                                   }
+                                   if (k < static_cast<int>(av.size())) {
                                        st.accent = static_cast<int>(av[k]) != 0;
-                                   if (k < static_cast<int>(sv.size()))
+                                   }
+                                   if (k < static_cast<int>(sv.size())) {
                                        st.slide = static_cast<int>(sv[k]) != 0;
+                                   }
                                }
                            }
                            catch (...) {
@@ -269,11 +286,11 @@ class seq303 : public object<seq303>, public vector_operator<> {
     // -- perform --------------------------------------------------------------------------------------
 
     void operator()(audio_bundle input, audio_bundle output) {
-        const long    n        = input.frame_count();
-        const double* in       = input.samples(0);
+        const long    n         = input.frame_count();
+        const double* in        = input.samples(0);
         double*       pitch_out = output.samples(0);
         double*       gate_out  = output.samples(1);
-        const bool    muted    = mute;
+        const bool    muted     = mute;
 
         if (!m_in.has_signal_connection()) {
             std::fill_n(pitch_out, n, 0.0);
@@ -294,11 +311,12 @@ class seq303 : public object<seq303>, public vector_operator<> {
 
     // Set a list value on a dictionary key (atom_reference only assigns scalars).
     static void set_key(dict& d, const char* key, const atoms& v) {
-        if (v.empty())
+        if (v.empty()) {
             return;
+        }
         c74::max::dictionary_appendatoms(reinterpret_cast<c74::max::t_dictionary*>(static_cast<c74::max::t_object*>(d)),
-                                    symbol(key), static_cast<long>(v.size()),
-                                    reinterpret_cast<c74::max::t_atom*>(const_cast<atom*>(v.data())));
+                                         symbol(key), static_cast<long>(v.size()),
+                                         reinterpret_cast<c74::max::t_atom*>(const_cast<atom*>(v.data())));
     }
 
     // Exposed for unit tests.

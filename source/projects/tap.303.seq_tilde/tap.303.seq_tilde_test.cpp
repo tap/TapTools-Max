@@ -21,8 +21,9 @@ SCENARIO("tap.303.seq~ instantiates with the plan's defaults") {
         }
         THEN("all steps rest") {
             auto& p = my_object.row().clock().data();
-            for (int k = 0; k < p.length; ++k)
+            for (int k = 0; k < p.length; ++k) {
                 REQUIRE(p.steps[k].gate == false);
+            }
         }
     }
 }
