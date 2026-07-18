@@ -81,7 +81,9 @@ class voice303 : public object<voice303>, public vector_operator<> {
                  "and run at ~200 ms, like the hardware.")
     TAP_303_ATTR(accent, kernel::p_accent, 0.5,
                  "Accent amount (0..1, the AC knob): how strongly accented notes hit — louder, with a "
-                 "faster envelope.")
+                 "faster envelope, and driving the accent-sweep circuit: consecutive accents charge a "
+                 "capacitor that pushes the cutoff higher note over note (the wow), scaled by the "
+                 "resonance knob, then drains during rests.")
     TAP_303_ATTR(tuning, kernel::p_tuning, 0.0, "Master tuning in cents (-1200..1200).")
     TAP_303_ATTR(gain, kernel::p_gain, 0.0, "Output gain in dB.")
 

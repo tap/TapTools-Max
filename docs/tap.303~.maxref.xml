@@ -14,7 +14,10 @@
 		Envelope sweeping the cutoff (envmod, with the hardware's law: two thirds of the
 		sweep above the cutoff knob, one third below) and the fixed-decay VCA envelope
 		(fast attack, ~1.2 s decay, no sustain, chopped at gate-off). Accented notes hit
-		louder with a faster envelope, scaled by the accent knob. Pitch arrives in the left
+		louder with a faster envelope, scaled by the accent knob — and drive the 303's
+		accent-sweep circuit: a capacitor charges with each accent and pushes the cutoff
+		higher when accents come close together (the famous build-up), scaled by the
+		resonance knob and independent of envmod. Pitch arrives in the left
 		inlet as a MIDI note number (signal, read per sample, or float; fractions are
 		cents). The right inlet is a gate signal whose rising edge triggers the note —
 		<b>edge amplitude encodes accent</b>: 1.0 is a plain note, up to 2.0 fully
@@ -109,7 +112,10 @@
 		</attribute>
 		<attribute name="accent" get="1" set="1" type="float" size="1">
 			<description>Accent amount (0-1): how strongly accented notes hit — louder, with a
-			faster envelope.</description>
+			faster envelope, and driving the accent-sweep circuit: consecutive accented notes
+			charge a capacitor that pushes the cutoff higher note over note (the famous
+			build-up, or "wow"), scaled by the resonance knob, draining away during rests. The
+			sweep works even with envmod at zero, like the hardware.</description>
 		</attribute>
 		<attribute name="tuning" get="1" set="1" type="float" size="1">
 			<description>Master tuning in cents (-1200..1200).</description>
