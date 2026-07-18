@@ -4,9 +4,10 @@
 > channels `tap.808.{kick,snare,clap,hat,cymbal,cowbell,tom,rim}~` end to end, plus the
 > slice-5 family polish: output balance, the family overview patcher, the kernel's
 > `tr808_render` tool — see the REVIVAL.md §7 progress-log entries; the §8 blocking
-> decisions are answered below). Remaining: runtime validation in Max (§7.3),
-> sample-pack calibration (§7.2), then the Phase 2 WDF go/no-go on the kick.
-> Drafted 2026-07-17.
+> decisions are answered below). **§7.2 sample-pack calibration done** (all eight
+> voices measured per knob cell against a real unit; `notebooks/tr808_calibration.ipynb`
+> in the kernel repo). Remaining: runtime validation in Max (§7.3), then the Phase 2
+> WDF go/no-go on the kick. Drafted 2026-07-17.
 > Design + phased work breakdown for the first net-new object *family*:
 > circuit-informed recreations of the Roland TR-808's analog drum voices, with a
 > flagged upgrade path to full circuit simulation, and a potential later phase adding
@@ -310,8 +311,11 @@ including the tone-max mode flip, toms/congas/cowbell/claves within ~4%); the de
 classes and noise voicings were re-fit to the measured unit (tom/conga/cowbell/clap
 tails roughly doubled, the snare's snappy band-limited and re-enveloped, the rimshot
 re-voiced low-dominant, the cymbal's decay span and brightness corrected). Each kernel
-header carries a §7.2 calibration note with its numbers and residuals. The DAFx-14
-gen~ cross-check for the kick remains open as a further option.
+header carries a §7.2 calibration note with its numbers and residuals, the closed-hat
+brightness residual was subsequently resolved by the hats' sizzle blend, and the whole
+workflow is committed as the kernel repo's `notebooks/tr808_calibration.ipynb` (the
+"notebook workflow" above, literally). The DAFx-14 gen~ cross-check for the kick
+remains open as a further option.
 
 ### 7.3 Wrapper + runtime tests
 

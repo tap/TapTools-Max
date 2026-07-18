@@ -781,9 +781,16 @@ GitHub Actions CI.
   re-enveloped with a fitted VR9 dial law, the rimshot re-voiced low-dominant (the
   real RS peaks at ~455 Hz), and the cymbal's decay span and brightness corrected to
   the measured 0.65–2.7 s / centroid range. Every kernel header now carries a §7.2
-  calibration note with its numbers and honest residuals (e.g. the closed hat measures
-  ~29% brighter on the real unit than the shared-band model produces). Kernel suite
-  green at 86 scenarios with the decay pins updated to the calibrated classes.
+  calibration note with its numbers and honest residuals. The one structural residual —
+  the closed hat measuring ~29% brighter than the shared-band model could produce — was
+  then resolved by the **hats' sizzle blend** (the bank's raw upper harmonics, ~13 kHz
+  high-passed, weighted per path inside the existing VCAs): CH centroid now −1.3%, OH
+  +0.5%, pinned by a HF-fraction test. The whole workflow is reproducible from the
+  kernel repo as **`notebooks/tr808_calibration.ipynb`** (house notebook pattern:
+  downloads and caches the reference set, re-renders the 116-cell grid via
+  `tr808_render --set`, prints per-voice delta tables, overlays spectra/envelopes;
+  committed executed — median |Δ| fundamentals 0.4–4.8%, decays mostly 1–8%). Kernel
+  suite green at 87 scenarios with the decay pins updated to the calibrated classes.
 
 - ✅ **`tap.808.*` slice 5 — family polish (2026-07-17). PHASE 1 OF THE PLAN IS
   COMPLETE.** Kernel side: **family output balance** — the bridged-T's impulse gain
