@@ -100,6 +100,14 @@ SCENARIO("the Min wrapper instantiates with the documented defaults") {
             my_object.seed = 42;
             REQUIRE(my_object.voice().seed() == 42u);
         }
+        THEN("the phase-2 VCA circuit defaults to clean and maps its symbols") {
+            REQUIRE(my_object.vca == symbol("clean"));
+            REQUIRE(my_object.voice().vca() == ktb::vca_clean);
+            my_object.vca = symbol("warm");
+            REQUIRE(my_object.voice().vca() == ktb::vca_warm);
+            my_object.vca = symbol("clean");
+            REQUIRE(my_object.voice().vca() == ktb::vca_clean);
+        }
         THEN("factory presets are recallable out of the box") {
             my_object.recall(atoms{2, 0.0}); // deep sub
             REQUIRE(my_object.voice().snap_targets().v[ktb::p_cutoff] == 250.0);

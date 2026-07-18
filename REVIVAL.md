@@ -986,6 +986,28 @@ GitHub Actions CI.
     (headless-authored; wants an open-in-Max check). **Runtime validation in Max still
     pending**, as everywhere.
 
+- ✅ **`tap.303~` phase 2 + the verification notebook (2026-07-18).** The 303 program's
+  fidelity phase, closed on evidence:
+  - **The transistor VCA** shipped as **`vca clean|warm`** (the `svf.h` two-circuit pattern):
+    the one-transistor class-A stage as a slope-normalized biased saturator (d = 2.0, b = 0.3,
+    probe-calibrated) in the hardware order — post-envelope-gain, pre-output-coupling, the
+    24 Hz coupling HPF absorbing the shaper's DC. The distortion tracks the envelope
+    (measured 5.4% difference signal quiet vs 11.5% on hot accents); `clean` stays the
+    default, bit-identical to phase 1. Kernel scenario + `tb303_vca_ab.wav`; wrapper `vca`
+    attribute + maxref.
+  - **`notebooks/tb303.ipynb`** (kernel repo) — the tap.303/tap.diode verification notebook,
+    house pattern: the shipping kernels driven through the C ABI (extended with
+    `taptools_diode` + `taptools_tb303`, including the full note interface and a direct C13
+    `accent_charge` readout). Seven executed, asserted sections: Stinchcombe TF to
+    **0.028 dB**, the stock-never-self-oscillates trait, the solver fast/exact A/B matrix
+    (≤ **−44.9 dBr** worst case) + CPU, the measured envmod law, the wow (×1.94 build,
+    ×0.998 reset), the warm VCA.
+  - **WDF: documented no-go, author-approved (2026-07-18)** on the notebook's §3 evidence —
+    `solver exact` already converges the circuit's nonlinear equations; a WDF would re-solve
+    the same network with only the diode-curve shape as the delta. Recorded in the plan §5.
+  Phase 2 of `plans/tap.303.md` is **complete**; what remains for the 303 program is runtime
+  validation in Max and the deferred phase-3 sequencer.
+
 ---
 
 ## 8. The `taptools-min` reconciliation (2026-06-17)
@@ -1139,12 +1161,14 @@ program: the standalone diode-ladder filter (**`tap.diode~`** — ✅) and the v
 (**`tap.303~`** — ✅, TapTools' first pitched instrument, carrying the package-wide
 melodic-voice contract: MIDI-note pitch signal + amplitude-as-accent gate + legato-as-slide);
 see the §7 progress-log entries. Provenance: Stinchcombe's filter analysis, the Devil Fish
-circuit documentation, Open303, x0xb0x schematics, Service Notes. **Phase 1 is ✅ complete —
-all four slices shipped** (the filter, the voice, the C13 wow, and the slice-4 Open303
-calibration + bends + seed/tolerance + factory presets — see the §7 entries). Remaining:
-the deferred sequencer phase (`tap.303.seq~`, coordinated with `tap.808.seq~`), the phase-2
-fidelity gates (transistor-VCA nonlinearity, WDF go/no-go), and **runtime validation in Max**
-for both objects (help patchers, maxtests, and the render WAVs as listening material).
+circuit documentation, Open303, x0xb0x schematics, Service Notes. **Phases 1 and 2 are ✅ complete**
+(phase 1: the filter, the voice, the C13 wow, the slice-4 Open303 calibration + bends +
+seed/tolerance + factory presets; phase 2: the `vca clean|warm` transistor stage, the
+square shaper resolved via Open303's measured constants, and the author-approved WDF no-go
+— grounded in the kernel repo's **`notebooks/tb303.ipynb`** verification notebook; see the
+§7 entries). Remaining: the deferred sequencer phase (`tap.303.seq~`, coordinated with
+`tap.808.seq~`) and **runtime validation in Max** for both objects (help patchers,
+maxtests, the render WAVs, and the notebook as the evaluation material).
 
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as

@@ -116,6 +116,16 @@ class voice303 : public object<voice303>, public vector_operator<> {
                                             "unit drifts (tuning, filter tracking, envelope and sweep timing, "
                                             "waveform imperfection). 0 is the exact nominal circuit."}};
 
+    attribute<symbol> vca{this, "vca", "clean", setter{ MIN_FUNCTION {
+                              const symbol s = args[0];
+                              m_voice.set_vca(s == symbol("warm") ? kernel::vca_warm : kernel::vca_clean);
+                              return {m_voice.vca() == kernel::vca_warm ? symbol("warm") : symbol("clean")};
+                          }},
+                          description{"VCA circuit (phase 2): clean (default, the linear multiply) or warm — the "
+                                      "303's one-transistor stage modeled as envelope-tracking saturation: quiet "
+                                      "notes stay clean, hot accents pick up even-harmonic warmth and gentle "
+                                      "compression."}};
+
     attribute<symbol> waveform{this, "waveform", "saw", setter{ MIN_FUNCTION {
                                    const symbol s = args[0];
                                    m_voice.set_waveform(s == symbol("square") ? kernel::wave_square : kernel::wave_saw);

@@ -154,6 +154,12 @@
 			<description>Oscillator waveform: saw or square (the hardware's two). Switching
 			glides click-free.</description>
 		</attribute>
+		<attribute name="vca" get="1" set="1" type="symbol" size="1">
+			<description>VCA circuit (phase 2): clean (default, the linear multiply) or warm —
+			the 303's one-transistor stage modeled as envelope-tracking saturation. Quiet notes
+			stay clean; hot accented notes pick up even-harmonic warmth and gentle compression,
+			like the discrete hardware stage.</description>
+		</attribute>
 		<attribute name="gain" get="1" set="1" type="float" size="1">
 			<description>Output gain in dB.</description>
 		</attribute>
