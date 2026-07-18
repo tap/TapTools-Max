@@ -1046,6 +1046,12 @@ GitHub Actions CI.
   `tb303_voice.h`/`tr808_kick.h` off one phasor ramp** (embedded audio), and
   cycle-quantized recall swapping exactly on the wrap sample.
 
+- ✅ **"Tools on Tap" Part V — The rhythm section (2026-07-18).** Two field-guide
+  chapters in the kernel repo's book: *The acid machine* (`tap.diode~`/`tap.303~`/
+  `tap.303.seq~`) and *The drum machine* (the eight `tap.808.*` channels +
+  `tap.808.seq~`), every number sourced from the executed notebooks or the kernel
+  suite per the book's own rules; the machine deep-dives renumber to Part VI.
+
 ---
 
 ## 8. The `taptools-min` reconciliation (2026-06-17)
