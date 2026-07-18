@@ -1,12 +1,14 @@
 # Plan — `tap.808.seq~` / `tap.303.seq~` (the shared step-sequencer engine)
 
-> Status: **drafted 2026-07-18** — the coordinated phase-3 design that `plans/tap.808.md` §6
-> and `plans/tap.303.md` §6 both deferred to. Both voice families have shipped (808 slices
-> 0–5 + §7.2 calibration; 303 phases 1–2 + the approved WDF no-go), the trigger and note
-> contracts have survived their family patchers, and the phase-3 interface dry run
-> (`help/tap.303~-pattern.maxpat`, a Max-patched 16-step sequencer driving the `note`
-> message) exists — the preconditions both plans set. §8 blocking decisions await author
-> sign-off. As always, the engine lands in the kernel repo (`tap/taptools`) first, then the
+> Status: **drafted 2026-07-18; §6 decisions approved by the author same day** — the
+> coordinated phase-3 design that `plans/tap.808.md` §6 and `plans/tap.303.md` §6 both
+> deferred to. Both voice families have shipped (808 slices 0–5 + §7.2 calibration; 303
+> phases 1–2 + the approved WDF no-go), the trigger and note contracts have survived their
+> family patchers, and the phase-3 interface dry run (`help/tap.303~-pattern.maxpat`, a
+> Max-patched 16-step sequencer driving the `note` message) exists — the preconditions
+> both plans set. The three blocking decisions (shape, clocking, slots) are ✅ approved,
+> and the non-blocking recommendations accepted in principle — implementation can start at
+> slice 0. As always, the engine lands in the kernel repo (`tap/taptools`) first, then the
 > Min wrappers + vertical slices here.
 
 ## 0. The headline answer, up front
@@ -265,28 +267,30 @@ REVIVAL.md progress log updated.
 
 ## 6. Pre-implementation questions (author decisions)
 
-### Blocking
+### Author decisions — ✅ the three blocking ones answered (author, 2026-07-18)
 
-1. **The shape**: one kernel engine (`step_seq.h`) + two family wrappers
-   (`tap.808.seq~` = one trigger row, `tap.303.seq~` = one pitch/gate line), per §0 —
-   i.e. 808-plan option (b) unified with the 303 emitter. Approve?
-2. **The clocking idiom**: phase-driven (one 0..1 ramp per pattern cycle from
-   `phasor~`), **no clock object in v1** — the master clock is a documented
-   `phasor~`/transport idiom. Approve?
-3. **Pattern slots + quantized recall** (default `cycle`) as the A/B-half / fill /
-   chaining mechanism, with `dictionary` save/recall. Approve?
+1. **The shape:** ✅ **approved** — one kernel engine (`step_seq.h`) + two family
+   wrappers (`tap.808.seq~` = one trigger row, `tap.303.seq~` = one pitch/gate line),
+   per §0 — i.e. 808-plan option (b) unified with the 303 emitter. (This also
+   resolves `plans/tap.808.md` §8 Q5.)
+2. **The clocking idiom:** ✅ **approved** — phase-driven (one 0..1 ramp per pattern
+   cycle from `phasor~`), **no clock object in v1**; the master clock is a documented
+   `phasor~`/transport idiom.
+3. **Pattern slots + quantized recall:** ✅ **approved** — 16 slots, `quantize`
+   defaulting to `cycle`, as the A/B-half / fill / chaining mechanism, with
+   `dictionary` save/recall.
 
-### Non-blocking (deferrable to their slices)
+### Still open (non-blocking, accepted in principle — confirmed at their slices)
 
-4. **Per-step velocity vs. hardware flags** on `tap.808.seq~`: recommended as stored
-   velocity 0..1 with `hits`/`accents` list conveniences mapping onto
-   `plain`/`accented` levels (slice-1 call).
+4. **Per-step velocity vs. hardware flags** on `tap.808.seq~`: stored velocity 0..1
+   with `hits`/`accents` list conveniences mapping onto `plain`/`accented` levels
+   (slice-1 confirmation).
 5. **A generic third wrapper (`tap.seq~`)** exposing the engine for non-family uses —
    deferred until someone wants it; the kernel design keeps it a thin add.
-6. **`pulse` gate-width attribute** on the trigger row for envelope consumers —
-   recommended in (cheap, contained); confirm at slice 1.
-7. **Step-index UI outlet** — recommended in (scheduler-domain, Min-glue only);
-   confirm at slice 1.
+6. **`pulse` gate-width attribute** on the trigger row for envelope consumers — in
+   (cheap, contained); confirm at slice 1.
+7. **Step-index UI outlet** — in (scheduler-domain, Min-glue only); confirm at
+   slice 1.
 
 ## 7. Sources
 
