@@ -54,13 +54,18 @@ class vca : public object<vca>, public vector_operator<> {
     vca(const atoms& args = {}) { m_vca.prepare(samplerate()); }
 
     attribute<symbol> circuit{
-        this, "circuit", "clean", range{"clean", "warm", "swing"},
+        this,
+        "circuit",
+        "clean",
+        range{"clean", "warm", "swing"},
         setter{ MIN_FUNCTION {
             int m = taptools::vca::mode_clean;
-            if (args[0] == "warm")
+            if (args[0] == "warm") {
                 m = taptools::vca::mode_warm;
-            else if (args[0] == "swing")
+            }
+            else if (args[0] == "swing") {
                 m = taptools::vca::mode_swing;
+            }
             m_vca.set_mode(m);
             return args;
         }},
@@ -77,7 +82,10 @@ class vca : public object<vca>, public vector_operator<> {
                                        "inlet. A signal in the right inlet overrides this per sample."}};
 
     attribute<number> drive{
-        this, "drive", taptools::vca::k_default_drive, range{0.1, 12.0},
+        this,
+        "drive",
+        taptools::vca::k_default_drive,
+        range{0.1, 12.0},
         setter{ MIN_FUNCTION {
             const double v = std::clamp(static_cast<double>(args[0]), 0.1, 12.0);
             m_vca.set_drive(v);
@@ -88,7 +96,10 @@ class vca : public object<vca>, public vector_operator<> {
                     "and more compression. Ignored by the clean circuit."}};
 
     attribute<number> bias{
-        this, "bias", taptools::vca::k_default_bias, range{-2.0, 2.0},
+        this,
+        "bias",
+        taptools::vca::k_default_bias,
+        range{-2.0, 2.0},
         setter{ MIN_FUNCTION {
             const double v = std::clamp(static_cast<double>(args[0]), -2.0, 2.0);
             m_vca.set_bias(v);
@@ -98,8 +109,7 @@ class vca : public object<vca>, public vector_operator<> {
                     "The asymmetry that produces even harmonics; 0 is a symmetric (odd-only) shaper. "
                     "Ignored by the clean circuit."}};
 
-    attribute<bool> dcblock{this, "dcblock", true,
-                            setter{ MIN_FUNCTION {
+    attribute<bool> dcblock{this, "dcblock", true, setter{ MIN_FUNCTION {
                                 m_vca.set_dc_block(static_cast<bool>(args[0]));
                                 return args;
                             }},

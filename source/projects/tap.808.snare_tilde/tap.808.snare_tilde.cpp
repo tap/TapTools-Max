@@ -75,14 +75,14 @@ class snare808 : public object<snare808>, public sample_operator<1, 1> {
                                          "both resonators together. 1 is the schematic (~173/336 Hz)."}};
 
     attribute<number> drive{this, "drive", 0.0, setter{MIN_FUNCTION{
-                                 const double v = MIN_CLAMP(static_cast<double>(args[0]), 0.0, 12.0);
-                                 m_snare.set_drive(v);
-                                 return {v};
-                             }},
-                             description{"Circuit bend: swing-VCA drive on the snappy noise path (0..12). 0 is the "
-                                         "calibrated linear model (default); higher engages the swing VCA's "
-                                         "symmetric harmonic saturation — grit and compression that ride the snappy "
-                                         "envelope, hardest on the transient crack."}};
+                                const double v = MIN_CLAMP(static_cast<double>(args[0]), 0.0, 12.0);
+                                m_snare.set_drive(v);
+                                return {v};
+                            }},
+                            description{"Circuit bend: swing-VCA drive on the snappy noise path (0..12). 0 is the "
+                                        "calibrated linear model (default); higher engages the swing VCA's "
+                                        "symmetric harmonic saturation — grit and compression that ride the snappy "
+                                        "envelope, hardest on the transient crack."}};
 
     attribute<int> seed{this, "seed", 1, setter{MIN_FUNCTION{
                             const int v = std::max(1, static_cast<int>(args[0]));

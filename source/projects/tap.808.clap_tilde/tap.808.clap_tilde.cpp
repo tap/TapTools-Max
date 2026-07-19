@@ -73,14 +73,14 @@ class clap808 : public object<clap808>, public sample_operator<1, 1> {
                                        "disconnects the wash, leaving only the three teeth."}};
 
     attribute<number> drive{this, "drive", 0.0, setter{MIN_FUNCTION{
-                                 const double v = MIN_CLAMP(static_cast<double>(args[0]), 0.0, 12.0);
-                                 m_clap.set_drive(v);
-                                 return {v};
-                             }},
-                             description{"Circuit bend: swing-VCA drive on the output VCA (0..12), for both the "
-                                         "clap and maracas models. 0 is the calibrated linear model (default); "
-                                         "higher engages the swing VCA's symmetric harmonic saturation — grit and "
-                                         "compression that ride the envelope."}};
+                                const double v = MIN_CLAMP(static_cast<double>(args[0]), 0.0, 12.0);
+                                m_clap.set_drive(v);
+                                return {v};
+                            }},
+                            description{"Circuit bend: swing-VCA drive on the output VCA (0..12), for both the "
+                                        "clap and maracas models. 0 is the calibrated linear model (default); "
+                                        "higher engages the swing VCA's symmetric harmonic saturation — grit and "
+                                        "compression that ride the envelope."}};
 
     attribute<int> seed{this, "seed", 1, setter{MIN_FUNCTION{
                             const int v = std::max(1, static_cast<int>(args[0]));
