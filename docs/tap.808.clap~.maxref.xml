@@ -90,6 +90,15 @@
 				it, leaving only the three teeth; above 1 exaggerates the wash.
 			</description>
 		</attribute>
+		<attribute name="drive" get="1" set="1" type="float" size="1">
+			<digest>Circuit bend: swing-VCA drive on the output VCA (default 0 = linear)</digest>
+			<description>
+				Swing-VCA drive on the output VCA, 0..12, for both the clap and maracas models.
+				0 is the calibrated linear model (default); higher engages the swing VCA's
+				symmetric harmonic saturation — grit and compression that ride the envelope.
+				See tap.vca~ (the swing circuit).
+			</description>
+		</attribute>
 		<attribute name="seed" get="1" set="1" type="int" size="1">
 			<digest>Noise seed (deterministic)</digest>
 			<description>

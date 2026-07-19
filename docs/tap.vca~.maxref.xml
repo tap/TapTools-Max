@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.vca~" module="msp" category="TapTools, MSP Modifiers">
+
+	<digest>
+		Voltage-controlled amplifier — clean multiply or warm transistor stage
+	</digest>
+
+	<description>
+		The <o>tap.vca~</o> object is a voltage-controlled amplifier. The left inlet is the
+		audio; the right inlet is the gain / control voltage — a signal for true per-sample
+		modulation, or a float to set the <at>gain</at> attribute. The <at>circuit</at>
+		attribute chooses the character: <b>clean</b> is a pure linear multiply, bit-identical
+		to <o>*~</o> — transparent, with no added harmonics or DC. <b>warm</b> is the Roland
+		TB-303's one-transistor class-A VCA stage — the same kernel <o>tap.303~</o> runs — a
+		biased, slope-normalized tanh applied after the gain: quiet signals stay essentially
+		clean, while hot signals pick up even-harmonic warmth and gentle compression that track
+		the control voltage, the way a discrete VCA does and a plain multiply cannot. An output
+		DC block (the <at>dcblock</at> attribute) sheds the shaped signal's DC offset, as the
+		hardware's output coupling capacitor does. The <at>drive</at> and <at>bias</at>
+		attributes shape the warm circuit (stock at the 303's values). One channel per object;
+		wrap in mc. for multichannel.
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">MSP Modifiers</metadata>
+		<metadata name="tag">Multichannel</metadata>
+		<metadata name="tag">64-bit</metadata>
+	</metadatalist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<arglist/>
+			<description>In the left inlet, the audio to amplify. In the right inlet, the gain /
+			control voltage (linear), applied per sample.</description>
+		</method>
+		<method name="float">
+			<arglist>
+				<arg name="gain" type="float" optional="0" id="1" />
+			</arglist>
+			<description>In the right inlet, sets the <at>gain</at> attribute. Ignored while a
+			signal is connected to that inlet.</description>
+		</method>
+		<method name="clear">
+			<arglist/>
+			<description>Reset the stage's DC-block state.</description>
+		</method>
+	</methodlist>
+
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="circuit" get="1" set="1" type="symbol" size="1">
+			<description>Amplifier circuit: clean (default, the pure linear multiply,
+			bit-identical to *~), warm (the TB-303 one-transistor class-A stage — asymmetric
+			biased-tanh saturation with even harmonics, plus the output DC block), or swing (the
+			TR-808 swing-type VCA — symmetric saturation with odd harmonics and no DC, the same
+			stage the 808 noise voices use). In warm and swing the warmth and compression ride the
+			control voltage; bias is ignored by swing.</description>
+		</attribute>
+		<attribute name="gain" get="1" set="1" type="float" size="1">
+			<description>Linear gain applied when no signal is connected to the right inlet. A
+			signal in the right inlet overrides this per sample.</description>
+		</attribute>
+		<attribute name="drive" get="1" set="1" type="float" size="1">
+			<description>Drive into the transistor stage's tanh for the warm and swing circuits
+			(0.1-12; default 2, the stock 303 value). Higher drive means more harmonics and more
+			compression. Ignored by the clean circuit.</description>
+		</attribute>
+		<attribute name="bias" get="1" set="1" type="float" size="1">
+			<description>Warm-circuit operating-point bias (-2..2; default 0.3, the stock 303
+			value). The asymmetry that produces even harmonics; 0 is a symmetric (odd-only)
+			shaper. Ignored by the clean circuit.</description>
+		</attribute>
+		<attribute name="dcblock" get="1" set="1" type="int" size="1">
+			<description>Warm-circuit output DC block (default on). The biased shaper leaves a
+			signal-dependent DC offset on AC material; this one-pole coupling high-pass removes
+			it, as the hardware's output capacitor does. Turn off to hear the raw
+			asymmetry.</description>
+		</attribute>
+		<attribute name="bypass" get="1" set="1" type="int" size="1">
+			<description>Pass the input through unprocessed.</description>
+		</attribute>
+		<attribute name="mute" get="1" set="1" type="int" size="1">
+			<description>Silence the output.</description>
+		</attribute>
+	</attributelist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.303~"/>
+		<seealso name="tap.crossfade~"/>
+		<seealso name="tap.pan~"/>
+		<seealso name="*~"/>
+		<seealso name="gain~"/>
+	</seealsolist>
+
+
+</c74object>

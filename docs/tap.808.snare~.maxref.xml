@@ -99,6 +99,15 @@
 				(~238/476 Hz) — about 1.4 here.
 			</description>
 		</attribute>
+		<attribute name="drive" get="1" set="1" type="float" size="1">
+			<digest>Circuit bend: swing-VCA drive on the snappy path (default 0 = linear)</digest>
+			<description>
+				Swing-VCA drive on the snappy noise path, 0..12. 0 is the calibrated linear
+				model (default); higher engages the swing VCA's symmetric harmonic saturation —
+				grit and compression that ride the snappy envelope, hardest on the transient
+				crack. See tap.vca~ (the swing circuit).
+			</description>
+		</attribute>
 		<attribute name="seed" get="1" set="1" type="int" size="1">
 			<digest>Noise seed (deterministic)</digest>
 			<description>

@@ -1058,6 +1058,36 @@ GitHub Actions CI.
   network, eight voices* (the `tr808_*` headers — the bridged-T solved on its states,
   the calibration lesson), and *Time as a function of phase* (`step_seq.h` — the O(1)
   derivation, gate-hold look-ahead, armed-recall re-derivation).
+- ✅ **Net-new object — `tap.vca~` (2026-07-18).** The 303's transistor VCA stage, lifted out
+  where it can amplify anything. Kernel: **`vca.h`** (`taptools::vca`) — the two-circuit `svf.h`
+  idiom applied to a gain stage: `clean` is the pure linear multiply (bit-identical to `*~`),
+  `warm` is the one-transistor class-A saturator `S(v) = (tanh(d·v+b) − tanh(b)) / (d·sech²(b))`
+  (stock `d=2.0`, `b=0.3` — the probe-calibrated 303 constants, now exposed as `drive`/`bias`),
+  applied to the post-gain signal so the even-harmonic warmth and compression **track the control
+  voltage** the way a discrete VCA does and a multiply cannot, plus an optional output-coupling DC
+  block (`dcblock`) for the shaper's signal-dependent offset. **`tb303_voice.h` was refactored to
+  compose `vca::shape()`** — one implementation shared between `tap.303~` and the standalone; the
+  voice keeps its own Open303 output high-pass and gain, so the extraction left it **bit-identical**
+  (pinned by `tests/vca_test.cpp`, which matches `shape()` to the old inline formula and re-runs the
+  303 warm-vs-clean scenarios). Wrapper `tap.vca_tilde` (audio in + signal/float gain CV in),
+  `circuit clean|warm` + `drive`/`bias`/`dcblock`/`bypass`/`mute`, the full vertical slice (maxref +
+  help patcher). Remaining: runtime validation in Max.
+- ✅ **The 808 swing-VCA harmonics — `vca.h` `swing` mode + the noise voices (2026-07-18).** The
+  first piece of the flagged 808 circuit-sim work, and the lowest-risk one: the swing-type VCA's
+  "many high harmonics" (Service Notes, RS/CL VCA), which `swing_vca()` had modeled as a flat
+  `x·env`. Kernel: **`vca.h` gains `mode_swing`** — a symmetric (odd-harmonic) `tanh(d·v)/d`
+  saturator, unity-slope-at-0 so quiet tails stay clean and hot transients pick up grit and
+  compression, no DC (symmetric → no coupling block needed). One implementation: a static
+  `vca::swing_shape(v, drive)` that both `mode_swing` and **`swing_vca(x, env, drive)`** route
+  through. **`drive` defaults to 0 → the exact linear passthru**, so every calibrated 808 voice
+  stays **bit-identical** until it opts in (the full existing `tr808_*` suite passes unchanged; the
+  snare test adds an explicit off-is-bit-identical / on-saturates-and-compresses scenario). Wired
+  into the three noise-path voices — **snare** (snappy), **clap** (CP + maracas output), **tom**
+  (noise "reverberation") — each exposing a `drive` circuit-bend attribute (0..12). `tap.vca~` gains
+  the matching `circuit swing`. The heavier WDF `@circuit` pass (the kick bridged-T etc.) stays
+  where the field guide left it — gated on an A/B showing an audible delta the informed model misses,
+  which the DAFx-14 finding suggests may never open. Remaining: A/B calibration of the swing `drive`
+  against reference, and runtime validation in Max.
 
 ---
 

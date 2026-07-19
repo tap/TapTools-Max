@@ -91,6 +91,15 @@
 			<digest>Output level</digest>
 			<description>Output level, 0..1 (default 1).</description>
 		</attribute>
+		<attribute name="drive" get="1" set="1" type="float" size="1">
+			<digest>Circuit bend: swing-VCA drive on the noise layer (default 0 = linear)</digest>
+			<description>
+				Swing-VCA drive on the noise "reverberation" layer, 0..12 (toms only — congas
+				have no noise layer). 0 is the calibrated linear model (default); higher engages
+				the swing VCA's symmetric harmonic saturation riding the noise envelope. See
+				tap.vca~ (the swing circuit).
+			</description>
+		</attribute>
 		<attribute name="seed" get="1" set="1" type="int" size="1">
 			<digest>Noise seed (toms; deterministic)</digest>
 			<description>Seed (&gt;= 1) for the tom noise layer; give mc. instances different seeds.</description>
