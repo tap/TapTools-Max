@@ -1,0 +1,23 @@
+# Canonical Tap House pre-commit config — the single source of truth for the
+# Tap family's local formatting hook. Distributed to every Tap repo by
+# scripts/sync.sh (alongside .clang-format / .clang-tidy / STYLE.md) and kept
+# honest by the drift-check workflow, so every repo runs the SAME hook at the
+# SAME pinned clang-format version.
+#
+# Why the pin matters: an ad-hoc hook using each machine's own clang-format
+# would format differently than CI and be worse than none. The `rev` below is
+# the Tap-wide clang-format version — bump it HERE, re-sync, and every repo
+# (and its CI, which runs `pre-commit run --all-files`) moves together.
+#
+# Adopt in a consumer repo:
+#   1. taphouse/scripts/sync.sh /path/to/your-repo   # copies this file in
+#   2. cd your-repo && pre-commit install            # once per clone
+# Thereafter `git commit` formats staged C/C++ before it can be pushed, so the
+# clang-format CI gate can never fail on a local commit again.
+repos:
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v18.1.3            # Tap-wide clang-format version (matches CI)
+    hooks:
+      - id: clang-format
+        types_or: [c, c++]
+        exclude: '^third_party/'   # vendored sources are formatted upstream, never by us
