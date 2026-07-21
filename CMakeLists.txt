@@ -39,6 +39,14 @@ if (NOT EXISTS "${TAPTOOLS_KERNEL_DIR}/include/taptools/taptools.h")
                         "Run: git submodule update --init --recursive (or set -DTAPTOOLS_KERNEL_DIR).")
 endif ()
 
+# The spectral externals (tap.convolve~ / tap.nr~ / tap.spectra~) pull the kernel's shared real FFT
+# (tap::dsp) from the kernel's own dsptap submodule — the Ooura transform plus its vDSP / CMSIS
+# backends. Expose the target once here so those objects can link the static lib; the rest of the
+# objects are header-only and never touch it. (Nested submodule — hence recursive init.)
+if (NOT TARGET tap::dsp AND EXISTS "${TAPTOOLS_KERNEL_DIR}/submodules/dsptap/CMakeLists.txt")
+    add_subdirectory(${TAPTOOLS_KERNEL_DIR}/submodules/dsptap ${CMAKE_CURRENT_BINARY_DIR}/dsptap)
+endif ()
+
 # Min-DevKit package helpers (defines SUBDIRLIST, packaging, etc.)
 include(${CMAKE_CURRENT_SOURCE_DIR}/source/min-api/script/min-package.cmake)
 

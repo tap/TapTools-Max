@@ -34,3 +34,12 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 # Catch-based unit tests (built when the _test.cpp is present; run via ctest).
 include(${C74_MIN_API_DIR}/test/min-object-unittest.cmake)
+
+# The spectral kernel pulls its FFT from the shared DspTap library (tap::dsp): link the Ooura static
+# lib into the external, and into the min-test target when present — that target must move off the
+# harness's forced C++17 to C++20 to compile DspTap's fft.h.
+target_link_libraries(${PROJECT_NAME} PRIVATE tap::dsp)
+if (TARGET ${PROJECT_NAME}_test)
+    target_link_libraries(${PROJECT_NAME}_test PUBLIC tap::dsp)
+    set_property(TARGET ${PROJECT_NAME}_test PROPERTY CXX_STANDARD 20)
+endif ()

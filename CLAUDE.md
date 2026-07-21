@@ -26,7 +26,10 @@ modern package; the legacy Jamoma-era tree has been pruned. What matters here:
   `submodules/taptools/include/taptools/`, in the `tap::tools` namespace, plus the kernel's own
   Catch2 tests, render tools, C ABI, notebooks, and benchmarks. It is a standalone CMake project
   with its own CI; develop the DSP there (or against a sibling checkout via `TAPTOOLS_KERNEL_DIR`).
-  See `submodules/taptools/README.md`.
+  See `submodules/taptools/README.md`. Most externals consume only the kernel headers, but the
+  spectral trio (`tap.convolve~`/`tap.nr~`/`tap.spectra~`) also link `tap::dsp` — the kernel's shared
+  real FFT, pinned at the kernel's own nested `submodules/dsptap` — so the root `CMakeLists.txt`
+  exposes that target and those three objects (and their min-tests, forced back to C++20) link it.
 - **`source/projects/<name>/`** — the Min-based externals (one folder per object: a `.cpp` + a
   `CMakeLists.txt`), thin wrappers over the kernel headers where the DSP has been extracted.
 - **`source/min-api/`** — the Min SDK submodule.
