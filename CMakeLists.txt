@@ -56,10 +56,32 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/source/min-lib/CMakeLists.txt")
 endif ()
 
 # Generate a build target for every object folder in source/projects.
+#
+# C++20 everywhere: Min's posttarget pins each external to C++17 and the unit-test harness pins each
+# _test target to C++17. Rather than override that per object, force C++20 on every target an object
+# folder creates (the external and its test) right here, in one place.
 SUBDIRLIST(PROJECT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/source/projects)
 foreach (project_dir ${PROJECT_DIRS})
     if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/source/projects/${project_dir}/CMakeLists.txt")
         message(STATUS "Generating: ${project_dir}")
         add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/source/projects/${project_dir})
+        get_property(_proj_targets
+            DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/source/projects/${project_dir}
+            PROPERTY BUILDSYSTEM_TARGETS)
+        foreach (_t ${_proj_targets})
+            set_property(TARGET ${_t} PROPERTY CXX_STANDARD 20)
+            set_property(TARGET ${_t} PROPERTY CXX_STANDARD_REQUIRED ON)
+            # The min unit-test harness pins tests to C++17 because its bundled Catch calls
+            # std::uncaught_exception() — removed in C++20 (Apple's libc++ enforces this; libstdc++
+            # still keeps it). It papers over that on Apple by defining
+            # CATCH_CONFIG_NO_CPP17_UNCAUGHT_EXCEPTIONS, which forces the *removed* singular form. Now
+            # that tests are C++20, cancel that opt-out (our option comes later on the command line and
+            # wins) so Catch auto-selects the C++20-valid std::uncaught_exceptions().
+            if (APPLE AND _t MATCHES "_test$")
+                target_compile_options(${_t} PRIVATE
+                    -UCATCH_CONFIG_NO_CPP17_UNCAUGHT_EXCEPTIONS
+                    -DCATCH_CONFIG_CPP17_UNCAUGHT_EXCEPTIONS)
+            endif ()
+        endforeach ()
     endif ()
 endforeach ()
