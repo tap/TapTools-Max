@@ -24,7 +24,7 @@ using namespace c74::min;
 class clap808 : public object<clap808>, public sample_operator<1, 1> {
   private:
     // Constructed before the attributes below so attribute setters can forward into it.
-    tap::tools::tr808::clap   m_clap;
+    tap::tools::tr808::clap m_clap;
     sample                  m_previous{0.0};
     static constexpr double k_edge_threshold{1e-3};
 

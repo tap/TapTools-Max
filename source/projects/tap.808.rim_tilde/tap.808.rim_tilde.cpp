@@ -21,7 +21,7 @@ using namespace c74::min;
 class rim808 : public object<rim808>, public sample_operator<1, 1> {
   private:
     // Constructed before the attributes below so attribute setters can forward into it.
-    tap::tools::tr808::rim    m_rim;
+    tap::tools::tr808::rim  m_rim;
     sample                  m_previous{0.0};
     static constexpr double k_edge_threshold{1e-3};
 

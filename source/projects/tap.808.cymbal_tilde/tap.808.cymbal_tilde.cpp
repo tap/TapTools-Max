@@ -22,8 +22,8 @@ class cymbal808 : public object<cymbal808>, public sample_operator<1, 1> {
   private:
     // Constructed before the attributes below so attribute setters can forward into it.
     tap::tools::tr808::cymbal m_cymbal;
-    sample                  m_previous{0.0};
-    static constexpr double k_edge_threshold{1e-3};
+    sample                    m_previous{0.0};
+    static constexpr double   k_edge_threshold{1e-3};
 
   public:
     MIN_DESCRIPTION{"A TR-808-style cymbal voice, synthesized from the analog circuit: six "
