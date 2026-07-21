@@ -29,7 +29,8 @@ modern package; the legacy Jamoma-era tree has been pruned. What matters here:
   See `submodules/taptools/README.md`. Most externals consume only the kernel headers, but the
   spectral trio (`tap.convolve~`/`tap.nr~`/`tap.spectra~`) also link `tap::dsp` — the kernel's shared
   real FFT, pinned at the kernel's own nested `submodules/dsptap` — so the root `CMakeLists.txt`
-  exposes that target and those three objects (and their min-tests, forced back to C++20) link it.
+  exposes that target and those three objects (and their min-tests) link it. The root also forces
+  C++20 on every object and test target centrally (Min otherwise pins C++17).
 - **`source/projects/<name>/`** — the Min-based externals (one folder per object: a `.cpp` + a
   `CMakeLists.txt`), thin wrappers over the kernel headers where the DSP has been extracted.
 - **`source/min-api/`** — the Min SDK submodule.
@@ -109,9 +110,10 @@ correctness is gated by the kernel repo's own CI, not here.
 ## Adding / porting an object
 
 1. Create `source/projects/tap.NAME/` containing `tap.NAME.cpp` and a `CMakeLists.txt`. Copy the
-   `CMakeLists.txt` from an existing port (e.g. `source/projects/tap.dcblock_tilde/`) — it is
-   boilerplate except that it **overrides `CXX_STANDARD` to 20** because Min's posttarget pins it to
-   17. Keep that override.
+   `CMakeLists.txt` from an existing port (e.g. `source/projects/tap.dcblock_tilde/`) — it is pure
+   boilerplate. **C++20 is set for every object and test target centrally** in the root
+   `CMakeLists.txt` (which re-forces it after `add_subdirectory`, since Min's posttarget and the
+   unit-test harness both pin C++17), so no per-object `CXX_STANDARD` override is needed.
 2. **Tilde (`~`) objects:** name the folder *and* the `.cpp` with the `_tilde` suffix — e.g.
    `source/projects/tap.dcblock_tilde/tap.dcblock_tilde.cpp`. The SDK's `max-pretarget.cmake` maps
    `_tilde` → `~` in the output binary name, so it still loads in Max as `tap.dcblock~`. The Max-side
@@ -150,8 +152,9 @@ include(${C74_MIN_API_DIR}/test/min-object-unittest.cmake)
 The test file does `#include "c74_min_unittest.h"` then `#include "tap.NAME.cpp"`, and uses
 `test_wrapper<classname>` to instantiate the object (call `ext_main(nullptr)` once per scenario). The
 canonical example is `source/projects/tap.sift_tilde/tap.sift_tilde_test.cpp`. Tests build against a
-mock kernel and run via `ctest --test-dir build`; **CI runs `ctest` on macOS**. Note the harness
-forces the test target to C++17, so tests can't use C++20-only features.
+mock kernel and run via `ctest --test-dir build`; **CI runs `ctest` on macOS**. The harness pins the
+test target to C++17, but the root re-forces C++20 on it (as on every object), so tests may use
+C++20 features.
 
 Beyond unit tests, "tested" still also means: builds on both platforms, the macOS binary is
 universal (enforced in CI via `lipo`), and it loads/behaves correctly in Max against its help patcher

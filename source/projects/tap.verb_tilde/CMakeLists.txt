@@ -19,9 +19,4 @@ add_library(
 
 include(${C74_MIN_API_DIR}/script/min-posttarget.cmake)
 
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    CXX_STANDARD 20
-    CXX_STANDARD_REQUIRED ON
-)
-
 include(${C74_MIN_API_DIR}/test/min-object-unittest.cmake)
