@@ -1,6 +1,6 @@
 /// @file
 /// @brief      Unit tests for tap.pitchaccum~ and its grm_pitchaccum.h kernel.
-/// @details    The kernel scenarios exercise taptools::pitchaccum::accum_bank directly (no Max
+/// @details    The kernel scenarios exercise tap::tools::pitchaccum::accum_bank directly (no Max
 ///             dependency); the wrapper scenario goes through the Min mock kernel. The test
 ///             harness pins this translation unit to C++17.
 /// @author     Timothy Place
@@ -13,7 +13,7 @@
 #include "c74_min_unittest.h"
 #include "tap.pitchaccum_tilde.cpp"
 
-namespace kpa = taptools::pitchaccum;
+namespace kpa = tap::tools::pitchaccum;
 
 namespace {
 

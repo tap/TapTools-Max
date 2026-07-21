@@ -13,7 +13,7 @@
 ///             reconstructs the input); &gt; 1 stretches the spectrum upward, &lt; 1 compresses it
 ///             toward DC. Hermitian symmetry is enforced so the output stays real.
 ///
-///             The DSP lives in the portable, Min-free kernel `taptools::spectra::remapper`
+///             The DSP lives in the portable, Min-free kernel `tap::tools::spectra::remapper`
 ///             (spectra.h, a Hann-windowed 4×-overlap STFT with COLA-normalised overlap-add). This
 ///             file is the Min wrapper. Latency = one FFT frame.
 /// @author     Timothy Place
@@ -29,7 +29,7 @@ using namespace c74::min;
 class spectra : public object<spectra>, public vector_operator<> {
   private:
     // Constructed before the attribute below so its default can forward into it.
-    taptools::spectra::remapper m_remapper;
+    tap::tools::spectra::remapper m_remapper;
 
     static bool is_power_of_two(int v) { return v > 0 && (v & (v - 1)) == 0; }
 

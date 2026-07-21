@@ -16,7 +16,7 @@
 #include "c74_min.h"
 
 using namespace c74::min;
-namespace kernel = taptools::pitchaccum;
+namespace kernel = tap::tools::pitchaccum;
 
 class pitchaccum : public object<pitchaccum>, public vector_operator<> {
   private:

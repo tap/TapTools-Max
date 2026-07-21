@@ -15,7 +15,7 @@
 ///             the left inlet setting the threshold and the right inlet setting how gradually it
 ///             engages.
 ///
-///             The DSP lives in the portable, Min-free kernel `taptools::nr::reducer` (nr.h, which
+///             The DSP lives in the portable, Min-free kernel `tap::tools::nr::reducer` (nr.h, which
 ///             runs a Hann-windowed 4×-overlap STFT with COLA-normalised overlap-add). This file is
 ///             the Min wrapper. Latency = one FFT frame.
 /// @author     Timothy Place
@@ -31,7 +31,7 @@ using namespace c74::min;
 class nr : public object<nr>, public vector_operator<> {
   private:
     // Constructed before the attributes below so their defaults can forward into it.
-    taptools::nr::reducer m_reducer;
+    tap::tools::nr::reducer m_reducer;
 
     static bool is_power_of_two(int v) { return v > 0 && (v & (v - 1)) == 0; }
 

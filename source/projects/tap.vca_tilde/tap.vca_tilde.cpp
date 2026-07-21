@@ -30,7 +30,7 @@ using namespace c74::min;
 class vca : public object<vca>, public vector_operator<> {
   private:
     // Constructed before the attributes below so their defaults can forward into it.
-    taptools::vca m_vca;
+    tap::tools::vca m_vca;
 
   public:
     MIN_DESCRIPTION{"A voltage-controlled amplifier. The left inlet is the audio, the right inlet "
@@ -59,12 +59,12 @@ class vca : public object<vca>, public vector_operator<> {
         "clean",
         range{"clean", "warm", "swing"},
         setter{ MIN_FUNCTION {
-            int m = taptools::vca::mode_clean;
+            int m = tap::tools::vca::mode_clean;
             if (args[0] == "warm") {
-                m = taptools::vca::mode_warm;
+                m = tap::tools::vca::mode_warm;
             }
             else if (args[0] == "swing") {
-                m = taptools::vca::mode_swing;
+                m = tap::tools::vca::mode_swing;
             }
             m_vca.set_mode(m);
             return args;
@@ -84,7 +84,7 @@ class vca : public object<vca>, public vector_operator<> {
     attribute<number> drive{
         this,
         "drive",
-        taptools::vca::k_default_drive,
+        tap::tools::vca::k_default_drive,
         range{0.1, 12.0},
         setter{ MIN_FUNCTION {
             const double v = std::clamp(static_cast<double>(args[0]), 0.1, 12.0);
@@ -98,7 +98,7 @@ class vca : public object<vca>, public vector_operator<> {
     attribute<number> bias{
         this,
         "bias",
-        taptools::vca::k_default_bias,
+        tap::tools::vca::k_default_bias,
         range{-2.0, 2.0},
         setter{ MIN_FUNCTION {
             const double v = std::clamp(static_cast<double>(args[0]), -2.0, 2.0);
@@ -172,7 +172,7 @@ class vca : public object<vca>, public vector_operator<> {
     }
 
     // Exposed for unit tests.
-    taptools::vca& stage() { return m_vca; }
+    tap::tools::vca& stage() { return m_vca; }
 };
 
 MIN_EXTERNAL(vca);

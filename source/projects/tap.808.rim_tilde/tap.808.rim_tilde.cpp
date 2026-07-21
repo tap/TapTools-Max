@@ -21,7 +21,7 @@ using namespace c74::min;
 class rim808 : public object<rim808>, public sample_operator<1, 1> {
   private:
     // Constructed before the attributes below so attribute setters can forward into it.
-    taptools::tr808::rim    m_rim;
+    tap::tools::tr808::rim    m_rim;
     sample                  m_previous{0.0};
     static constexpr double k_edge_threshold{1e-3};
 
@@ -46,8 +46,8 @@ class rim808 : public object<rim808>, public sample_operator<1, 1> {
                             "rimshot",
                             range{"rimshot", "claves"},
                             setter{MIN_FUNCTION{
-                                m_rim.set_model(args[0] == "claves" ? taptools::tr808::rim::model_claves
-                                                                    : taptools::tr808::rim::model_rimshot);
+                                m_rim.set_model(args[0] == "claves" ? tap::tools::tr808::rim::model_claves
+                                                                    : tap::tools::tr808::rim::model_rimshot);
                                 return args;
                             }},
                             description{"Voice model: rimshot or claves (the hardware's RS/CL switch — one "

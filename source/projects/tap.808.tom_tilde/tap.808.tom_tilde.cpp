@@ -23,7 +23,7 @@ using namespace c74::min;
 class tom808 : public object<tom808>, public sample_operator<1, 1> {
   private:
     // Constructed before the attributes below so attribute setters can forward into it.
-    taptools::tr808::tom    m_tom;
+    tap::tools::tr808::tom    m_tom;
     sample                  m_previous{0.0};
     static constexpr double k_edge_threshold{1e-3};
 
@@ -60,8 +60,8 @@ class tom808 : public object<tom808>, public sample_operator<1, 1> {
                             "tom",
                             range{"tom", "conga"},
                             setter{MIN_FUNCTION{
-                                m_tom.set_model(args[0] == "conga" ? taptools::tr808::tom::model_conga
-                                                                   : taptools::tr808::tom::model_tom);
+                                m_tom.set_model(args[0] == "conga" ? tap::tools::tr808::tom::model_conga
+                                                                   : tap::tools::tr808::tom::model_tom);
                                 return args;
                             }},
                             description{"Voice model: tom (with the noise layer) or conga (pure ring) — the "

@@ -42,9 +42,9 @@
 #include "c74_min.h"
 
 using namespace c74::min;
-using taptools::conv_engine;
+using tap::tools::conv_engine;
 
-// The convolution DSP lives in taptools::conv_engine. Everything below is the Min wrapper:
+// The convolution DSP lives in tap::tools::conv_engine. Everything below is the Min wrapper:
 // reading the IR from a buffer~, dry/wet, predelay, output gain, energy normalisation, bypass/mute.
 // ------------------------------------------------------------------------------------------------
 class convolve : public object<convolve>, public vector_operator<> {

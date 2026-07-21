@@ -21,7 +21,7 @@ using namespace c74::min;
 class cymbal808 : public object<cymbal808>, public sample_operator<1, 1> {
   private:
     // Constructed before the attributes below so attribute setters can forward into it.
-    taptools::tr808::cymbal m_cymbal;
+    tap::tools::tr808::cymbal m_cymbal;
     sample                  m_previous{0.0};
     static constexpr double k_edge_threshold{1e-3};
 

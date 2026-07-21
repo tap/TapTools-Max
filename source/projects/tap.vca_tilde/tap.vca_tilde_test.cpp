@@ -1,6 +1,6 @@
 /// @file
 /// @brief      Unit tests for tap.vca~ and its vca.h kernel.
-/// @details    Kernel scenarios exercise taptools::vca directly; one scenario goes through the Min
+/// @details    Kernel scenarios exercise tap::tools::vca directly; one scenario goes through the Min
 ///             mock for the wrapper's attribute defaults, forwarding, and clamping. The deep DSP
 ///             correctness tests live in the kernel repo (tests/vca_test.cpp); this pins the
 ///             Min-level behavior. The harness pins this translation unit to C++17.
@@ -18,8 +18,8 @@ namespace {
 
     constexpr double k_sr = 48000.0;
 
-    taptools::vca make_stage(int mode = taptools::vca::mode_clean) {
-        taptools::vca a;
+    tap::tools::vca make_stage(int mode = tap::tools::vca::mode_clean) {
+        tap::tools::vca a;
         a.prepare(k_sr);
         a.set_mode(mode);
         return a;
@@ -28,7 +28,7 @@ namespace {
 } // namespace
 
 SCENARIO("the clean circuit is an exact linear multiply") {
-    auto a = make_stage(taptools::vca::mode_clean);
+    auto a = make_stage(tap::tools::vca::mode_clean);
     THEN("process(x, gain) == x * gain to the bit") {
         for (double g : {0.0, 0.5, 1.0, 2.0, -0.5}) {
             for (double x : {-0.8, 0.0, 0.42}) {
@@ -39,7 +39,7 @@ SCENARIO("the clean circuit is an exact linear multiply") {
 }
 
 SCENARIO("the warm circuit adds tracking saturation but leaves quiet signals near-clean") {
-    auto a = make_stage(taptools::vca::mode_warm);
+    auto a = make_stage(tap::tools::vca::mode_warm);
     THEN("a tiny signal passes at ~unity gain") {
         REQUIRE(a.shape(1e-4) == Approx(1e-4).epsilon(1e-3));
     }
@@ -56,10 +56,10 @@ SCENARIO("the warm circuit adds tracking saturation but leaves quiet signals nea
 }
 
 SCENARIO("the swing circuit is the TR-808 symmetric saturator (odd harmonics, no DC)") {
-    auto a = make_stage(taptools::vca::mode_swing);
+    auto a = make_stage(tap::tools::vca::mode_swing);
     a.set_drive(3.0);
     THEN("drive 0 is the exact linear passthru; drive > 0 is a compressing odd function") {
-        REQUIRE(taptools::vca::swing_shape(0.6, 0.0) == 0.6);
+        REQUIRE(tap::tools::vca::swing_shape(0.6, 0.0) == 0.6);
         REQUIRE(std::abs(a.shape(0.7) + a.shape(-0.7)) < 1e-12); // symmetric
         REQUIRE(std::abs(a.shape(1.4)) < 1.4);                   // compresses hot signals
     }
@@ -74,17 +74,17 @@ SCENARIO("the Min wrapper instantiates and takes its attributes") {
         THEN("the defaults are sane") {
             REQUIRE(my_object.circuit == symbol("clean"));
             REQUIRE(static_cast<double>(my_object.gain) == 1.0);
-            REQUIRE(static_cast<double>(my_object.drive) == taptools::vca::k_default_drive);
-            REQUIRE(static_cast<double>(my_object.bias) == taptools::vca::k_default_bias);
+            REQUIRE(static_cast<double>(my_object.drive) == tap::tools::vca::k_default_drive);
+            REQUIRE(static_cast<double>(my_object.bias) == tap::tools::vca::k_default_bias);
             REQUIRE(static_cast<bool>(my_object.dcblock) == true);
-            REQUIRE(my_object.stage().circuit() == taptools::vca::mode_clean);
+            REQUIRE(my_object.stage().circuit() == tap::tools::vca::mode_clean);
         }
 
         WHEN("the circuit is switched to warm") {
             my_object.circuit = "warm";
             THEN("the stage follows") {
                 REQUIRE(my_object.circuit == symbol("warm"));
-                REQUIRE(my_object.stage().circuit() == taptools::vca::mode_warm);
+                REQUIRE(my_object.stage().circuit() == tap::tools::vca::mode_warm);
             }
         }
 
@@ -92,7 +92,7 @@ SCENARIO("the Min wrapper instantiates and takes its attributes") {
             my_object.circuit = "swing";
             THEN("the stage follows (the TR-808 symmetric saturator)") {
                 REQUIRE(my_object.circuit == symbol("swing"));
-                REQUIRE(my_object.stage().circuit() == taptools::vca::mode_swing);
+                REQUIRE(my_object.stage().circuit() == tap::tools::vca::mode_swing);
             }
         }
 

@@ -17,7 +17,7 @@
 #include "c74_min.h"
 
 using namespace c74::min;
-namespace kernel = taptools::ladder;
+namespace kernel = tap::tools::ladder;
 
 class ladder : public object<ladder>, public vector_operator<> {
   private:

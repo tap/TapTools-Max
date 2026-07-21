@@ -1,7 +1,7 @@
 /// @file
 /// @brief      tap.303.seq~ — one step-sequenced bass line (the tap.303~ note contract).
 /// @details    A thin Min wrapper around the shared step-sequencer kernel in step_seq.h
-///             (taptools::seq::note_row — the engine, the swing warp, the slot store, the
+///             (tap::tools::seq::note_row — the engine, the swing warp, the slot store, the
 ///             pinned gate duty and accent levels all live there; see its header for the
 ///             model and plans/tap.seq.md for the design of record).
 ///
@@ -31,7 +31,7 @@
 #include "c74_min.h"
 
 using namespace c74::min;
-namespace kernel = taptools::seq;
+namespace kernel = tap::tools::seq;
 
 class seq303 : public object<seq303>, public vector_operator<> {
   private:

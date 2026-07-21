@@ -22,7 +22,7 @@ using namespace c74::min;
 class snare808 : public object<snare808>, public sample_operator<1, 1> {
   private:
     // Constructed before the attributes below so attribute setters can forward into it.
-    taptools::tr808::snare  m_snare;
+    tap::tools::tr808::snare  m_snare;
     sample                  m_previous{0.0};
     static constexpr double k_edge_threshold{1e-3};
 

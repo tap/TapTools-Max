@@ -19,7 +19,7 @@
 #include "c74_min.h"
 
 using namespace c74::min;
-namespace kernel = taptools::diode;
+namespace kernel = tap::tools::diode;
 
 class diode : public object<diode>, public vector_operator<> {
   private:
