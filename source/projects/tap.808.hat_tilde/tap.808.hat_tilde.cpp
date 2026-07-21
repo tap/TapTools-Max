@@ -22,7 +22,7 @@ using namespace c74::min;
 class hat808 : public object<hat808>, public sample_operator<2, 1> {
   private:
     // Constructed before the attributes below so attribute setters can forward into it.
-    tap::tools::tr808::hat    m_hat;
+    tap::tools::tr808::hat  m_hat;
     sample                  m_prev_closed{0.0};
     sample                  m_prev_open{0.0};
     static constexpr double k_edge_threshold{1e-3};
