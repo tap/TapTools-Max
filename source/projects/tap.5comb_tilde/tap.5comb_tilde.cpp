@@ -15,7 +15,7 @@
 #include "c74_min.h"
 
 using namespace c74::min;
-namespace kernel = taptools::fivecomb;
+namespace kernel = tap::tools::fivecomb;
 
 class fivecomb : public object<fivecomb>, public vector_operator<> {
   private:

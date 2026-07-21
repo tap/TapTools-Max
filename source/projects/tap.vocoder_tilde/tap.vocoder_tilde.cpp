@@ -14,7 +14,7 @@
 ///             how they actually behave (a Q value and a millisecond time). A practical `gain`
 ///             (linear makeup) attribute is added for level staging.
 ///
-///             The DSP lives in the portable, Min-free kernel `taptools::vocoder::bank` (vocoder.h)
+///             The DSP lives in the portable, Min-free kernel `tap::tools::vocoder::bank` (vocoder.h)
 ///             — RBJ constant-0 dB-peak bandpass biquads with per-band envelope followers. This file
 ///             is the Min wrapper.
 /// @author     Timothy Place
@@ -30,7 +30,7 @@ using namespace c74::min;
 class vocoder : public object<vocoder>, public sample_operator<2, 1> {
   private:
     // Constructed before the attributes below so their defaults can forward into it.
-    taptools::vocoder::bank m_bank;
+    tap::tools::vocoder::bank m_bank;
 
   public:
     MIN_DESCRIPTION{"A basic 24-band channel vocoder. The modulator (left inlet) imposes its "

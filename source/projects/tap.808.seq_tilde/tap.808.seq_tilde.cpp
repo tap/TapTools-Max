@@ -1,7 +1,7 @@
 /// @file
 /// @brief      tap.808.seq~ — one step-sequencer drum row (the tap.808.* trigger contract).
 /// @details    A thin Min wrapper around the shared step-sequencer kernel in step_seq.h
-///             (taptools::seq::trigger_row — the engine, the swing warp, the slot store, and
+///             (tap::tools::seq::trigger_row — the engine, the swing warp, the slot store, and
 ///             the pinned trigger levels all live there; see its header for the model and
 ///             plans/tap.seq.md for the design of record).
 ///
@@ -27,7 +27,7 @@
 #include "c74_min.h"
 
 using namespace c74::min;
-namespace kernel = taptools::seq;
+namespace kernel = tap::tools::seq;
 
 class seq808 : public object<seq808>, public vector_operator<> {
   private:

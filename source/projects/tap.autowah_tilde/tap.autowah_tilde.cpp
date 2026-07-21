@@ -17,7 +17,7 @@
 #include "c74_min.h"
 
 using namespace c74::min;
-namespace kernel = taptools::autowah;
+namespace kernel = tap::tools::autowah;
 
 class autowah : public object<autowah>, public vector_operator<> {
   private:

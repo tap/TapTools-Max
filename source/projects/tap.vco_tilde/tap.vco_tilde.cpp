@@ -17,7 +17,7 @@
 #include "c74_min.h"
 
 using namespace c74::min;
-namespace kernel = taptools::vco;
+namespace kernel = tap::tools::vco;
 
 class vco : public object<vco>, public vector_operator<> {
   private:

@@ -23,7 +23,7 @@ modern package; the legacy Jamoma-era tree has been pruned. What matters here:
 
 - **`submodules/taptools/`** — the portable DSP library (header-only, plain C++, no Max/Min
   dependency), pinned as a submodule: one self-contained header per object under
-  `submodules/taptools/include/taptools/`, in the `taptools` namespace, plus the kernel's own
+  `submodules/taptools/include/taptools/`, in the `tap::tools` namespace, plus the kernel's own
   Catch2 tests, render tools, C ABI, notebooks, and benchmarks. It is a standalone CMake project
   with its own CI; develop the DSP there (or against a sibling checkout via `TAPTOOLS_KERNEL_DIR`).
   See `submodules/taptools/README.md`.
@@ -49,7 +49,7 @@ The historical material lives on branches, not in the working tree:
   inlets/outlets, attributes, messages, the perform loop. Write **all DSP as plain portable C++**
   with **no dependency on `min-lib`** (min-lib is the under-maintained piece; keeping DSP portable
   makes the wrapper a small swappable shim). Substantial DSP belongs in a **kernel header** in the
-  kernel repo (`submodules/taptools/include/taptools/<name>.h`, namespace `taptools`, C++ stdlib
+  kernel repo (`submodules/taptools/include/taptools/<name>.h`, namespace `tap::tools`, C++ stdlib
   only, C++17-clean) with the wrapper `.cpp` doing only Min glue — six objects follow this today.
   New/changed DSP is committed in the kernel repo, then the submodule pin is bumped here. Within
   `source/projects/`, no shared global lookup tables — each object is self-contained; sharing

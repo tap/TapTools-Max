@@ -24,7 +24,7 @@ using namespace c74::min;
 class clap808 : public object<clap808>, public sample_operator<1, 1> {
   private:
     // Constructed before the attributes below so attribute setters can forward into it.
-    taptools::tr808::clap   m_clap;
+    tap::tools::tr808::clap   m_clap;
     sample                  m_previous{0.0};
     static constexpr double k_edge_threshold{1e-3};
 
@@ -50,8 +50,8 @@ class clap808 : public object<clap808>, public sample_operator<1, 1> {
                             "clap",
                             range{"clap", "maracas"},
                             setter{MIN_FUNCTION{
-                                m_clap.set_model(args[0] == "maracas" ? taptools::tr808::clap::model_maracas
-                                                                      : taptools::tr808::clap::model_clap);
+                                m_clap.set_model(args[0] == "maracas" ? tap::tools::tr808::clap::model_maracas
+                                                                      : tap::tools::tr808::clap::model_clap);
                                 return args;
                             }},
                             description{"Voice model: clap or maracas (the hardware's CP/MA switch — one circuit, "

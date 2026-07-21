@@ -1,6 +1,6 @@
 /// @file
 /// @brief      Unit tests for tap.svf~ and its svf.h kernel.
-/// @details    Kernel scenarios exercise taptools::svf::svf_filter directly; one scenario goes
+/// @details    Kernel scenarios exercise tap::tools::svf::svf_filter directly; one scenario goes
 ///             through the Min mock. The harness pins this translation unit to C++17.
 /// @author     Timothy Place
 // SPDX-License-Identifier: BSD-3-Clause
@@ -13,7 +13,7 @@
 #include "c74_min_unittest.h"
 #include "tap.svf_tilde.cpp"
 
-namespace ksv = taptools::svf;
+namespace ksv = tap::tools::svf;
 
 namespace {
 

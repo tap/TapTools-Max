@@ -25,7 +25,7 @@
 #include "c74_min.h"
 
 using namespace c74::min;
-namespace kernel = taptools::tb303;
+namespace kernel = tap::tools::tb303;
 
 class voice303 : public object<voice303>, public vector_operator<> {
   private:

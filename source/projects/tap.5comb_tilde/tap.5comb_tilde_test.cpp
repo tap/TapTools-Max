@@ -1,6 +1,6 @@
 /// @file
 /// @brief      Unit tests for tap.5comb~ and its grm_comb.h kernel.
-/// @details    The kernel scenarios exercise taptools::fivecomb::comb_bank directly (it has no Max
+/// @details    The kernel scenarios exercise tap::tools::fivecomb::comb_bank directly (it has no Max
 ///             dependency); the wrapper scenario goes through the Min mock kernel. Note the test
 ///             harness pins this translation unit to C++17.
 /// @author     Timothy Place
@@ -13,7 +13,7 @@
 #include "c74_min_unittest.h"
 #include "tap.5comb_tilde.cpp"
 
-namespace kfc = taptools::fivecomb;
+namespace kfc = tap::tools::fivecomb;
 
 namespace {
 

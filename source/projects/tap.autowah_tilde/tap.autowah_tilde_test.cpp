@@ -10,7 +10,7 @@
 #include "c74_min_unittest.h"
 #include "tap.autowah_tilde.cpp"
 
-namespace kaw = taptools::autowah;
+namespace kaw = tap::tools::autowah;
 
 SCENARIO("the Min wrapper instantiates with the documented defaults") {
     ext_main(nullptr);

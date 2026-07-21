@@ -16,7 +16,7 @@
 #include "c74_min_unittest.h"
 #include "tap.diode_tilde.cpp"
 
-namespace kdf = taptools::diode;
+namespace kdf = tap::tools::diode;
 
 namespace {
 

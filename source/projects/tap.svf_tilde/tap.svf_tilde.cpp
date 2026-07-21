@@ -25,7 +25,7 @@
 #include "c74_min.h"
 
 using namespace c74::min;
-namespace kernel = taptools::svf;
+namespace kernel = tap::tools::svf;
 
 class svf : public object<svf>, public vector_operator<> {
   private:

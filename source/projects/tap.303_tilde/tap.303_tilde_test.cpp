@@ -16,7 +16,7 @@
 #include "c74_min_unittest.h"
 #include "tap.303_tilde.cpp"
 
-namespace ktb = taptools::tb303;
+namespace ktb = tap::tools::tb303;
 
 namespace {
 
@@ -57,7 +57,7 @@ SCENARIO("the Min wrapper instantiates with the documented defaults") {
             my_object.cutoff = 1.0;
             REQUIRE(static_cast<double>(my_object.cutoff) == ktb::k_cutoff_min);
             my_object.resonance = 9.0;
-            REQUIRE(static_cast<double>(my_object.resonance) == taptools::diode::k_res_max);
+            REQUIRE(static_cast<double>(my_object.resonance) == tap::tools::diode::k_res_max);
             my_object.envmod = 7.0;
             REQUIRE(static_cast<double>(my_object.envmod) == 1.0);
             my_object.decay = 1.0;

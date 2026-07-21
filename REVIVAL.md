@@ -530,7 +530,7 @@ GitHub Actions CI.
   modulation; `smooth` covers glide), and the object is now **single-channel** (mc.-friendly)
   per house convention.
 - Architecture follows the `tap.ladder~` kernel pattern: all DSP in a portable header
-  (`svf.h`, `taptools::svf`, no Min dependency) under a thin wrapper. The kernel is
+  (`svf.h`, `tap::tools::svf`, no Min dependency) under a thin wrapper. The kernel is
   genuinely **multichannel** (shared coefficients per tick(), per-channel state via
   `process(channel, x)`) for reuse outside Max; the Max object runs it with one channel.
 - Surface: discrete types (lowpass/highpass/bandpass/notch/peak/allpass), a **morph** type
@@ -561,7 +561,7 @@ GitHub Actions CI.
   and a polyphase halfband resampler — both change output microscopically, awaiting sign-off.
 - ✅ **`tap.vco~` added (2026-07-11)** — a **virtual-analog oscillator**, the source-side
   companion to `tap.ladder~` and the repo's first oscillator (`tap.noise~` was the only
-  generator). Kernel (`source/projects/tap.vco_tilde/vco.h`, `taptools::vco::vco_osc`):
+  generator). Kernel (`source/projects/tap.vco_tilde/vco.h`, `tap::tools::vco::vco_osc`):
   **polyBLEP** alias-suppressed saw and pulse (PWM 1–99%), triangle via leaky integration
   of the BLEP square, pure sine — all driven by one master phase and **morphed by a
   continuous `shape` parameter (0 sine → 1 tri → 2 saw → 3 pulse)** that rides the
@@ -585,7 +585,7 @@ GitHub Actions CI.
   ladder; the two maxrefs cross-reference, and fourpole~ finally *got* a maxref — it had
   none). New ground for the repo: **nothing else here had tanh/nonlinear feedback or
   filter oversampling**. Kernel (`source/projects/tap.ladder_tilde/ladder.h`,
-  `taptools::ladder::ladder_filter`): zero-delay-feedback TPT 4-stage ladder, prewarped
+  `tap::tools::ladder::ladder_filter`): zero-delay-feedback TPT 4-stage ladder, prewarped
   tuning, per-stage tanh via linear-ZDF prediction + one corrective nonlinear pass
   (full Newton solve flagged in-file as a possible future upgrade — unnecessary at these
   oversampling factors), `k = 4·resonance` up to 4.4 for clean bounded self-oscillation
@@ -640,7 +640,7 @@ GitHub Actions CI.
   parameter surface (`freq`/`res`/`lp` masters, `freq1..5`/`res1..5`/`lp1..5`, `gain`,
   `mix`) and 5 Hz frequency floor were kept. **All DSP lives in a portable, header-only,
   Max-free kernel** (`source/projects/tap.5comb_tilde/grm_comb.h`,
-  `taptools::fivecomb::comb_bank`) — a first for the repo, per the "Min is a thin shim"
+  `tap::tools::fivecomb::comb_bank`) — a first for the repo, per the "Min is a thin shim"
   philosophy — with: fractional delays (4-point Hermite), every parameter on a per-sample
   linear ramp, resonance mapped to ring time on a log curve (20 ms → 100 s; feedback derived
   from the current delay, capped at 0.99999 — no clipper, DC blocker in the loop instead),
@@ -665,7 +665,7 @@ GitHub Actions CI.
   pass (the shimmer/spiral the plugin is named for). Same architecture as `tap.5comb~`:
   all DSP in a portable header-only kernel
   (`source/projects/tap.pitchaccum_tilde/grm_pitchaccum.h`,
-  `taptools::pitchaccum::accum_bank`), 17 per-sample-ramped parameters, 16-slot
+  `tap::tools::pitchaccum::accum_bank`), 17 per-sample-ramped parameters, 16-slot
   preset-morph engine, thin Min shim. The transposer is the `tap.shift~`/tt_shift engine
   (phasor sweeping two taps half a cycle apart) modernized: Hermite fractional taps and a
   **complementary cos²-flank envelope pair that sums exactly to 1** (constant level at any
@@ -689,7 +689,7 @@ GitHub Actions CI.
   header-only C++ library consumed by the wrapper repo as a pinned submodule via a
   `*_ROOT`-style override). What moved: the six extracted kernel headers
   (`ladder.h`, `svf.h`, `vco.h`, `grm_comb.h`, `grm_pitchaccum.h`, `conv_engine.h`) →
-  `kernel/include/taptools/` (with `conv_engine` brought into the `taptools` namespace — it was
+  `kernel/include/taptools/` (with `conv_engine` brought into the `tap::tools` namespace — it was
   the only global-namespace kernel — plus a `taptools/taptools.h` umbrella); the offline render
   tools → `kernel/tools/render/`; the C ABI → `kernel/tools/capi/`; the notebooks →
   `kernel/notebooks/`; `benchmarks/` + `svf_bench` → `kernel/bench/`. The kernel exports a
@@ -713,7 +713,7 @@ GitHub Actions CI.
   object and the follow-through on the `tap.autowah~` prototype idea from the `taptools-min`
   archive (§8). Full design + hardware research + validation method: **`plans/tap.autowah~.md`**.
   First object developed **cross-repo from the start**: the kernel
-  (`include/taptools/autowah.h`, `taptools::autowah::wah_filter`) landed in `tap/taptools`
+  (`include/taptools/autowah.h`, `tap::tools::autowah::wah_filter`) landed in `tap/taptools`
   and the submodule pin was bumped here. Also the first **kernel composing another kernel** —
   it wraps `svf.h`'s Simper filter (one 2nd-order section, per-sample `tick(cutoff_hz)`)
   behind a sensitivity→rectifier→attack/release detector and an exponential `bias · 2^(sweep ·
@@ -892,7 +892,7 @@ GitHub Actions CI.
 - ✅ **`tap.diode~` added (2026-07-17, tap.303 slice 1)** — a **virtual-analog diode-ladder
   filter, the TB-303 topology** (plan: **`plans/tap.303.md`**; §8 blocking decisions approved
   same day) and the first deliverable of the 303 recreation. Kernel-first:
-  **`diode_ladder.h`** (`taptools::diode`), a ZDF 4-stage *unbuffered* diode chain whose
+  **`diode_ladder.h`** (`tap::tools::diode`), a ZDF 4-stage *unbuffered* diode chain whose
   linearized transfer function reproduces **Stinchcombe's published TB-303 response exactly**
   — the header derives that the equal-component chain with the top cap halved yields his
   normalized denominator (4·2^(3/4), 10√2, 8·2^(1/4)) to four digits, that Routh–Hurwitz puts
@@ -924,7 +924,7 @@ GitHub Actions CI.
   melodic sibling), and **slide as legato** — a pitch change while the gate is held glides
   through the hardware's ~60 ms RC without retriggering, no separate slide input (pulled
   forward from plan slice 3: the contract requires legato semantics from day one). Kernel
-  (`tb303_voice.h`, `taptools::tb303::voice`) composes the existing kernels — `vco.h`'s
+  (`tb303_voice.h`, `tap::tools::tb303::voice`) composes the existing kernels — `vco.h`'s
   polyBLEP saw/square driven per sample, `diode_ladder.h` with per-sample envelope-modulated
   cutoff — around the voice circuits with **Open303-calibrated constants**: decay-only MEG
   (3 ms rise; 200–2000 ms knob; accent bypasses it to ~200 ms), the 2/3-up env-mod cutoff law
@@ -1011,7 +1011,7 @@ GitHub Actions CI.
 - ✅ **The sequencers — `tap.808.seq~` + `tap.303.seq~` (2026-07-18).** The coordinated
   phase 3 both family plans deferred, designed and author-approved same day as
   **`plans/tap.seq.md`** and shipped end to end: **one shared kernel engine**
-  (`step_seq.h`, `taptools::seq`) — phase-clocked from a `phasor~` ramp
+  (`step_seq.h`, `tap::tools::seq`) — phase-clocked from a `phasor~` ramp
   (floor(phase × length), swing warping the odd steps, sample-accurate entries,
   stateless against phase), 16 slots with cycle/step/now-quantized recall — with two
   thin emitters speaking the shipped voice contracts verbatim. **`tap.808.seq~`**: one
@@ -1059,7 +1059,7 @@ GitHub Actions CI.
   the calibration lesson), and *Time as a function of phase* (`step_seq.h` — the O(1)
   derivation, gate-hold look-ahead, armed-recall re-derivation).
 - ✅ **Net-new object — `tap.vca~` (2026-07-18).** The 303's transistor VCA stage, lifted out
-  where it can amplify anything. Kernel: **`vca.h`** (`taptools::vca`) — the two-circuit `svf.h`
+  where it can amplify anything. Kernel: **`vca.h`** (`tap::tools::vca`) — the two-circuit `svf.h`
   idiom applied to a gain stage: `clean` is the pure linear multiply (bit-identical to `*~`),
   `warm` is the one-transistor class-A saturator `S(v) = (tanh(d·v+b) − tanh(b)) / (d·sech²(b))`
   (stock `d=2.0`, `b=0.3` — the probe-calibrated 303 constants, now exposed as `drive`/`bias`),
@@ -1216,7 +1216,7 @@ AmbiTap / AmbiTap-Max pattern:
   job moved to the kernel repo.
 
 ✅ **Spectral trio extracted (2026-07-14).** `tap.nr~`, `tap.spectra~`, and `tap.vocoder~` now
-consume kernel headers (`taptools::nr::reducer`, `spectra::remapper`, `vocoder::bank`); the
+consume kernel headers (`tap::tools::nr::reducer`, `spectra::remapper`, `vocoder::bank`); the
 radix-2 FFT that was byte-identical across `conv_engine`/`nr`/`spectra` is consolidated into
 `fft.h`, and the overlap-add machinery `nr`/`spectra` shared lives in `stft.h`. (`vocoder~` turned
 out to be a time-domain biquad filterbank, so it follows the `svf`/`ladder` `prepare(sr)` idiom,

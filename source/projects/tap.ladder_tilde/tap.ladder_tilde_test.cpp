@@ -1,6 +1,6 @@
 /// @file
 /// @brief      Unit tests for tap.ladder~ and its ladder.h kernel.
-/// @details    Kernel scenarios exercise taptools::ladder::ladder_filter directly; one scenario
+/// @details    Kernel scenarios exercise tap::tools::ladder::ladder_filter directly; one scenario
 ///             goes through the Min mock. The harness pins this translation unit to C++17.
 /// @author     Timothy Place
 /// @copyright  Copyright 2026 Timothy Place. Distributed under the New BSD License.
@@ -12,7 +12,7 @@
 #include "c74_min_unittest.h"
 #include "tap.ladder_tilde.cpp"
 
-namespace klf = taptools::ladder;
+namespace klf = tap::tools::ladder;
 
 namespace {
 

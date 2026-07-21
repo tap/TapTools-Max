@@ -20,8 +20,8 @@ SCENARIO("tap.808.seq~ instantiates with the plan's defaults") {
             REQUIRE(my_object.quantize == symbol("cycle"));
         }
         THEN("the trigger levels are the pinned bus constants") {
-            REQUIRE(static_cast<double>(my_object.plain) == taptools::seq::k_trig_plain);
-            REQUIRE(static_cast<double>(my_object.accented) == taptools::seq::k_trig_accented);
+            REQUIRE(static_cast<double>(my_object.plain) == tap::tools::seq::k_trig_plain);
+            REQUIRE(static_cast<double>(my_object.accented) == tap::tools::seq::k_trig_accented);
         }
     }
 }
@@ -36,8 +36,8 @@ SCENARIO("tap.808.seq~ clamps and plumbs into the kernel") {
         WHEN("length is set out of range") {
             my_object.length = 999;
             THEN("it clamps to the kernel maximum, in the kernel too") {
-                REQUIRE(static_cast<int>(my_object.length) == taptools::seq::k_max_steps);
-                REQUIRE(my_object.row().clock().data().length == taptools::seq::k_max_steps);
+                REQUIRE(static_cast<int>(my_object.length) == tap::tools::seq::k_max_steps);
+                REQUIRE(my_object.row().clock().data().length == tap::tools::seq::k_max_steps);
             }
         }
         WHEN("swing is set past 1") {
@@ -51,9 +51,9 @@ SCENARIO("tap.808.seq~ clamps and plumbs into the kernel") {
             my_object.hits(c74::min::atoms{1, 0, 1, 0});
             THEN("sounding steps carry the plain level and rests are zero") {
                 auto& p = my_object.row().clock().data();
-                REQUIRE(p.steps[0].velocity == taptools::seq::k_trig_plain);
+                REQUIRE(p.steps[0].velocity == tap::tools::seq::k_trig_plain);
                 REQUIRE(p.steps[1].velocity == 0.0);
-                REQUIRE(p.steps[2].velocity == taptools::seq::k_trig_plain);
+                REQUIRE(p.steps[2].velocity == tap::tools::seq::k_trig_plain);
             }
         }
         WHEN("an accents list marks a sounding step") {
@@ -61,8 +61,8 @@ SCENARIO("tap.808.seq~ clamps and plumbs into the kernel") {
             my_object.accents(c74::min::atoms{0, 1});
             THEN("the accented step carries the accented level") {
                 auto& p = my_object.row().clock().data();
-                REQUIRE(p.steps[0].velocity == taptools::seq::k_trig_plain);
-                REQUIRE(p.steps[1].velocity == taptools::seq::k_trig_accented);
+                REQUIRE(p.steps[0].velocity == tap::tools::seq::k_trig_plain);
+                REQUIRE(p.steps[1].velocity == tap::tools::seq::k_trig_accented);
             }
         }
         WHEN("a step message sets a velocity directly") {

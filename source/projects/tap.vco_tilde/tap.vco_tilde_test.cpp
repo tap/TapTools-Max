@@ -1,6 +1,6 @@
 /// @file
 /// @brief      Unit tests for tap.vco~ and its vco.h kernel.
-/// @details    Kernel scenarios exercise taptools::vco::vco_osc directly; one scenario goes
+/// @details    Kernel scenarios exercise tap::tools::vco::vco_osc directly; one scenario goes
 ///             through the Min mock. The harness pins this translation unit to C++17.
 /// @author     Timothy Place
 /// @copyright  Copyright 2026 Timothy Place. Distributed under the New BSD License.
@@ -12,7 +12,7 @@
 #include "c74_min_unittest.h"
 #include "tap.vco_tilde.cpp"
 
-namespace kvo = taptools::vco;
+namespace kvo = tap::tools::vco;
 
 namespace {
 
