@@ -89,7 +89,7 @@ class tune : public object<tune>, public sample_operator<1, 1> {
     // pitch when it changes (or when voicing stops), then re-arms itself.
     timer<> m_report{this,
                      MIN_FUNCTION{
-                         const double hz = m_hz_now.load(std::memory_order_relaxed);
+                         const double hz          = m_hz_now.load(std::memory_order_relaxed);
                          const bool   voiced_now  = hz > 0.0;
                          const bool   voiced_sent = m_hz_sent > 0.0;
                          if (voiced_now && (!voiced_sent || std::abs(hz - m_hz_sent) > 0.01)) {
@@ -120,17 +120,17 @@ class tune : public object<tune>, public sample_operator<1, 1> {
                           description{"Key root for the scale. Setting it re-derives the allowed notes from key + "
                                       "scale, replacing any custom 'notes' mask."}};
 
-    attribute<symbol> scale{this,
-                            "scale",
-                            "chromatic",
-                            range{"chromatic", "major", "minor", "harmonic", "melodic", "pentatonic",
-                                  "minorpentatonic"},
-                            setter{MIN_FUNCTION{
-                                m_engine.set_scale(scale_mask_of(args[0]));
-                                return {args[0]};
-                            }},
-                            description{"Scale the corrector snaps to, relative to the key. Setting it re-derives "
-                                        "the allowed notes, replacing any custom 'notes' mask."}};
+    attribute<symbol> scale{
+        this,
+        "scale",
+        "chromatic",
+        range{"chromatic", "major", "minor", "harmonic", "melodic", "pentatonic", "minorpentatonic"},
+        setter{MIN_FUNCTION{
+            m_engine.set_scale(scale_mask_of(args[0]));
+            return {args[0]};
+        }},
+        description{"Scale the corrector snaps to, relative to the key. Setting it re-derives "
+                    "the allowed notes, replacing any custom 'notes' mask."}};
 
     attribute<symbol> mode{this,
                            "mode",
@@ -189,9 +189,7 @@ class tune : public object<tune>, public sample_operator<1, 1> {
                              description{"Correction depth in percent. 100 lands on the target; 50 corrects half "
                                          "the distance; 0 leaves the pitch untouched."}};
 
-    attribute<number> minfreq{this,
-                              "minfreq",
-                              tap::tools::tune::k_default_min_hz,
+    attribute<number> minfreq{this, "minfreq", tap::tools::tune::k_default_min_hz,
                               setter{MIN_FUNCTION{
                                   m_min_hz = args[0];
                                   m_engine.set_range(m_min_hz, m_max_hz);
@@ -200,9 +198,7 @@ class tune : public object<tune>, public sample_operator<1, 1> {
                               description{"Lowest input frequency (Hz) treated as pitched. Estimates below it are "
                                           "ignored (no correction)."}};
 
-    attribute<number> maxfreq{this,
-                              "maxfreq",
-                              tap::tools::tune::k_default_max_hz,
+    attribute<number> maxfreq{this, "maxfreq", tap::tools::tune::k_default_max_hz,
                               setter{MIN_FUNCTION{
                                   m_max_hz = args[0];
                                   m_engine.set_range(m_min_hz, m_max_hz);
@@ -211,10 +207,7 @@ class tune : public object<tune>, public sample_operator<1, 1> {
                               description{"Highest input frequency (Hz) treated as pitched. Estimates above it are "
                                           "ignored (no correction)."}};
 
-    attribute<bool> autokey{this,
-                            "autokey",
-                            false,
-                            setter{MIN_FUNCTION{
+    attribute<bool> autokey{this, "autokey", false, setter{MIN_FUNCTION{
                                 m_engine.set_autokey(args[0]);
                                 return {args[0]};
                             }},
@@ -235,10 +228,7 @@ class tune : public object<tune>, public sample_operator<1, 1> {
                                description{"Pitch-report period in milliseconds for the right outlet ('pitch "
                                            "<midi> <hz>' while the input is voiced). 0 disables reporting."}};
 
-    attribute<bool> formant{this,
-                            "formant",
-                            false,
-                            setter{MIN_FUNCTION{
+    attribute<bool> formant{this, "formant", false, setter{MIN_FUNCTION{
                                 m_engine.set_formant(args[0]);
                                 return {args[0]};
                             }},
