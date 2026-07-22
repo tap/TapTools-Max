@@ -83,6 +83,11 @@
 			(formant-preserving TD-PSOLA — best on voice, needs harmonic-rich input), or pvoc
 			(peak-locked phase vocoder, one FFT frame of latency).</description>
 		</attribute>
+		<attribute name="formant" get="1" set="1" type="int" size="1">
+			<description>Formant preservation for the pvoc backend (LPC source-filter): the
+			correction shifts the pitch while the spectral envelope stays put. Matters for large
+			corrections (midi mode). The psola backend preserves formants inherently.</description>
+		</attribute>
 		<attribute name="speed" get="1" set="1" type="float" size="1">
 			<description>Retune speed in milliseconds — the time constant of the glide onto the
 			target note. 0 snaps instantly (the hard quantize effect).</description>

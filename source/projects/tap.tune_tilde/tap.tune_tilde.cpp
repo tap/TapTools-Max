@@ -179,6 +179,18 @@ class tune : public object<tune>, public sample_operator<1, 1> {
                               description{"Highest input frequency (Hz) treated as pitched. Estimates above it are "
                                           "ignored (no correction)."}};
 
+    attribute<bool> formant{this,
+                            "formant",
+                            false,
+                            setter{MIN_FUNCTION{
+                                m_engine.set_formant(args[0]);
+                                return {args[0]};
+                            }},
+                            description{"Formant preservation for the pvoc backend (LPC source-filter): the "
+                                        "correction shifts the pitch while the spectral envelope stays put — "
+                                        "matters for large corrections (midi mode). The psola backend preserves "
+                                        "formants inherently; the grain engine is unaffected."}};
+
     attribute<bool> bypass{this, "bypass", false, description{"Pass the input through unprocessed."}};
 
     attribute<bool> mute{this, "mute", false, description{"Silence the output."}};
