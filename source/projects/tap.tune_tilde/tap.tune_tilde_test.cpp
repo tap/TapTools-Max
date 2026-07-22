@@ -72,6 +72,23 @@ SCENARIO("attributes forward into the kernel") {
                 REQUIRE(my_object.engine().target_mode() == tap::tools::tune::mode::midi);
             }
         }
+
+        WHEN("the backend is switched") {
+            THEN("it defaults to the grain engine") {
+                REQUIRE(static_cast<symbol>(my_object.backend) == "grain");
+                REQUIRE(my_object.engine().resynth_backend() == tap::tools::tune::backend::grain);
+            }
+
+            my_object.backend = "psola";
+            THEN("psola forwards into the kernel") {
+                REQUIRE(my_object.engine().resynth_backend() == tap::tools::tune::backend::psola);
+            }
+
+            my_object.backend = "pvoc";
+            THEN("pvoc forwards into the kernel") {
+                REQUIRE(my_object.engine().resynth_backend() == tap::tools::tune::backend::pvoc);
+            }
+        }
     }
 }
 

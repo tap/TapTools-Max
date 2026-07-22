@@ -1264,10 +1264,18 @@ transposer engine with its window locked to an **even multiple of the detected p
 lock measurably makes the average retune ratio exact); this repo adds the Min wrapper, wrapper
 tests, reference page, and help patcher. IP framing (per the pitch-correction handoff doc): the
 implemented pipeline is the public-domain expired-patent design; polyphonic per-note editing
-(Celemony DNA) deliberately out of scope; "tune", not the trademarked product name. Deferred:
-pitch-synchronous (PSOLA) and phase-vocoder resynth backends behind the same kernel interface,
-formant preservation (LPC, from published literature only), auto-key detection, a detected-pitch
-outlet, and the runtime maxtest. Needs runtime validation in Max like the rest of the DSP set.
+(Celemony DNA) deliberately out of scope; "tune", not the trademarked product name.
+**Backends shipped (2026-07-22, same day):** resynthesis is now selectable via `@backend` —
+`grain` (the validated low-latency two-tap default), `psola` (true TD-PSOLA, new DspTap
+primitive `tap::dsp::psola`; formant-preserving on voice, and honestly documented as a
+spectral-envelope resampler — pure tones far from a new harmonic thin out, pinned by its
+tests), and `pvoc` (peak-locked phase vocoder, new DspTap primitive `tap::dsp::pvoc` on the
+shared real FFT; Laroche–Dolson-style rigid peak-region shifting, exact waveform identity at
+ratio 1). Detector, mapper, and retune glide are shared; only the last stage swaps, and
+switching live is click-safe (the incoming engine starts from silence). Still deferred:
+formant preservation (LPC, from published literature only), auto-key detection, a
+detected-pitch outlet, and the runtime maxtest. Needs runtime validation in Max like the rest
+of the DSP set.
 
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
