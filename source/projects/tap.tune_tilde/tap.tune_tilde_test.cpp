@@ -16,9 +16,9 @@ SCENARIO("tap.tune~ instantiates with the expected defaults") {
         tune&              my_object = an_instance;
 
         THEN("the attributes have the documented defaults") {
-            REQUIRE(static_cast<symbol>(my_object.key) == "c");
-            REQUIRE(static_cast<symbol>(my_object.scale) == "chromatic");
-            REQUIRE(static_cast<symbol>(my_object.mode) == "scale");
+            REQUIRE(my_object.key == symbol("c"));
+            REQUIRE(my_object.scale == symbol("chromatic"));
+            REQUIRE(my_object.mode == symbol("scale"));
             REQUIRE(static_cast<double>(my_object.speed) == tap::tools::tune::k_default_speed_ms);
             REQUIRE(static_cast<double>(my_object.amount) == 100.0);
             REQUIRE(static_cast<double>(my_object.minfreq) == tap::tools::tune::k_default_min_hz);
@@ -75,7 +75,7 @@ SCENARIO("attributes forward into the kernel") {
 
         WHEN("the backend is switched") {
             THEN("it defaults to the grain engine") {
-                REQUIRE(static_cast<symbol>(my_object.backend) == "grain");
+                REQUIRE(my_object.backend == symbol("grain"));
                 REQUIRE(my_object.engine().resynth_backend() == tap::tools::tune::backend::grain);
             }
 
@@ -116,8 +116,8 @@ SCENARIO("attributes forward into the kernel") {
             my_object.applykey();
 
             THEN("the key and scale attributes stay untouched") {
-                REQUIRE(static_cast<symbol>(my_object.key) == "c");
-                REQUIRE(static_cast<symbol>(my_object.scale) == "chromatic");
+                REQUIRE(my_object.key == symbol("c"));
+                REQUIRE(my_object.scale == symbol("chromatic"));
             }
         }
 
