@@ -113,6 +113,27 @@ class tune : public object<tune>, public sample_operator<1, 1> {
                                        "nearest currently-held MIDI note (send 'note' messages) and leaves the "
                                        "signal untouched when none are held."}};
 
+    attribute<symbol> backend{this,
+                              "backend",
+                              "grain",
+                              range{"grain", "psola", "pvoc"},
+                              setter{MIN_FUNCTION{
+                                  if (args[0] == "psola") {
+                                      m_engine.set_backend(tap::tools::tune::backend::psola);
+                                  }
+                                  else if (args[0] == "pvoc") {
+                                      m_engine.set_backend(tap::tools::tune::backend::pvoc);
+                                  }
+                                  else {
+                                      m_engine.set_backend(tap::tools::tune::backend::grain);
+                                  }
+                                  return {args[0]};
+                              }},
+                              description{"Resynthesis engine. 'grain' is the low-latency two-tap default; 'psola' "
+                                          "is formant-preserving TD-PSOLA, best on voice (needs harmonic-rich "
+                                          "input); 'pvoc' is a peak-locked phase vocoder with one FFT frame of "
+                                          "latency. Switching starts the new engine from silence."}};
+
     attribute<number> speed{this,
                             "speed",
                             tap::tools::tune::k_default_speed_ms,
