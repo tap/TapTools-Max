@@ -1108,8 +1108,14 @@ GitHub Actions CI.
   silence, determinism. Wrapper `tap.overdrive_tilde` (thin `vector_operator`), attributes
   `drive`/`body`/`asymmetry`/`preamp`/`output`/`oversample`/`smooth`/`bypass`/`mute`, min-api
   attribute tests, the full vertical slice (maxref + help patcher + a bypass-passthrough
-  `maxtest` starter). Remaining: the in-Max voicing pass (the `k_voice_*` constants are the sound
-  of the object) and runtime validation.
+  `maxtest` starter). Same-day follow-up: the rest of the kernel-repo house treatment — a
+  `taptools_od_*` C ABI + `Overdrive` ctypes class, the **executed verification notebook**
+  (`overdrive.ipynb`: tilt +5/+16.3/+17.2 dB at drive 0/0.5/0.9; H2 −151 → −26 dB across
+  asymmetry; folded H7 −22 → −36 dB at 4×; DC means ~1e-10), and two field-guide chapters —
+  *Distortion with a memory* (new book Part VII, The pedalboard — after `tap.tune~`'s Part VI,
+  Staying in tune, landed the same week) + *The clipper in the loop: overdrive.h* (machine part,
+  now VIII). Remaining: the in-Max voicing pass (the
+  `k_voice_*` constants are the sound of the object) and runtime validation.
 
 ---
 
