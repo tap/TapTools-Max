@@ -188,3 +188,17 @@ if __name__ == "__main__":
         numinlets=2,
         numoutlets=2,
     )
+    # tap.tune~: DC is unpitched — the detector reports unvoiced, the correction
+    # relaxes to zero, and the period-locked two-tap grain engine passes the
+    # signal at exactly unity (its complementary envelopes sum to 1 and the
+    # frozen taps read a constant). Pins the unpitched-passthrough contract in
+    # a real Max instance. (Outlet 2 is the pitch/key report outlet.)
+    audio_test(
+        "tap.tune~.maxtest.maxpat",
+        object_text="tap.tune~",
+        input_value="1.",
+        expected="1.",
+        assert_name="tap.tune~-unpitched-dc-unity",
+        description="tap.tune~: unpitched DC passes the grain engine at unity (no correction applies).",
+        numoutlets=2,
+    )

@@ -14,6 +14,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright 2026 Timothy Place.
 
+#include <atomic>
+
 #include "c74_min.h"
 #include "taptools/tune.h"
 
@@ -21,6 +23,8 @@ using namespace c74::min;
 
 class tune : public object<tune>, public sample_operator<1, 1> {
   private:
+    static constexpr const char* k_note_names[12] = {"c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b"};
+
     // Constructed before the attributes below so their defaults can forward into it.
     tap::tools::tune::corrector m_engine;
 
@@ -28,11 +32,15 @@ class tune : public object<tune>, public sample_operator<1, 1> {
     double m_min_hz{tap::tools::tune::k_default_min_hz};
     double m_max_hz{tap::tools::tune::k_default_max_hz};
 
+    // Detected pitch, handed from the audio thread to the report timer (relaxed
+    // single-value handoff — the newest value wins, the tap.303.seq~ pattern).
+    std::atomic<double> m_hz_now{0.0};
+    double              m_hz_sent{-1.0};
+
     static int pitch_class_of(const symbol& s) {
         const std::string name = s;
-        constexpr const char* k_names[12] = {"c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b"};
         for (int i = 0; i < 12; ++i) {
-            if (name == k_names[i]) {
+            if (name == k_note_names[i]) {
                 return i;
             }
         }
@@ -74,6 +82,30 @@ class tune : public object<tune>, public sample_operator<1, 1> {
 
     inlet<>  m_in{this, "(signal) audio input"};
     outlet<> m_out{this, "(signal) pitch-corrected output", "signal"};
+    outlet<> m_info{this, "(list) reports: 'pitch <midi> <hz>' while voiced, 'key ...' on getkey/applykey"};
+
+    // Fires on the scheduler thread; declared before the attributes so the interval
+    // attribute's constructor-time setter finds it fully built. Reports the detected
+    // pitch when it changes (or when voicing stops), then re-arms itself.
+    timer<> m_report{this,
+                     MIN_FUNCTION{
+                         const double hz = m_hz_now.load(std::memory_order_relaxed);
+                         const bool   voiced_now  = hz > 0.0;
+                         const bool   voiced_sent = m_hz_sent > 0.0;
+                         if (voiced_now && (!voiced_sent || std::abs(hz - m_hz_sent) > 0.01)) {
+                             const double midi = 69.0 + 12.0 * std::log2(hz / 440.0);
+                             m_info.send("pitch", midi, hz);
+                             m_hz_sent = hz;
+                         }
+                         else if (!voiced_now && voiced_sent) {
+                             m_info.send("pitch", -1, 0.0); // voicing ended
+                             m_hz_sent = 0.0;
+                         }
+                         if (static_cast<double>(interval) > 0.0) {
+                             m_report.delay(interval);
+                         }
+                         return {};
+                     }};
 
     tune(const atoms& args = {}) { m_engine.prepare(samplerate()); }
 
@@ -179,6 +211,30 @@ class tune : public object<tune>, public sample_operator<1, 1> {
                               description{"Highest input frequency (Hz) treated as pitched. Estimates above it are "
                                           "ignored (no correction)."}};
 
+    attribute<bool> autokey{this,
+                            "autokey",
+                            false,
+                            setter{MIN_FUNCTION{
+                                m_engine.set_autokey(args[0]);
+                                return {args[0]};
+                            }},
+                            description{"Learn the key from the incoming pitches (Krumhansl-Kessler profile "
+                                        "scoring over a slowly-forgetting histogram). Learning only — query the "
+                                        "estimate with 'getkey', adopt it as key + scale with 'applykey'."}};
+
+    attribute<number> interval{this,
+                               "interval",
+                               50.0,
+                               range{0.0, 1000.0},
+                               setter{MIN_FUNCTION{
+                                   if (static_cast<double>(args[0]) > 0.0) {
+                                       m_report.delay(args[0]);
+                                   }
+                                   return {args[0]};
+                               }},
+                               description{"Pitch-report period in milliseconds for the right outlet ('pitch "
+                                           "<midi> <hz>' while the input is voiced). 0 disables reporting."}};
+
     attribute<bool> formant{this,
                             "formant",
                             false,
@@ -241,6 +297,27 @@ class tune : public object<tune>, public sample_operator<1, 1> {
                         return {};
                     }};
 
+    message<> getkey{this, "getkey",
+                     "Report the auto-key estimate from the right outlet: 'key <root> <major|minor> "
+                     "<confidence>', or 'key none' while there is not yet enough voiced material.",
+                     MIN_FUNCTION{
+                         send_key_estimate();
+                         return {};
+                     }};
+
+    message<> applykey{this, "applykey",
+                       "Adopt the auto-key estimate as the key and scale attributes, then report it "
+                       "from the right outlet. Does nothing (reports 'key none') without an estimate.",
+                       MIN_FUNCTION{
+                           const auto e = m_engine.autokey_estimate();
+                           if (e.valid()) {
+                               key   = k_note_names[e.key];
+                               scale = e.minor ? "minor" : "major";
+                           }
+                           send_key_estimate();
+                           return {};
+                       }};
+
     message<> clear{this, "clear", "Reset the audio state (buffers and glides).",
                     MIN_FUNCTION{
                         m_engine.clear();
@@ -258,11 +335,25 @@ class tune : public object<tune>, public sample_operator<1, 1> {
             return x;
         }
         const sample y = m_engine.process(x);
+        m_hz_now.store(m_engine.detected_hz(), std::memory_order_relaxed);
         return mute ? 0.0 : y;
     }
 
     /// Kernel access for the unit tests.
     const tap::tools::tune::corrector& engine() const { return m_engine; }
+
+  private:
+    // The estimate reads the learner's histogram while audio may be writing it; a torn
+    // double there skews one report harmlessly and the next call heals it.
+    void send_key_estimate() {
+        const auto e = m_engine.autokey_estimate();
+        if (e.valid()) {
+            m_info.send("key", symbol(k_note_names[e.key]), symbol(e.minor ? "minor" : "major"), e.confidence);
+        }
+        else {
+            m_info.send("key", symbol("none"));
+        }
+    }
 };
 
 MIN_EXTERNAL(tune);

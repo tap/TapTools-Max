@@ -17,8 +17,11 @@
 		(sent as <m>note</m> messages). The detector is a YIN-family pitch tracker. Resynthesis
 		is selectable via <at>backend</at>: a period-locked granular transposer sharing its
 		engine with <o>tap.shift~</o> (the low-latency default), formant-preserving TD-PSOLA,
-		or a peak-locked phase vocoder. The object is monophonic by design — pitch detection
-		needs a single voice. For multichannel signals, wrap it in an mc. operator.
+		or a peak-locked phase vocoder. The right outlet reports the detected pitch
+		(<m>pitch</m> messages, every <at>interval</at> milliseconds while the input is voiced)
+		and answers <m>getkey</m>/<m>applykey</m> with the auto-key estimate learned when
+		<at>autokey</at> is on. The object is monophonic by design — pitch detection needs a
+		single voice. For multichannel signals, wrap it in an mc. operator.
 	</description>
 
 
@@ -57,6 +60,17 @@
 			<arglist/>
 			<description>Release all held MIDI notes.</description>
 		</method>
+		<method name="getkey">
+			<arglist/>
+			<description>Report the auto-key estimate from the right outlet: 'key root
+			major|minor confidence', or 'key none' while there is not yet enough voiced
+			material. Enable learning with the autokey attribute.</description>
+		</method>
+		<method name="applykey">
+			<arglist/>
+			<description>Adopt the auto-key estimate as the key and scale attributes, then
+			report it from the right outlet.</description>
+		</method>
 		<method name="clear">
 			<arglist/>
 			<description>Reset the audio state (buffers and glides).</description>
@@ -82,6 +96,15 @@
 			<description>Resynthesis engine: grain (low-latency two-tap default), psola
 			(formant-preserving TD-PSOLA — best on voice, needs harmonic-rich input), or pvoc
 			(peak-locked phase vocoder, one FFT frame of latency).</description>
+		</attribute>
+		<attribute name="autokey" get="1" set="1" type="int" size="1">
+			<description>Learn the key from the incoming pitches (Krumhansl-Kessler profile
+			scoring over a slowly-forgetting histogram, about a minute of memory). Learning
+			only — query with getkey, adopt with applykey.</description>
+		</attribute>
+		<attribute name="interval" get="1" set="1" type="float" size="1">
+			<description>Pitch-report period in milliseconds for the right outlet. 0 disables
+			reporting.</description>
 		</attribute>
 		<attribute name="formant" get="1" set="1" type="int" size="1">
 			<description>Formant preservation for the pvoc backend (LPC source-filter): the
