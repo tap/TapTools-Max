@@ -89,6 +89,18 @@ SCENARIO("attributes forward into the kernel") {
                 REQUIRE(my_object.engine().resynth_backend() == tap::tools::tune::backend::pvoc);
             }
         }
+
+        WHEN("formant preservation is enabled") {
+            THEN("it defaults off") {
+                REQUIRE(static_cast<bool>(my_object.formant) == false);
+                REQUIRE(my_object.engine().formant() == false);
+            }
+
+            my_object.formant = true;
+            THEN("the flag forwards into the kernel") {
+                REQUIRE(my_object.engine().formant() == true);
+            }
+        }
     }
 }
 

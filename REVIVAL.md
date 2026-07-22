@@ -1272,10 +1272,19 @@ spectral-envelope resampler — pure tones far from a new harmonic thin out, pin
 tests), and `pvoc` (peak-locked phase vocoder, new DspTap primitive `tap::dsp::pvoc` on the
 shared real FFT; Laroche–Dolson-style rigid peak-region shifting, exact waveform identity at
 ratio 1). Detector, mapper, and retune glide are shared; only the last stage swaps, and
-switching live is click-safe (the incoming engine starts from silence). Still deferred:
-formant preservation (LPC, from published literature only), auto-key detection, a
-detected-pitch outlet, and the runtime maxtest. Needs runtime validation in Max like the rest
-of the DSP set.
+switching live is click-safe (the incoming engine starts from silence).
+**Formant preservation shipped (2026-07-22, same day):** `@formant` enables the LPC
+source-filter method on the pvoc backend (DspTap: autocorrelation LPC + Levinson–Durbin,
+order 48, `envelope(target)/envelope(source)` per relocated bin — from the published
+literature only, per the IP policy); psola preserves formants inherently. **Verification
+notebooks shipped** in both upstream repos, driving the shipping C++ through each repo's
+C ABI: DspTap `notebooks/pitchshift.ipynb` (YIN accuracy; Finding 1 — PSOLA is a
+spectral-envelope resampler; Finding 2 — naive phase-vocoder remapping measurably loses
+half its level vs the peak-locked design; the formant demo) and TapTools
+`notebooks/tune.ipynb` (retune-speed family, the three backends compared on the same
+vibrato voice, MIDI-mode formant demo; `Tune`/`Yin` added to the kernel C ABI). Still
+deferred: auto-key detection, a detected-pitch outlet, and the runtime maxtest. Needs
+runtime validation in Max like the rest of the DSP set.
 
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
