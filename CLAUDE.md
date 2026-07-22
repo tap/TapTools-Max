@@ -26,10 +26,11 @@ modern package; the legacy Jamoma-era tree has been pruned. What matters here:
   `submodules/taptools/include/taptools/`, in the `tap::tools` namespace, plus the kernel's own
   Catch2 tests, render tools, C ABI, notebooks, and benchmarks. It is a standalone CMake project
   with its own CI; develop the DSP there (or against a sibling checkout via `TAPTOOLS_KERNEL_DIR`).
-  See `submodules/taptools/README.md`. Most externals consume only the kernel headers, but the
-  spectral trio (`tap.convolve~`/`tap.nr~`/`tap.spectra~`) also link `tap::dsp` — the kernel's shared
-  real FFT, pinned at the kernel's own nested `submodules/dsptap` — so the root `CMakeLists.txt`
-  exposes that target and those three objects (and their min-tests) link it. The root also forces
+  See `submodules/taptools/README.md`. Most externals consume only the kernel headers, but some
+  also link `tap::dsp` — the shared DspTap primitives (real FFT, YIN, PSOLA, phase vocoder),
+  pinned at the kernel's own nested `submodules/dsptap`: the spectral trio
+  (`tap.convolve~`/`tap.nr~`/`tap.spectra~`) and `tap.tune~`. The root `CMakeLists.txt` exposes
+  that target and those objects (and their min-tests) link it. The root also forces
   C++20 on every object and test target centrally (Min otherwise pins C++17).
 - **`source/projects/<name>/`** — the Min-based externals (one folder per object: a `.cpp` + a
   `CMakeLists.txt`), thin wrappers over the kernel headers where the DSP has been extracted.
@@ -54,7 +55,8 @@ The historical material lives on branches, not in the working tree:
   with **no dependency on `min-lib`** (min-lib is the under-maintained piece; keeping DSP portable
   makes the wrapper a small swappable shim). Substantial DSP belongs in a **kernel header** in the
   kernel repo (`submodules/taptools/include/taptools/<name>.h`, namespace `tap::tools`, C++ stdlib
-  only, C++17-clean) with the wrapper `.cpp` doing only Min glue — six objects follow this today.
+  only) with the wrapper `.cpp` doing only Min glue — a growing set of objects follow this today
+  (see `REVIVAL.md` for the current list).
   New/changed DSP is committed in the kernel repo, then the submodule pin is bumped here. Within
   `source/projects/`, no shared global lookup tables — each object is self-contained; sharing
   between kernels is allowed (and encouraged) inside the kernel repo.
@@ -105,7 +107,14 @@ cmake --build build --config Release
 
 CI (`.github/workflows/build.yml`) checks out submodules recursively, builds both platforms on
 every push, and **fails the macOS job if any `.mxo` is not universal** (checked with `lipo`). DSP
-correctness is gated by the kernel repo's own CI, not here.
+correctness is gated by the kernel repo's own CI, not here. A style workflow additionally gates
+**clang-format and clang-tidy** on `source/projects/` (plus a drift check that `.clang-format` /
+`.clang-tidy` / `.pre-commit-config.yaml` match the canonical taphouse copies — never hand-edit
+those). Run `pre-commit install` once per clone so commits format themselves; on Claude Code web
+the checked-in SessionStart hook (`.claude/hooks/session-start.sh`) initializes submodules and
+installs the hook automatically. Note clang-tidy compiles with a *clang* front end: wrapper code
+that GCC's mock-kernel test build accepts can still fail there (e.g. ambiguous Min `attribute`
+conversions), so treat tidy as a second compiler.
 
 ## Adding / porting an object
 
