@@ -12,9 +12,9 @@
 #   3. warm the pinned clang-format binary so the first commit doesn't
 #      pay the download (the container snapshot caches it)
 #
-# Candidate for the taphouse sync set (scripts/sync.sh) alongside
-# .clang-format / .clang-tidy / .pre-commit-config.yaml, so every Tap repo
-# carries the same hook. Web-only; local clones are untouched.
+# Canonical copy: taphouse (distributed by scripts/sync.sh alongside
+# .clang-format / .clang-tidy / .pre-commit-config.yaml; drift-guarded where
+# present). Web-only; local clones are untouched.
 set -euo pipefail
 
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
