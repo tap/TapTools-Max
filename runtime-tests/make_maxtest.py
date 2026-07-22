@@ -202,3 +202,14 @@ if __name__ == "__main__":
         description="tap.tune~: unpitched DC passes the grain engine at unity (no correction applies).",
         numoutlets=2,
     )
+    # tap.overdrive~: bypass is a pure passthrough regardless of the drive settings —
+    # pins that the external loads and the signal path is wired (the DSP itself is
+    # covered by the kernel repo's overdrive_test.cpp).
+    audio_test(
+        "tap.overdrive~.maxtest.maxpat",
+        object_text="tap.overdrive~ @bypass 1 @drive 1.",
+        input_value="0.5",
+        expected="0.5",
+        assert_name="tap.overdrive~-bypass-passthrough",
+        description="tap.overdrive~ @bypass 1: sig~ 0.5 passes unprocessed.",
+    )

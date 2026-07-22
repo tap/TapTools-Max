@@ -1088,6 +1088,28 @@ GitHub Actions CI.
   where the field guide left it — gated on an A/B showing an audible delta the informed model misses,
   which the DAFx-14 finding suggests may never open. Remaining: A/B calibration of the swing `drive`
   against reference, and runtime validation in Max.
+- ✅ **Net-new object — `tap.overdrive~` (2026-07-22).** The spiritual successor to the Jamoma-era
+  `tap.overdrive~`, deliberately *not* a port (per the overdrive handoff brief): TTOverdrive's two
+  memoryless odd-function curves — the sine shaper's hard ±1 plateau and its aliasing were the
+  "digital" tell — are dropped, replaced by a voiced feedback clipper chasing the *class* of
+  TS-lineage pedals (Mad Professor Little Green Wonder as the listening reference). Kernel:
+  **`overdrive.h`** (`tap::tools::od`) — the nonlinearity sits inside a lowpass **feedback loop**
+  solved zero-delay (the `svf.h` driven-circuit / `ladder.h` solver_fast one-pass scheme), with the
+  LF loop gain pinned so bass stays tight and nearly clean at any drive while mids take the full
+  gain — the frequency-dependent clipping a static curve cannot do, and most of the perceptual
+  distance to the reference. Even harmonics via an `asymmetry` bias (0..1), a unity clean-through so
+  the transfer never flattens, an always-on DC blocker (`R = 0.9997`, the TTDCBlock constant — this
+  time actually in the signal path, unlike TTOverdrive's vestigial one), `body` (−1..+1) sliding the
+  pre-clipper HP corner + CW upper-mid push / CCW treble lift (all linear voicing EQ, placeholders
+  pending the by-ear pass against LGW demos), 1/2/4/8× oversampling (default 4×), and normalized
+  0..1 parameters throughout (mappable, and Q15/Q31-ready for a future fixed-point M33 target).
+  Kernel Catch2 tests pin the design goals: gain-tilt-grows-with-drive, even-harmonic emergence,
+  DC blocking, never-flat slope, alias-floor improvement with oversampling, body tilt, decay to
+  silence, determinism. Wrapper `tap.overdrive_tilde` (thin `vector_operator`), attributes
+  `drive`/`body`/`asymmetry`/`preamp`/`output`/`oversample`/`smooth`/`bypass`/`mute`, min-api
+  attribute tests, the full vertical slice (maxref + help patcher + a bypass-passthrough
+  `maxtest` starter). Remaining: the in-Max voicing pass (the `k_voice_*` constants are the sound
+  of the object) and runtime validation.
 
 ---
 
