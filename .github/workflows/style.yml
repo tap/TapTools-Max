@@ -12,9 +12,9 @@ on: [push, pull_request]
 jobs:
   drift:
     # Fails if this repo's .clang-format/.clang-tidy/STYLE.md diverge from TapHouse.
-    uses: tap/taphouse/.github/workflows/drift-check.yml@v4
+    uses: tap/taphouse/.github/workflows/drift-check.yml@v5
     with:
-      ref: v4
+      ref: v5
 
   clang-format:
     runs-on: ubuntu-latest
