@@ -1282,9 +1282,16 @@ C ABI: DspTap `notebooks/pitchshift.ipynb` (YIN accuracy; Finding 1 — PSOLA is
 spectral-envelope resampler; Finding 2 — naive phase-vocoder remapping measurably loses
 half its level vs the peak-locked design; the formant demo) and TapTools
 `notebooks/tune.ipynb` (retune-speed family, the three backends compared on the same
-vibrato voice, MIDI-mode formant demo; `Tune`/`Yin` added to the kernel C ABI). Still
-deferred: auto-key detection, a detected-pitch outlet, and the runtime maxtest. Needs
-runtime validation in Max like the rest of the DSP set.
+vibrato voice, MIDI-mode formant demo; `Tune`/`Yin` added to the kernel C ABI).
+**Deferred list closed (2026-07-22, same day):** auto-key detection shipped (kernel:
+Krumhansl–Kessler profile scoring over a slowly-forgetting pitch-class histogram —
+learning-only, `@autokey` + `getkey`/`applykey` in the wrapper); the **detected-pitch
+outlet** shipped (right outlet, timer-driven `pitch <midi> <hz>` reports every `@interval`
+ms with an atomic audio→scheduler handoff, plus the `key ...` replies); and the **runtime
+maxtest** shipped (`runtime-tests/patchers/tap.tune~.maxtest.maxpat`, generated via
+`make_maxtest.py` — unpitched DC passes the grain engine at exactly unity). Remaining for
+this object: the in-Max validation pass itself (help patcher + maxtest under a licensed
+Max), like the rest of the DSP set.
 
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as

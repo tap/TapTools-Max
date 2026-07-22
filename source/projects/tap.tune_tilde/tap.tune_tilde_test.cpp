@@ -90,6 +90,37 @@ SCENARIO("attributes forward into the kernel") {
             }
         }
 
+        WHEN("auto-key learning is toggled") {
+            THEN("it defaults off, with reporting at 50 ms") {
+                REQUIRE(static_cast<bool>(my_object.autokey) == false);
+                REQUIRE(my_object.engine().autokey() == false);
+                REQUIRE(static_cast<double>(my_object.interval) == 50.0);
+            }
+
+            my_object.autokey = true;
+            THEN("the flag forwards into the kernel") {
+                REQUIRE(my_object.engine().autokey() == true);
+            }
+        }
+
+        WHEN("the key estimate is queried before anything was heard") {
+            my_object.autokey = true;
+            my_object.getkey();
+
+            THEN("no estimate exists yet (the message must not crash or fabricate one)") {
+                REQUIRE_FALSE(my_object.engine().autokey_estimate().valid());
+            }
+        }
+
+        WHEN("applykey runs without an estimate") {
+            my_object.applykey();
+
+            THEN("the key and scale attributes stay untouched") {
+                REQUIRE(static_cast<symbol>(my_object.key) == "c");
+                REQUIRE(static_cast<symbol>(my_object.scale) == "chromatic");
+            }
+        }
+
         WHEN("formant preservation is enabled") {
             THEN("it defaults off") {
                 REQUIRE(static_cast<bool>(my_object.formant) == false);
