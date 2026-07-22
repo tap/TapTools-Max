@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.overdrive~" module="msp" category="TapTools, MSP Distortion">
+
+	<digest>
+		Voiced feedback overdrive / saturation
+	</digest>
+
+	<description>
+		The <o>tap.overdrive~</o> object is a soft-clipping overdrive whose nonlinearity sits
+		inside a lowpass feedback loop — the topology of TS-lineage feedback pedals (voiced
+		against the Mad Professor Little Green Wonder) — rather than a static waveshaping curve
+		applied to the whole spectrum. The result is frequency-dependent clipping: bass stays
+		tight and nearly clean at any drive while mids and highs take the full gain and break up
+		first, and the tilt grows as the drive rises. The asymmetry attribute biases the clipper
+		for even-harmonic warmth (a built-in DC blocker removes the offset this creates), and a
+		unity clean path is summed around the clipper so the transfer keeps rising with reduced
+		slope instead of flattening into a hard digital plateau. The body attribute is the
+		signature voicing control: toward -1 fuller lows reach the clipper and the top gets a
+		slight lift; toward +1 the lows tighten and thin and the upper mids push forward. The
+		clipping stage runs oversampled (default 4x) to keep aliasing down, and all parameters
+		glide smoothly. This object is the spiritual successor to the original Jamoma-era
+		tap.overdrive~, replacing its memoryless waveshaper modes. Single-channel: wrap in mc.
+		for multichannel.
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Distortion</metadata>
+	</metadatalist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="clear">
+			<arglist/>
+			<description>Reset the filter, feedback, and resampler state.</description>
+		</method>
+	</methodlist>
+
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="drive" get="1" set="1" type="float" size="1">
+			<description>Drive (0-1). 0 is edge-of-breakup — a pedal's gain knob full
+			counterclockwise, still warm — and 1 is heavily saturated. The sweep is perceptual
+			(dB of gain into the clipper); use bypass for a true clean signal.</description>
+		</attribute>
+		<attribute name="body" get="1" set="1" type="float" size="1">
+			<description>Body voicing (-1..+1, 0 neutral). Toward -1: fuller lows into the
+			clipper and a slight treble lift. Toward +1: thinner, tighter lows and an upper-mid
+			push. Linear pre/post voicing around the clipper, not part of the
+			nonlinearity.</description>
+		</attribute>
+		<attribute name="asymmetry" get="1" set="1" type="float" size="1">
+			<description>Asymmetry (0-1): even-harmonic amount. 0 is a symmetric clip (odd
+			harmonics only); raising it biases the clipper for even-order warmth. The DC this
+			generates is removed by the built-in DC blocker.</description>
+		</attribute>
+		<attribute name="preamp" get="1" set="1" type="float" size="1">
+			<description>Input gain in dB (-24..24), applied before the clipper.</description>
+		</attribute>
+		<attribute name="output" get="1" set="1" type="float" size="1">
+			<description>Makeup gain in dB (-24..24), applied at the output.</description>
+		</attribute>
+		<attribute name="oversample" get="1" set="1" type="int" size="1">
+			<description>Internal oversampling factor for the clipping stage (1, 2, 4, or 8;
+			default 4). Reduces aliasing from the clipper's harmonics.</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>Anti-zipper interpolation time in milliseconds applied to parameter changes.</description>
+		</attribute>
+		<attribute name="bypass" get="1" set="1" type="int" size="1">
+			<description>Pass the input through unprocessed.</description>
+		</attribute>
+		<attribute name="mute" get="1" set="1" type="int" size="1">
+			<description>Silence the output.</description>
+		</attribute>
+	</attributelist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="overdrive~"/>
+		<seealso name="tap.vca~"/>
+		<seealso name="tap.svf~"/>
+		<seealso name="tap.dcblock~"/>
+	</seealsolist>
+
+
+</c74object>
