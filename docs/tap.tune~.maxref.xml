@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.tune~" module="msp" category="TapTools, MSP Modifiers">
+
+	<digest>
+		Real-time monophonic pitch correction
+	</digest>
+
+	<description>
+		The <o>tap.tune~</o> object is the classic retune effect: it detects the pitch of a
+		monophonic input (voice or instrument), snaps it to the nearest allowed note, and glides
+		the correction in at a settable retune speed. Slow speeds correct transparently while
+		letting vibrato through; a speed of zero snaps instantly — the well-known hard-quantize
+		vocal effect. Allowed notes come from a key and scale (with individual per-note enables via
+		the <m>notes</m> message), or in midi mode from whatever MIDI notes are currently held
+		(sent as <m>note</m> messages). The detector is a YIN-family pitch tracker; resynthesis
+		is a period-locked granular transposer sharing its engine with <o>tap.shift~</o>. The
+		object is monophonic by design — pitch detection needs a single voice. For multichannel
+		signals, wrap it in an mc. operator.
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Effect</metadata>
+	</metadatalist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="notes">
+			<arglist>
+				<arg name="input" type="list" optional="0" id="0" />
+			</arglist>
+			<description>
+				Set the allowed notes directly, as absolute pitch classes, replacing the key/scale
+				derivation. Send either twelve 0/1 toggles (C through B) or a list of the enabled
+				pitch classes (0 = C .. 11 = B).
+			</description>
+		</method>
+		<method name="note">
+			<arglist>
+				<arg name="pitch" type="int" optional="0" id="0" />
+				<arg name="velocity" type="int" optional="1" id="1" />
+			</arglist>
+			<description>
+				MIDI note-on/off for midi mode: a pitch (0-127) and a velocity. Velocity 0 releases
+				the note; anything else holds it as a correction target.
+			</description>
+		</method>
+		<method name="flush">
+			<arglist/>
+			<description>Release all held MIDI notes.</description>
+		</method>
+		<method name="clear">
+			<arglist/>
+			<description>Reset the audio state (buffers and glides).</description>
+		</method>
+	</methodlist>
+
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="key" get="1" set="1" type="symbol" size="1">
+			<description>Key root for the scale (c, c#, d .. b). Setting it re-derives the allowed
+			notes from key + scale, replacing any custom notes mask.</description>
+		</attribute>
+		<attribute name="scale" get="1" set="1" type="symbol" size="1">
+			<description>Scale the corrector snaps to, relative to the key: chromatic, major,
+			minor, harmonic, melodic, pentatonic, or minorpentatonic.</description>
+		</attribute>
+		<attribute name="mode" get="1" set="1" type="symbol" size="1">
+			<description>Target selection: scale snaps to the key/scale notes; midi snaps to the
+			nearest held MIDI note and leaves the signal untouched when none are held.</description>
+		</attribute>
+		<attribute name="speed" get="1" set="1" type="float" size="1">
+			<description>Retune speed in milliseconds — the time constant of the glide onto the
+			target note. 0 snaps instantly (the hard quantize effect).</description>
+		</attribute>
+		<attribute name="amount" get="1" set="1" type="float" size="1">
+			<description>Correction depth in percent (0-100). 100 lands on the target; 50 corrects
+			half the distance.</description>
+		</attribute>
+		<attribute name="minfreq" get="1" set="1" type="float" size="1">
+			<description>Lowest input frequency (Hz) treated as pitched.</description>
+		</attribute>
+		<attribute name="maxfreq" get="1" set="1" type="float" size="1">
+			<description>Highest input frequency (Hz) treated as pitched.</description>
+		</attribute>
+		<attribute name="bypass" get="1" set="1" type="int" size="1">
+			<description>Pass the input through unprocessed.</description>
+		</attribute>
+		<attribute name="mute" get="1" set="1" type="int" size="1">
+			<description>Silence the output.</description>
+		</attribute>
+	</attributelist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.shift~"/>
+		<seealso name="tap.pitchaccum~"/>
+		<seealso name="fzero~"/>
+		<seealso name="retune~"/>
+	</seealsolist>
+
+</c74object>

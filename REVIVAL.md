@@ -1253,6 +1253,22 @@ square shaper resolved via Open303's measured constants, and the author-approved
 gate-hold). Remaining: **runtime validation in Max** for all three objects (help
 patchers, maxtests, the render WAVs, and the notebook as the evaluation material).
 
+**12. Net-new object — `tap.tune~` (2026-07-22).** ✅ **v1 shipped** — real-time monophonic
+pitch correction (the classic retune / hard-snap effect). Cross-repo vertical slice: the YIN
+detector landed in **DspTap** as the shared `tap::dsp::yin` primitive (full-rate, cumulative-mean
+normalized, parabolic sub-sample lag; double golden model + float32 profile, the `fft.h`
+backend pattern — promoted from the decimated follower inside `grm_pitchaccum.h`); the corrector
+kernel landed in **`tap/taptools`** as `taptools/tune.h` (`tune::corrector`: scale/key mapper
+with per-note enables + MIDI-target mode, retune-speed glide, and the two-tap `tap.shift~`
+transposer engine with its window locked to an **even multiple of the detected period** — the
+lock measurably makes the average retune ratio exact); this repo adds the Min wrapper, wrapper
+tests, reference page, and help patcher. IP framing (per the pitch-correction handoff doc): the
+implemented pipeline is the public-domain expired-patent design; polyphonic per-note editing
+(Celemony DNA) deliberately out of scope; "tune", not the trademarked product name. Deferred:
+pitch-synchronous (PSOLA) and phase-vocoder resynth backends behind the same kernel interface,
+formant preservation (LPC, from published literature only), auto-key detection, a detected-pitch
+outlet, and the runtime maxtest. Needs runtime validation in Max like the rest of the DSP set.
+
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
 they're touched. Control/utility and Jitter objects never move — they are Max message-logic, not
