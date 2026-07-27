@@ -27,6 +27,15 @@ add_library(
 include(${C74_MIN_API_DIR}/script/min-posttarget.cmake)
 
 # Catch-based unit tests (built when tap.convolve_tilde_test.cpp is present; run via ctest).
+# min-object-unittest.cmake self-guards on that file existing, so including it
+# unconditionally is safe and creates no target while the file is absent.
+#
+# There is deliberately no test file: this object loads its impulse response through
+# `buffer_reference`, and min-api's mock kernel implements none of the buffer~ API
+# (buffer_ref_new, buffer_getframecount, buffer_view, ...). A test_wrapper<convolve> calls
+# buffer_ref_new from the constructor, so the test executable does not link. The same applies
+# to every buffer_reference object here (tap.buffer.peak~/record~/snap~), none of which has a
+# wrapper test either. Testing this object needs the real Max kernel — see runtime-tests/.
 include(${C74_MIN_API_DIR}/test/min-object-unittest.cmake)
 
 # The spectral kernel pulls its FFT from the shared DspTap library (tap::dsp): link the Ooura static
