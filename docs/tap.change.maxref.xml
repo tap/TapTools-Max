@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.change" module="max" category="TapTools, Control">
+
+	<digest>
+		Filter out repetitions
+	</digest>
+
+	<description>
+		The <o>tap.change</o> object passes its input through only when that input differs from
+		the previous one. Where Max's <o>change</o> works on numbers alone, tap.change filters
+		repetitions of any message — int, float, list, or symbol. Novel input leaves the left
+		outlet unchanged; a repeat sends a <m>bang</m> from the middle outlet instead, so both
+		outcomes are addressable. The first input after the object is created always counts as
+		novel. Comparison is atom by atom, and a difference in atom <i>type</i> counts as a
+		change: the int 5 followed by the float 5. is two different messages, matching the
+		behavior of the original TapTools object. Sending to the right inlet stores a value
+		silently — no output is produced, but the next identical input is treated as a repeat.
+		The rightmost outlet is the standard dumpout.
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Control</metadata>
+	</metadatalist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="int">
+			<arglist>
+				<arg name="input" type="int" optional="0" id="0" />
+			</arglist>
+			<description>Integer input. Passed through when it differs from the stored value, otherwise a bang is sent from the middle outlet.</description>
+		</method>
+		<method name="float">
+			<arglist>
+				<arg name="input" type="float" optional="0" id="0" />
+			</arglist>
+			<description>Float input. Passed through when it differs from the stored value, otherwise a bang is sent from the middle outlet.</description>
+		</method>
+		<method name="list">
+			<arglist>
+				<arg name="input" type="list" optional="0" id="0" />
+			</arglist>
+			<description>List input. Compared element by element, including each element's type; any difference in length, value, or type passes the list through.</description>
+		</method>
+		<method name="anything">
+			<arglist>
+				<arg name="input" type="atom" optional="0" id="0" />
+			</arglist>
+			<description>A symbol or any other message. The selector participates in the comparison, so a change of selector alone counts as novel input.</description>
+		</method>
+	</methodlist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="change"/>
+		<seealso name="change~"/>
+		<seealso name="!="/>
+		<seealso name="route"/>
+	</seealsolist>
+
+
+</c74object>

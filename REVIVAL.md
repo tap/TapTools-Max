@@ -1117,6 +1117,27 @@ GitHub Actions CI.
   now VIII). Remaining: the in-Max voicing pass (the
   `k_voice_*` constants are the sound of the object) and runtime validation.
 
+**Docs/help vertical slice completed (2026-07-27):** the package now ships a reference page
+*and* a help patcher for **all 78 objects**. `tap.change` had neither — its maxref is written
+from the current source rather than ported, because the legacy page predates the behavior the
+revived object actually has (the bang-on-repeat middle outlet, the silent-set right inlet, and
+atom-*type* participating in the comparison, so int 5 then float 5. is two messages).
+`tap.delay~` and `tap.rotate` had reference pages but no help patcher; both were authored fresh.
+Note legacy is **not** a source for these two: it has no `tap.rotate` help at all, and its
+`tap.delay.maxhelp` documents the *control-rate* `tap.delay`, not the signal object — porting it
+would have been wrong. All three patchers follow the `tap.fourpole~` skeleton (house `tap` style,
+gradient background, Lato Light, dependency cache) and **want an open-in-Max check**.
+
+*Finding, recorded rather than fixed:* `tap.convolve~` includes the min-api unittest harness but
+ships no test file, which looks like a dangling target and is not one — `min-object-unittest.cmake`
+self-guards on the test file existing. A wrapper test was attempted and abandoned: the object
+loads its IR through `buffer_reference`, the mock kernel implements none of the `buffer~` API, and
+`test_wrapper<convolve>` calls `buffer_ref_new` from the constructor, so the executable does not
+link. That is why all four `buffer_reference` objects (`tap.convolve~`,
+`tap.buffer.peak~`/`record~`/`snap~`) have no wrapper tests, and it is now a comment in
+`tap.convolve_tilde/CMakeLists.txt` so the next reader does not retrace it. Those objects need the
+real kernel — i.e. `runtime-tests/`. Wrapper-test coverage stands at 49/78.
+
 ---
 
 ## 8. The `taptools-min` reconciliation (2026-06-17)
@@ -1188,7 +1209,10 @@ best-effort moddate restore). The `runtime-tests/` (max-test) harness is the veh
 **first verify the two generated example patchers in Max**, then extend patcher coverage
 to these objects.
 
-**2. Help patchers.** ✅ `tap.sustain~` and `tap.filter~` now have help patchers (authored
+**2. Help patchers.** ✅ **Every object now has both a reference page and a help patcher
+(78/78)** — `tap.change` was missing both, and `tap.delay~` / `tap.rotate` had a maxref but no
+patcher; all three were filled in 2026-07-27 (see §7) and **want an open-in-Max check**.
+✅ `tap.sustain~` and `tap.filter~` now have help patchers (authored
 headless from the maxref + templates; **want a first open-in-Max check**). The spectral
 trio's help patchers are still the *legacy `pfft~` abstractions* and **need rework** for the
 new self-contained objects. *Pre-existing shared-asset gap found & fixed:* the help
