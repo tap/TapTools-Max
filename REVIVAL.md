@@ -1136,7 +1136,64 @@ loads its IR through `buffer_reference`, the mock kernel implements none of the 
 link. That is why all four `buffer_reference` objects (`tap.convolve~`,
 `tap.buffer.peak~`/`record~`/`snap~`) have no wrapper tests, and it is now a comment in
 `tap.convolve_tilde/CMakeLists.txt` so the next reader does not retrace it. Those objects need the
-real kernel — i.e. `runtime-tests/`. Wrapper-test coverage stands at 49/78.
+real kernel — i.e. `runtime-tests/`. Wrapper-test coverage stood at 49/78 at this point (raised to
+66/78 the next day — see the entry below).
+
+**Wrapper-test sweep completed (2026-07-28):** every object that *can* be tested against the mock
+kernel now is — **66/78**, up from 49. Seventeen new suites (92 scenarios, ~835k assertions):
+`tap.autothru~`, `tap.comb~`, `tap.delay~`, `tap.elixir~`, `tap.fft.binmodulator~`,
+`tap.fft.list~`, `tap.fft.normalize~`, `tap.fourpole~`, `tap.gang`, `tap.limi~`, `tap.midimapper`,
+`tap.multitap~`, `tap.noise~`, `tap.procrastinate~`, `tap.pulsesub~`, `tap.random~`, `tap.rotate`.
+The remaining twelve are **blocked, not skipped**, and for one of three reasons the mock kernel
+cannot fake: the four `buffer_reference` objects (above), the five Jitter objects
+(`tap.jit.ali`/`colortrack`/`kernel`/`proximity`/`sum`), the two file-IO objects
+(`tap.filecontainer`, `tap.folder`), and **`tap.inquisitor`**, which needs
+`object_attr_getnames` and `jbox_get_object` — neither exists anywhere in min-api's mock, so its
+test executable would not link. All twelve want `runtime-tests/`.
+
+Objects whose randomness or sample rate would otherwise make them untestable were made
+deterministic rather than tested loosely: `tap.procrastinate~`'s four random voices are pinned by
+collapsing every range to a single value (low == high), which makes the cascade geometry
+measurable — one impulse in yields four taps at 2204-sample intervals, one per voice, proving the
+voices are both cascaded *and* summed; `tap.random~`'s bounds are collapsed so the drawn value is
+exact; `tap.noise~`'s white LCG is reproduced sample-for-sample in the test, pinning the ported
+TTNoise constants, and the four colors are ordered brown < pink < white < blue by a
+level-normalized mean-absolute-first-difference measure.
+
+*Real defect found and fixed — `tap.multitap~` was silent from instantiation.* Members are
+initialized in declaration order, so private state declared *after* an attribute is
+default-initialized **again**, after that attribute's setter has already written to it. The `gain`
+attribute's 0 dB default converts to a linear 1.0, and a trailing `m_gain_lin{}` threw it away —
+and unlike the other cached state here, nothing recomputes the gains, so a fresh object summed
+every tap at zero gain until the user touched `@gain`. Fixed by moving the cached state above the
+attributes, which is the pattern `tap.noise~` already documents in a comment; the comment there is
+now duplicated at the fix site so the next reader meets it before repeating the mistake.
+`tap.comb~` (`m_lp_coef` left at its 0.1 placeholder), `tap.fourpole~` (`m_f`/`m_fb` left at 0, so
+it passes nothing), `tap.limi~` (`m_recover`) and `tap.pulsesub~` (the envelope steps) have the
+same hazard but are **latent**: their remaining member initializers were written to mirror the
+attribute defaults, and `dspsetup` — which Max always calls before the perform routine — recomputes
+what was lost. Their test files send `dspsetup` first and say why in the file header, so the
+dependency is recorded rather than accidental.
+
+*Two min-api landmines, recorded at the four sites that hit them:* (1)
+`attribute<std::vector<T>>::operator=(const T)` wraps the whole vector in a single atom via the
+catch-all `atom(T)` template, which **recurses until the stack runs out** — assigning a list-valued
+attribute must go through the `atoms` overload (`tap.multitap~`, `tap.midimapper`). (2) Anything
+that reaches an outlet through a `queue` is invisible in the mock, whose `qelem_set` is a no-op and
+whose `queue` service function is private. That makes `tap.gang` — whose entire fan-out is
+deferred — a construction-and-dispatch test only, stated plainly in its file header; `tap.fft.list~`
+escapes it because `bang` runs the same `emit()` synchronously, so its list output *is* asserted.
+
+*Two honest limits pinned rather than papered over.* `tap.fourpole~`'s resonance does **not** peak
+at the frequency it is nominally tuned to: measured at the 1 kHz default, `@q 0.9` boosts 500 Hz by
+~1.6× and *thins* 100 Hz to ~0.27×, while the response at 1 kHz itself moves by under 1%. That is
+the Stilson/Smith one-pole-cascade model's known detuning, and the test says so — retuning the model
+should change those numbers with it. `tap.noise~`'s white source is documented as ranging over
+(-1, 1), but its LCG (modulus 139968) does reach 0, at which point `1 - 2*accum/139968` is exactly
+1.0 — so the true range is (-1, 1]; the test asserts the endpoint is hit. Third, smaller:
+`tap.rotate`'s `cart_to_pol` divide-by-zero guard substitutes 0.000001 for a zero real part, which
+gives axis-aligned points an absolute error floor around 1e-6; the axis tests carry a 1e-5 tolerance
+and a comment explaining that the floor belongs to the algorithm, not the assertions.
 
 ---
 
@@ -1208,6 +1265,15 @@ roughly by risk: the reinvented spectral trio (`tap.vocoder~`/`tap.nr~`/`tap.spe
 best-effort moddate restore). The `runtime-tests/` (max-test) harness is the vehicle —
 **first verify the two generated example patchers in Max**, then extend patcher coverage
 to these objects.
+
+✅ **Wrapper-test coverage is now complete at 66/78** (2026-07-28, see §7) — every object the mock
+kernel can host has a suite. That makes the twelve it cannot host the *first* claim on
+`runtime-tests/`, since they have no automated coverage at all today: the four `buffer_reference`
+objects (`tap.convolve~`, `tap.buffer.peak~`/`record~`/`snap~`), the five Jitter objects, the two
+file-IO objects (`tap.filecontainer`, `tap.folder`), and `tap.inquisitor` (needs the real patcher
+API). `tap.gang` belongs on the list too: its suite covers construction and message dispatch, but
+its outlets fan out through `queue`s that only Max services, so the ring-of-gangs
+change-detection behavior is still unasserted.
 
 **2. Help patchers.** ✅ **Every object now has both a reference page and a help patcher
 (78/78)** — `tap.change` was missing both, and `tap.delay~` / `tap.rotate` had a maxref but no

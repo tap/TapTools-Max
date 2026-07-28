@@ -17,6 +17,23 @@
 using namespace c74::min;
 
 class multitap : public object<multitap>, public sample_operator<1, 1> {
+  private:
+    // Cached state — declared before the attributes so it is initialized before their setters run.
+    // Members are initialized in declaration order, so state declared *after* an attribute is
+    // default-initialized again after that attribute's setter has already written to it. That is
+    // what silently zeroed m_gain_lin here: the gain attribute's 0 dB default converts to a linear
+    // 1.0, and a trailing `m_gain_lin{}` threw it away, leaving a fresh object silent. (tap.noise~
+    // carries the same note; dspsetup does not recompute the gains, so nothing recovered it.)
+    static constexpr int    k_max_taps{100};
+    static constexpr double k_master_gain{1.0};
+
+    std::vector<double>            m_buffer;
+    long                           m_write{0};
+    int                            m_num_taps{1};
+    std::array<double, k_max_taps> m_delay_ms{};
+    std::array<long, k_max_taps>   m_delay_samples{};
+    std::array<double, k_max_taps> m_gain_lin{};
+
   public:
     MIN_DESCRIPTION{"A self-contained multitap delay. Records the input into a buffer and sums any "
                     "number of taps, each with its own delay time (ms) and gain (dB)."};
@@ -107,16 +124,6 @@ class multitap : public object<multitap>, public sample_operator<1, 1> {
     }
 
   private:
-    static constexpr int    k_max_taps{100};
-    static constexpr double k_master_gain{1.0};
-
-    std::vector<double>            m_buffer;
-    long                           m_write{0};
-    int                            m_num_taps{1};
-    std::array<double, k_max_taps> m_delay_ms{};
-    std::array<long, k_max_taps>   m_delay_samples{};
-    std::array<double, k_max_taps> m_gain_lin{};
-
     void allocate() {
         const double sr = samplerate();
         long         n  = static_cast<long>(static_cast<double>(buffersize) * (sr * 0.001));
