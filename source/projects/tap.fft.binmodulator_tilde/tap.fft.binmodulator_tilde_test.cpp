@@ -4,7 +4,6 @@
 // Copyright 2002-2026 Timothy Place.
 
 #include <cmath>
-#include <vector>
 
 #include "c74_min_unittest.h"             // required unit-test header (defines main via Catch)
 #include "tap.fft.binmodulator_tilde.cpp" // include the object source so we can instantiate it
@@ -21,14 +20,13 @@ namespace {
     // Process one single-sample "frame" for a given bin index. The LFOs advance once per frame, so a
     // frame count of 1 makes each call one LFO step — with vs == 1 the increment is freq/sr.
     frame step(fft_binmodulator& object, double re, double im, double bin) {
-        double              r = re, i = im, b = bin;
-        std::vector<double> or_(1, 0.0), oi(1, 0.0);
-        double*             inp[3]  = {&r, &i, &b};
-        double*             outp[2] = {or_.data(), oi.data()};
-        audio_bundle        ina{inp, 3, 1};
-        audio_bundle        outa{outp, 2, 1};
+        double       r = re, i = im, b = bin, o_re = 0.0, o_im = 0.0;
+        double*      inp[3]  = {&r, &i, &b};
+        double*      outp[2] = {&o_re, &o_im};
+        audio_bundle ina{inp, 3, 1};
+        audio_bundle outa{outp, 2, 1};
         object(ina, outa);
-        return {or_[0], oi[0]};
+        return {o_re, o_im};
     }
 
 } // namespace
