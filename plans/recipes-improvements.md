@@ -1,9 +1,11 @@
 # Plan — improvements surfaced by the Recipes chapters
 
 > **Status: executed.** §1–§6 and §8 shipped 2026-08-05 (§1–§2 kernel-first with wrappers;
-> §3–§8 in the parallel wave — see per-section status notes); still open: refreshed help
-> patchers and the on-Mac validation passes (the 5comb `notes` message and the verb
-> `clear`/DC-blocker fix shipped 2026-08-05). This is the design-of-record for the object improvements
+> §3–§8 in the parallel wave — see per-section status notes); the 5comb `notes` message, the
+> verb `clear`/DC-blocker fix, and the help-patcher refresh (delay/multitap/vocoder/harmony
+> rewritten to the current surfaces; 5comb gains a `notes` row; adsr's mode menu gains
+> `analog`) also shipped 2026-08-05. Still open: the on-Mac validation passes (licensed Max —
+> includes opening each refreshed help patcher once to confirm layout). This is the design-of-record for the object improvements
 > discovered while drafting *Tools on Tap* Part IX (Recipes) — see `book/PLAN-recipes.md` in
 > the kernel repo for the chapters themselves. The recipe-drafting method (check every knob
 > against the wrapper source before it goes in print) doubles as an audit; this file collects
@@ -247,5 +249,5 @@ object has them). Low urgency, documented workarounds; batch with any vocoder re
 | 2026-08-05 | delay-pair decision | trash-or-rebuild resolved: rebuild behind the same names, `interp 0` legacy mode, kill the 0.0-signal trap | → §5 |
 | 2026-08-05 | §4 sweep tests | `tap.verb~` `clear` resets cores + limiter but NOT the DC-blocker state (`m_dc_l/m_dc_r`) — pre-existing, one line | **fixed 2026-08-05** |
 | 2026-08-05 | §3 implementation | min-api native enum attributes report indices; `attribute<enum class>` banned (REVIVAL §9.5) → house symbolic-enum pattern is `attribute<symbol>` + numeric fallback | recorded in §3 |
-| 2026-08-05 | wrapper wave | delay/multitap/vocoder/harmony help patchers still show pre-wave surfaces (JSON graphs, non-trivial edit) | on-Mac pass |
+| 2026-08-05 | wrapper wave | delay/multitap/vocoder/harmony help patchers still show pre-wave surfaces (JSON graphs, non-trivial edit) | **refreshed 2026-08-05** (rewritten to the current surfaces in the flat house style; 5comb help gains a `notes` row; adsr help's mode menu gains `analog`; layout check stays in the on-Mac pass) |
 | 2026-08-05 | (still open) | `tap.5comb~` MIDI `notes` message (§7) — not covered by the wave | **shipped 2026-08-05** (write-through-attributes; fractional MIDI; maxref + test) |

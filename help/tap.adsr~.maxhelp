@@ -528,7 +528,7 @@
 									"fontname" : "Lato Light",
 									"fontsize" : 12.0,
 									"id" : "obj-10",
-									"items" : [ "hybrid", ",", "linear", ",", "exponential" ],
+									"items" : [ "analog", ",", "hybrid", ",", "linear", ",", "exponential" ],
 									"maxclass" : "umenu",
 									"numinlets" : 1,
 									"numoutlets" : 3,
