@@ -102,16 +102,31 @@ Two objects violate the "a seed is a serial number" doctrine:
   instantiations. Same fix, same doctrine: a `seed` attribute, deterministic default,
   behavior change in the release notes.
 
-## 5. `tap.delay~` / `tap.multitap~` — below the house bar
+## 5. `tap.delay~` / `tap.multitap~` — rebuild behind the same names (decision)
 
 The second-wave sweep found the delay pair is the weakest DSP in the package: **integer-
 sample delays with no interpolation** (modulating the time zipper-steps — while `tap.5comb~`
 and `tap.pitchaccum~` Hermite-interpolate as a point of pride), no feedback, no `mix`, no
 `bypass`/`mute`, and a trap on `tap.delay~`'s time inlet (a signal value of exactly 0.0
-means "use the attribute," not "zero delay"). The sequenced-modular recipe had to warn
-readers off them for anything modulated. Candidate: a kernel-first rebuild (Hermite taps,
-`feedback` with the DC-blocked loop the comb already has, `mix`, per-tap pans on multitap),
-keeping the current objects' defaults as the compatibility surface.
+means "use the attribute," not "zero delay").
+
+**Trash-or-rebuild was considered; the decision is rebuild, keeping the names.** The
+reasoning, recorded so it doesn't get re-litigated:
+
+- *Deleting* breaks every legacy patcher that instantiates them — the names date to the
+  1999 package, and the revival's promise is continuity. A missing-object box is the worst
+  outcome the package can hand an old user.
+- *Keeping them as-is* is also indefensible: stock Max (`delay~`, `tapin~`/`tapout~`)
+  already covers bare uninterpolated delay, so the un-upgraded objects duplicate the host
+  with less. The only reason for a `tap.` delay to exist is the house treatment.
+- The substrate is already written: `grm_comb.h` carries the Hermite fractional tap and
+  the DC-blocked feedback loop. A kernel `delay.h` extracting that is small.
+
+Target: kernel-first rebuild — Hermite taps, `feedback` (delay~), `mix`, `bypass`/`mute`,
+per-tap gain *and pan* on multitap, house `smooth` ramps on times. Compatibility: keep an
+`interp 0` integer mode for bit-faithful legacy behavior (non-default), and **kill the
+0.0-signal trap** as a documented breaking change — a signal on the time inlet always wins,
+including at zero. Wrapper defaults otherwise preserved.
 
 ## 6. `tap.vocoder~` — the missing conveniences
 
@@ -179,3 +194,5 @@ object has them). Low urgency, documented workarounds; batch with any vocoder re
 | 2026-08-05 | comb drones | `tap.5comb~` tunes in Hz only — voicing tables want a MIDI list message | → §7 |
 | 2026-08-05 | (sweep) | maxref drift: verb `er`, vocoder attr types, sustain XML empty, adsr phantom methods | → §8 |
 | 2026-08-05 | (sweep) | `tap.sustain~` `length` setter missing; `tap.crossfade~` `mode` is a no-op | → §7 |
+| 2026-08-05 | robot voice (songbook) | the "Hide and Seek" mechanism is a *formant-corrected multi-voice harmonizer* — no package object does formant-true shifting (`tap.shift~` moves formants with pitch; the recipe caps its stack at ±7 st for that reason). Candidate new object on the DspTap LPC substrate (`pvoc.h` already does envelope-preserving shifts) | candidate, unscheduled |
+| 2026-08-05 | delay-pair decision | trash-or-rebuild resolved: rebuild behind the same names, `interp 0` legacy mode, kill the 0.0-signal trap | → §5 |
