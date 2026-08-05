@@ -447,6 +447,8 @@ class verb : public object<verb>, public sample_operator<2, 2> {
                         m_up_r.clear();
                         m_down_l.clear();
                         m_down_r.clear();
+                        m_dc_l = {};
+                        m_dc_r = {};
                         reset_limiter();
                         return {};
                     }};

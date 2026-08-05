@@ -458,3 +458,35 @@ SCENARIO("the Min wrapper instantiates with the documented defaults") {
         }
     }
 }
+
+SCENARIO("the notes message tunes combs from MIDI note numbers through the attributes") {
+    ext_main(nullptr);
+
+    GIVEN("a default instance") {
+        test_wrapper<fivecomb> an_instance;
+        fivecomb&              my_object = an_instance;
+
+        WHEN("five notes are sent") {
+            my_object.notes(atoms{69.0, 57.0, 64.0, 76.0, 69.5});
+
+            THEN("the freq attributes read the equal-tempered frequencies (fractional = cents)") {
+                REQUIRE(static_cast<double>(my_object.freq1) == APPROX(440.0));
+                REQUIRE(static_cast<double>(my_object.freq2) == APPROX(220.0));
+                REQUIRE(static_cast<double>(my_object.freq3) == APPROX(440.0 * std::exp2(-5.0 / 12.0)));
+                REQUIRE(static_cast<double>(my_object.freq4) == APPROX(440.0 * std::exp2(7.0 / 12.0)));
+                REQUIRE(static_cast<double>(my_object.freq5) == APPROX(440.0 * std::exp2(0.5 / 12.0)));
+            }
+        }
+
+        WHEN("a partial list is sent") {
+            const double before = my_object.freq3;
+            my_object.notes(atoms{60.0, 67.0});
+
+            THEN("only the first combs given are retuned") {
+                REQUIRE(static_cast<double>(my_object.freq1) == APPROX(440.0 * std::exp2(-9.0 / 12.0)));
+                REQUIRE(static_cast<double>(my_object.freq2) == APPROX(440.0 * std::exp2(-2.0 / 12.0)));
+                REQUIRE(static_cast<double>(my_object.freq3) == APPROX(before));
+            }
+        }
+    }
+}
