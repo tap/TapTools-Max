@@ -1436,6 +1436,19 @@ recipes-improvements plan §1 carries the reasoning. Kernel: eight Catch2 scenar
 `adsr.ipynb`; wrapper shrunk to Min glue, maxref rewritten (retiring its phantom `int`/`float`
 methods), wrapper tests updated. Remaining: in-Max validation.
 
+**15. The improvements wave (2026-08-05).** ✅ **Shipped in parallel** (four worktree agents,
+serial integration): kernel side — the vco performance section (vibrato in cents with
+per-note-re-armed onset delay, bend; formula-free at last), the vocoder sibilance path and
+carrier-dry mix (silent-carrier contract intact at defaults), the harmonizer 16-slot preset
+morph, and the delay-pair kernel (`taptools/delay.h`, Hermite taps, DC-blocked feedback,
+`interp 0` bit-compat pinned against the Jamoma source). Max side — ladder/diode symbolic
+`mode`/`solver` (the min-api enum finding is recorded in the plan §3), noise/verb `seed`
+determinism, the sustain `length` setter, crossfade `mode` deprecated in docs, six maxrefs
+rewritten, the vco/vocoder/harmony wrapper surfaces grown, and tap.delay~/tap.multitap~
+rebuilt (multitap now stereo with per-tap pan; the 0.0-time-signal trap retired as a
+documented breaking change). Still open in the plan: 5comb `notes`, the verb `clear`
+DC-blocker one-liner, help-patcher refreshes, and the on-Mac validation passes.
+
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
 they're touched. Control/utility and Jitter objects never move — they are Max message-logic, not

@@ -1,6 +1,9 @@
 # Plan — improvements surfaced by the Recipes chapters
 
-> **Status: planned, not started.** This is the design-of-record for the object improvements
+> **Status: executed.** §1–§6 and §8 shipped 2026-08-05 (§1–§2 kernel-first with wrappers;
+> §3–§8 in the parallel wave — see per-section status notes); still open: the `tap.5comb~`
+> MIDI `notes` message, the verb `clear`/DC-blocker one-liner, refreshed help patchers, and
+> the on-Mac validation passes. This is the design-of-record for the object improvements
 > discovered while drafting *Tools on Tap* Part IX (Recipes) — see `book/PLAN-recipes.md` in
 > the kernel repo for the chapters themselves. The recipe-drafting method (check every knob
 > against the wrapper source before it goes in print) doubles as an audit; this file collects
@@ -75,6 +78,10 @@ awareness.
 
 ## 2. `tap.vco~` — a performance-modulation section (vibrato, bend)
 
+> **Status: shipped 2026-08-05** — kernel `p_vibrato`/`p_vibrato_rate`/`p_vibrato_delay`/
+> `p_bend` with four pinned scenarios (depth-0 bit-identity held), wrapper attributes and
+> maxref, and the famous-patches chapter's formula retired.
+
 **The tell in print:** the famous-patches chapter has to teach `cycle~ 5.5` scaled by
 `0.006 × f` because the FM inlet is calibrated in Hz and constant-*cents* vibrato needs
 per-note depth scaling — then hand-rolls the delayed onset with `line~`.
@@ -88,6 +95,12 @@ Depth 0 must keep the bit-identical-ideal-by-default promise the vco test suite 
 
 ## 3. `tap.ladder~` — symbolic `mode`/`solver` (wrapper bug-fix, plus an audit)
 
+> **Status: shipped 2026-08-05** (ladder + diode; both spellings accepted, getters report
+> symbols; maxrefs + wrapper tests updated). Finding recorded: min-api's native enum
+> attributes store/report the *index*, and `attribute<enum class>` is banned per REVIVAL
+> §9.5 — so the house pattern for symbolic enums is `attribute<symbol>` + `range{}` with a
+> numeric-atom fallback in the setter.
+
 **Confirmed bug-adjacent:** the wrapper's `mode` and `solver` are `attribute<int>`, but the
 shipped book chapters (ladder chapter's recipes; vco chapter's Moog recipe) print
 `@mode lp24` — which the object does not accept (and lp24 happens to be index 0, so the
@@ -97,6 +110,10 @@ for the same pattern (`tap.diode~` is the likely sibling), and update the Part I
 `@mode 0` workaround back to the symbolic spelling. Wrapper-only; no kernel change.
 
 ## 4. Determinism sweep — `tap.noise~` and `tap.verb~`
+
+> **Status: shipped 2026-08-05.** noise: `seed` with seed 1 bit-identical to the legacy
+> default sequence (pinned). verb: `deviate()` on the house LCG with a `seed` attribute;
+> right core offset-seeded (+0x9E3779B9) to preserve stereo decorrelation.
 
 Two objects violate the "a seed is a serial number" doctrine:
 
@@ -109,6 +126,13 @@ Two objects violate the "a seed is a serial number" doctrine:
   behavior change in the release notes.
 
 ## 5. `tap.delay~` / `tap.multitap~` — rebuild behind the same names (decision)
+
+> **Status: shipped 2026-08-05** — kernel `taptools/delay.h` (`line` + `multitap`, Hermite
+> taps cited to Laakso et al. 1996, DC-blocked feedback, exact-endpoint mix/pan, `interp 0`
+> verified bit-for-bit against the Jamoma-era `tt_delay.h` truncation) with six pinned
+> scenarios + capi/bridge; wrappers rebuilt (multitap now stereo out with per-tap pan; the
+> 0.0-signal trap is dead — a connected time signal always wins, documented breaking
+> change). Help patchers still show the old surfaces — flagged for the on-Mac pass.
 
 The second-wave sweep found the delay pair is the weakest DSP in the package: **integer-
 sample delays with no interpolation** (modulating the time zipper-steps — while `tap.5comb~`
@@ -136,6 +160,11 @@ including at zero. Wrapper defaults otherwise preserved.
 
 ## 6. `tap.vocoder~` — the missing conveniences
 
+> **Status: shipped 2026-08-05** — kernel `sibilance` (seeded Dudley-lineage unvoiced path
+> in the >4 kHz bands, silent-carrier contract intact at the default 0, pinned) and
+> equal-power carrier-dry `mix` with exact endpoints; wrapper adds both plus `seed`,
+> `bypass`, `mute`.
+
 The robot-voice recipe works around three absences: no unvoiced/**sibilance path** (the
 recipe's fix — ride 10 % noise in the carrier full-time — is the classic patch, but a
 detector-switched noise path is the classic *hardware* answer and a good kernel exercise
@@ -151,12 +180,16 @@ object has them). Low urgency, documented workarounds; batch with any vocoder re
   bypasses `smooth` by design, so sequencer-driven patches need an external slew
   (`slide~`) to get portamento. Fold into §2: either a documented `glide` that applies to
   the signal inlet, or a MIDI-note signal input mode with the 303-style RC.
-- **`tap.sustain~` `length`** has no setter — runtime changes silently wait for a DSP
-  restart. Either wire the setter (re-size at next `dspsetup`, documented) or document the
-  restriction in the maxref (which currently documents *nothing* — see §8).
-- **`tap.crossfade~` `mode`** is a legacy no-op (both values compute identically) —
-  deprecate in docs so nobody A/Bs a placebo.
-- **`tap.harmony~` v1.1 — the house machinery.** The shipped v1 lacks `mute`/`bypass` and
+- **`tap.sustain~` `length`** — **shipped 2026-08-05**: the setter stores the value
+  truthfully and the ring re-sizes at the next `dspsetup`, documented in attribute and
+  maxref.
+- **`tap.crossfade~` `mode`** — **deprecated in the maxref 2026-08-05** (verified no-op;
+  code untouched for compatibility).
+- **`tap.harmony~` v1.1 — the house machinery.** **Shipped 2026-08-05**: kernel 16-slot
+  preset morph (params snapshot + timed recall via target ramps over the existing slews, so
+  every prior contract holds by construction; formant snaps at recall start), wrapper
+  `store`/`recall [ms]` + `interp` + `bypass`/`mute`. Original item text follows for the
+  record. The shipped v1 lacks `mute`/`bypass` and
   the 16-slot preset-morph engine its effect siblings carry (autowah/pitchaccum/5comb/303).
   A timed morph between two stored *chords* is very much in the recipes' spirit; the kernel
   already slews intervals and gains, so this is wrapper plumbing plus the store/recall
@@ -164,6 +197,10 @@ object has them). Low urgency, documented workarounds; batch with any vocoder re
   queries stay truthful and a DSP restart no longer reverts the last chord.
 
 ## 8. Documentation debts (no DSP)
+
+> **Status: shipped 2026-08-05** — verb/vocoder/sustain/noise/delay/multitap maxrefs
+> rewritten or corrected (adsr was fixed earlier); the book's `@mode 0` workarounds are
+> restored to `@mode lp24` in the kernel repo alongside §3.
 
 - The vco chapter should say once that `smooth` is a per-object ramp time shared by every
   parameter — 280 ms of Lucky-Man portamento also slows `pw`/`gain` changes on that object.
@@ -208,3 +245,7 @@ object has them). Low urgency, documented workarounds; batch with any vocoder re
 | 2026-08-05 | (sweep) | `tap.sustain~` `length` setter missing; `tap.crossfade~` `mode` is a no-op | → §7 |
 | 2026-08-05 | robot voice (songbook) | the "Hide and Seek" mechanism is a *formant-corrected multi-voice harmonizer* — no package object does formant-true shifting (`tap.shift~` moves formants with pitch; the recipe caps its stack at ±7 st for that reason). Candidate new object on the DspTap LPC substrate (`pvoc.h` already does envelope-preserving shifts) | **shipped 2026-08-05** as `tap.harmony~` (kernel `harmonizer.h` + wrapper; REVIVAL.md §13) |
 | 2026-08-05 | delay-pair decision | trash-or-rebuild resolved: rebuild behind the same names, `interp 0` legacy mode, kill the 0.0-signal trap | → §5 |
+| 2026-08-05 | §4 sweep tests | `tap.verb~` `clear` resets cores + limiter but NOT the DC-blocker state (`m_dc_l/m_dc_r`) — pre-existing, one line | open, unscheduled |
+| 2026-08-05 | §3 implementation | min-api native enum attributes report indices; `attribute<enum class>` banned (REVIVAL §9.5) → house symbolic-enum pattern is `attribute<symbol>` + numeric fallback | recorded in §3 |
+| 2026-08-05 | wrapper wave | delay/multitap/vocoder/harmony help patchers still show pre-wave surfaces (JSON graphs, non-trivial edit) | on-Mac pass |
+| 2026-08-05 | (still open) | `tap.5comb~` MIDI `notes` message (§7) — not covered by the wave | open |
