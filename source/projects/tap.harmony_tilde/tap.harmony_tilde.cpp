@@ -97,7 +97,8 @@ class harmony : public object<harmony>, public sample_operator<1, 1> {
                             description{"LPC formant preservation on every voice. On keeps the "
                                         "singer's envelope; off is the chipmunk-chorus bend."}};
 
-    attribute<number> glide{this, "glide", tap::tools::harmony::k_default_glide_ms, setter{MIN_FUNCTION{
+    attribute<number> glide{this, "glide", tap::tools::harmony::k_default_glide_ms,
+                            setter{MIN_FUNCTION{
                                 m_engine.set_glide(args[0]);
                                 return args;
                             }},
