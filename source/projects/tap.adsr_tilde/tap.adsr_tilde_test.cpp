@@ -18,14 +18,16 @@ SCENARIO("tap.adsr~ instantiates with the documented defaults") {
         test_wrapper<adsr> an_instance;
         adsr&              my_object = an_instance;
 
-        THEN("attack 50, decay 100, sustain -6, release 500, mode hybrid, trigger off") {
+        THEN("attack 50, decay 100, sustain -6, release 500, mode analog, trigger off") {
             REQUIRE(static_cast<double>(my_object.attack) == 50.0);
             REQUIRE(static_cast<double>(my_object.decay) == 100.0);
             REQUIRE(static_cast<double>(my_object.sustain) == -6.0);
             REQUIRE(static_cast<double>(my_object.release) == 500.0);
             const symbol m = my_object.mode;
-            REQUIRE(std::string(m.c_str()) == "hybrid");
+            REQUIRE(std::string(m.c_str()) == "analog");
             REQUIRE(static_cast<bool>(my_object.trigger) == false);
+            REQUIRE(static_cast<double>(my_object.velocity) == 0.0);
+            REQUIRE(static_cast<double>(my_object.threshold) == tap::tools::adsr::k_default_threshold);
         }
     }
 }
