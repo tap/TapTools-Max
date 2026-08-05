@@ -1,4 +1,4 @@
-# Copyright 2008-2026 Timothy Place. Distributed under the New BSD License.
+# Copyright 1999-2026 Timothy Place. Distributed under the New BSD License.
 
 cmake_minimum_required(VERSION 3.19)
 
@@ -10,9 +10,12 @@ include(${C74_MIN_API_DIR}/script/min-pretarget.cmake)
 #############################################################
 
 include_directories("${C74_INCLUDES}")
+# The portable DSP kernel (header-only), pinned as the submodules/taptools submodule.
+include_directories("${TAPTOOLS_KERNEL_DIR}/include")
 
 set(SOURCES
     ${PROJECT_NAME}.cpp
+    ${TAPTOOLS_KERNEL_DIR}/include/taptools/delay.h
 )
 
 add_library(

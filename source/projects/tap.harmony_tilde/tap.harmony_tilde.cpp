@@ -12,6 +12,12 @@
 ///             preservation — published-literature implementations only); this file is only
 ///             the Max plumbing. Latency is one FFT frame (fftsize samples, dry included).
 ///             Monophonic source material by design; wrap in mc. for multichannel.
+///
+///             Sixteen preset slots (the vco.h house pattern): 'store <slot>' snapshots the
+///             kernel's parameter targets, 'recall <slot> [ms]' morphs every continuous
+///             parameter there over the given time (default: the interp attribute). Note a
+///             DSP restart re-applies the attribute values, so a recalled preset holds until
+///             the next dspsetup. bypass and mute are wrapper-side, per the house idiom.
 /// @author     Timothy Place
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright 2026 Timothy Place.
@@ -120,6 +126,16 @@ class harmony : public object<harmony>, public sample_operator<1, 1> {
                            description{"FFT frame size in samples (256..4096, rounded up to a power "
                                        "of two). This is the latency. Applies when DSP restarts."}};
 
+    attribute<number> interp{this, "interp", 500.0, setter{MIN_FUNCTION{
+                                 return {std::max(0.0, static_cast<double>(args[0]))};
+                             }},
+                             description{"Default preset-morph time in ms used by the 'recall' message."}};
+
+    attribute<bool> bypass{this, "bypass", false,
+                           description{"Pass the input through unprocessed (no harmonizer latency)."}};
+
+    attribute<bool> mute{this, "mute", false, description{"Silence the output."}};
+
     /// Set up to four intervals at once and enable exactly those voices at level 1.
     /// Writes through the attributes (not the engine directly) so queries stay truthful
     /// and a DSP restart's re-apply preserves the chord instead of reverting it.
@@ -138,6 +154,26 @@ class harmony : public object<harmony>, public sample_operator<1, 1> {
                         }
                         return {};
                     }};
+
+    message<> store{this, "store", "Store the current parameters in a preset slot (1..16).",
+                    MIN_FUNCTION{
+                        if (!args.empty()) {
+                            m_engine.store_preset(static_cast<int>(args[0]) - 1);
+                        }
+                        return {};
+                    }};
+
+    message<> recall{this, "recall",
+                     "Morph all parameters to a stored preset (1..16). An optional second argument overrides "
+                     "the morph time in ms (default: the interp attribute).",
+                     MIN_FUNCTION{
+                         if (!args.empty()) {
+                             const double ms =
+                                 (args.size() > 1) ? static_cast<double>(args[1]) : static_cast<double>(interp);
+                             m_engine.recall_preset(static_cast<int>(args[0]) - 1, ms * 0.001);
+                         }
+                         return {};
+                     }};
 
     message<> clear{this, "clear", "Zero all running state (delay lines, phases, slews).",
                     MIN_FUNCTION{
@@ -163,7 +199,15 @@ class harmony : public object<harmony>, public sample_operator<1, 1> {
                            return {};
                        }};
 
-    sample operator()(sample x) { return m_engine.process(x); }
+    sample operator()(sample x) {
+        if (mute) {
+            return 0.0;
+        }
+        if (bypass) {
+            return x; // raw input, no harmonizer latency
+        }
+        return m_engine.process(x);
+    }
 };
 
 MIN_EXTERNAL(harmony);

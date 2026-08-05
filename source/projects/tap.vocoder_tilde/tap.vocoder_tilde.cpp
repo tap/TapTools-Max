@@ -14,6 +14,13 @@
 ///             how they actually behave (a Q value and a millisecond time). A practical `gain`
 ///             (linear makeup) attribute is added for level staging.
 ///
+///             Two conveniences beyond the original object (see vocoder.h for the full contract):
+///             `sibilance` blends a deterministic seeded noise source into the carrier path of the
+///             bands above ~4 kHz (the classic unvoiced/sibilance excitation; `seed` decorrelates
+///             instances), and `mix` is an equal-power blend of the dry *carrier* against the
+///             vocoded output (the carrier is the program material; the modulator is an analysis
+///             input). `bypass` and `mute` are wrapper-side, per the house idiom.
+///
 ///             The DSP lives in the portable, Min-free kernel `tap::tools::vocoder::bank` (vocoder.h)
 ///             — RBJ constant-0 dB-peak bandpass biquads with per-band envelope followers. This file
 ///             is the Min wrapper.
@@ -79,6 +86,44 @@ class vocoder : public object<vocoder>, public sample_operator<2, 1> {
                            }},
                            description{"Linear makeup gain applied to the summed output."}};
 
+    attribute<number> sibilance{
+        this,
+        "sibilance",
+        0.0,
+        range{0.0, 1.0},
+        setter{MIN_FUNCTION{
+            m_bank.set_sibilance(args[0]);
+            return {args[0]};
+        }},
+        description{"Sibilance amount (0..1). Blends a deterministic seeded noise source into the "
+                    "carrier path of the bands above ~4 kHz, so unvoiced consonants come through "
+                    "while the modulator gates them. At 0 (default) the output is identical to the "
+                    "noise-free vocoder."}};
+
+    attribute<number> mix{this,
+                          "mix",
+                          100.0,
+                          range{0.0, 100.0},
+                          setter{MIN_FUNCTION{
+                              m_bank.set_mix(args[0]);
+                              return {args[0]};
+                          }},
+                          description{"Wet/dry mix in percent (0..100), equal-power. The dry side is the carrier "
+                                      "(the program material); 100 (default) is fully vocoded, 0 passes the "
+                                      "carrier through untouched."}};
+
+    attribute<int> seed{this, "seed", 1, setter{MIN_FUNCTION{
+                            const int v = std::max(1, static_cast<int>(args[0]));
+                            m_bank.set_seed(static_cast<uint32_t>(v));
+                            return {v};
+                        }},
+                        description{"Seed for the sibilance noise source (>= 1). The noise is deterministic per "
+                                    "seed; give mc. instances different seeds to decorrelate them."}};
+
+    attribute<bool> bypass{this, "bypass", false, description{"Pass the carrier through unprocessed."}};
+
+    attribute<bool> mute{this, "mute", false, description{"Silence the output."}};
+
     message<> clear{this, "clear", "Reset all filter and envelope-follower state.",
                     MIN_FUNCTION{
                         m_bank.clear();
@@ -91,7 +136,15 @@ class vocoder : public object<vocoder>, public sample_operator<2, 1> {
                            return {};
                        }};
 
-    sample operator()(sample modulator, sample carrier) { return m_bank.process(modulator, carrier); }
+    sample operator()(sample modulator, sample carrier) {
+        if (mute) {
+            return 0.0;
+        }
+        if (bypass) {
+            return carrier; // the carrier is the program material — the vocoder's "input"
+        }
+        return m_bank.process(modulator, carrier);
+    }
 };
 
 MIN_EXTERNAL(vocoder);

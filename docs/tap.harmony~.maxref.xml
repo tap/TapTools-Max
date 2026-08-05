@@ -51,6 +51,27 @@
 				and the parameter slews.
 			</description>
 		</method>
+		<method name="store">
+			<arglist>
+				<arg name="slot" type="int" optional="0" id="0" />
+			</arglist>
+			<description>
+				Store the current parameters (intervals, levels, dry, glide, formant) in a
+				preset slot (1..16).
+			</description>
+		</method>
+		<method name="recall">
+			<arglist>
+				<arg name="slot" type="int" optional="0" id="0" />
+				<arg name="morph-time" type="float" optional="1" id="1" />
+			</arglist>
+			<description>
+				Morph all parameters to a stored preset (1..16). Every continuous parameter
+				glides to the stored values over the morph time in milliseconds (default: the
+				<at>interp</at> attribute); the formant flag snaps at recall start. A recalled
+				preset holds until the DSP chain restarts, which re-applies the attribute values.
+			</description>
+		</method>
 	</methodlist>
 
 
@@ -104,6 +125,20 @@
 				the object's latency, dry path included. Applies when the DSP chain restarts.
 				Default 1024.
 			</description>
+		</attribute>
+		<attribute name="interp" get="1" set="1" type="float" size="1">
+			<description>
+				Default preset-morph time in milliseconds used by the <m>recall</m> message
+				when no morph time is given. Default 500.
+			</description>
+		</attribute>
+		<attribute name="bypass" get="1" set="1" type="int" size="1">
+			<description>
+				Pass the input through unprocessed (no harmonizer latency). Default 0 (off).
+			</description>
+		</attribute>
+		<attribute name="mute" get="1" set="1" type="int" size="1">
+			<description>Silence the output. Default 0 (off).</description>
 		</attribute>
 	</attributelist>
 

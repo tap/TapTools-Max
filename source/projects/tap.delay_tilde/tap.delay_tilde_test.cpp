@@ -1,8 +1,15 @@
 /// @file
-/// @brief      Unit tests for tap.delay~.
+/// @brief      Unit tests for tap.delay~ (the kernel-backed rebuild).
+/// @details    The kernel slews every parameter over 20 ms by default, so each scenario settles the
+///             ramps (~882 samples at the mock 44.1 kHz) before measuring. The signal-rate
+///             time-override path branches on `inlet::has_signal_connection()`, which the mock
+///             harness can only present as *unconnected* (see tap.autothru~'s test note) — so the
+///             "a time signal always wins, including at 0.0" contract needs a real patch cord and
+///             belongs in runtime-tests/. What is pinned here is the message-rate surface.
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright 1999-2026 Timothy Place.
 
+#include <cmath>
 #include <vector>
 
 #include "c74_min_unittest.h"  // required unit-test header (defines main via Catch)
@@ -12,28 +19,20 @@ namespace {
 
     constexpr double k_mock_sr = 44100.0; // the mock kernel's sys_getsr()
 
-    // Feed an impulse followed by silence and return the whole output.
-    // dt is the per-sample delay-time signal on the right inlet (0 = "use the attribute").
-    std::vector<double> impulse_response(delay& object, size_t n, double dt) {
-        std::vector<double> out(n, 0.0);
+    // Run silence through the object so the kernel's parameter ramps reach their targets.
+    void settle(delay& object, size_t n = 2048) {
         for (size_t i = 0; i < n; ++i) {
-            out[i] = object(i == 0 ? 1.0 : 0.0, dt);
+            object(0.0, 0.0);
         }
-        return out;
     }
 
-    // Index of the single non-zero sample, or -1 if there is not exactly one.
-    long sole_tap(const std::vector<double>& x) {
-        long found = -1;
-        for (size_t i = 0; i < x.size(); ++i) {
-            if (x[i] != 0.0) {
-                if (found >= 0) {
-                    return -1; // more than one
-                }
-                found = static_cast<long>(i);
-            }
+    // Feed an impulse followed by silence and return the whole output.
+    std::vector<double> impulse_response(delay& object, size_t n) {
+        std::vector<double> out(n, 0.0);
+        for (size_t i = 0; i < n; ++i) {
+            out[i] = object(i == 0 ? 1.0 : 0.0, 0.0);
         }
-        return found;
+        return out;
     }
 
 } // namespace
@@ -45,24 +44,12 @@ SCENARIO("tap.delay~ instantiates with the documented defaults") {
         test_wrapper<delay> an_instance;
         delay&              my_object = an_instance;
 
-        THEN("the buffer is 1000 ms and the delay is zero") {
+        THEN("buffer 1000 ms, delay 0, feedback 0, mix 100 (wet-only), Hermite interpolation") {
             REQUIRE(static_cast<double>(my_object.buffersize) == 1000.0);
             REQUIRE(static_cast<double>(my_object.delaytime) == 0.0);
-        }
-    }
-}
-
-SCENARIO("tap.delay~ passes the signal straight through at zero delay") {
-    ext_main(nullptr);
-
-    GIVEN("a default instance") {
-        test_wrapper<delay> an_instance;
-        delay&              my_object = an_instance;
-
-        THEN("each sample comes out on the sample it went in") {
-            REQUIRE(my_object(0.5, 0.0) == 0.5);
-            REQUIRE(my_object(-0.25, 0.0) == -0.25);
-            REQUIRE(my_object(1.0, 0.0) == 1.0);
+            REQUIRE(static_cast<double>(my_object.feedback) == 0.0);
+            REQUIRE(static_cast<double>(my_object.mix) == 100.0);
+            REQUIRE(static_cast<int>(my_object.interp) == 1);
         }
     }
 }
@@ -70,56 +57,120 @@ SCENARIO("tap.delay~ passes the signal straight through at zero delay") {
 SCENARIO("tap.delay~ delays by the attribute value") {
     ext_main(nullptr);
 
-    GIVEN("a 10 ms delay") {
+    GIVEN("a 10 ms delay, ramps settled") {
         test_wrapper<delay> an_instance;
         delay&              my_object = an_instance;
         my_object.delaytime           = 10.0;
+        settle(my_object);
 
         WHEN("an impulse is processed") {
-            const std::vector<double> out = impulse_response(my_object, 2048, 0.0);
+            const std::vector<double> out = impulse_response(my_object, 2048);
 
-            THEN("exactly one tap comes out, 441 samples later") {
-                REQUIRE(sole_tap(out) == static_cast<long>(10.0 * k_mock_sr * 0.001));
+            THEN("the tap comes out at unity, 441 samples later (a whole-sample delay reads exactly)") {
+                REQUIRE(out[static_cast<size_t>(10.0 * k_mock_sr * 0.001)] == 1.0);
+            }
+        }
+    }
+
+    GIVEN("the same delay in legacy truncation mode") {
+        test_wrapper<delay> an_instance;
+        delay&              my_object = an_instance;
+        my_object.interp              = 0;
+        my_object.delaytime           = 10.0;
+        settle(my_object);
+
+        WHEN("an impulse is processed") {
+            const std::vector<double> out = impulse_response(my_object, 2048);
+
+            THEN("the tap lands at long(ms * sr / 1000) samples, exactly as the old object") {
                 REQUIRE(out[441] == 1.0);
             }
         }
     }
 }
 
-SCENARIO("tap.delay~ clamps the delay time to the documented bounds") {
+SCENARIO("tap.delay~ recirculates through the feedback path") {
+    ext_main(nullptr);
+
+    GIVEN("a 10 ms delay with 0.5 feedback, ramps settled") {
+        test_wrapper<delay> an_instance;
+        delay&              my_object = an_instance;
+        my_object.delaytime           = 10.0;
+        my_object.feedback            = 0.5;
+        settle(my_object);
+
+        WHEN("an impulse is processed") {
+            const std::vector<double> out = impulse_response(my_object, 4096);
+
+            THEN("the echoes decay by ~the feedback coefficient (the loop DC blocker shaves a hair)") {
+                REQUIRE(out[441] == 1.0);
+                REQUIRE(std::abs(out[882] - 0.5) < 0.01);
+                REQUIRE(std::abs(out[1323] - 0.25) < 0.01);
+            }
+        }
+    }
+}
+
+SCENARIO("tap.delay~ honours the equal-power mix endpoints") {
+    ext_main(nullptr);
+
+    GIVEN("mix 0, ramps settled") {
+        test_wrapper<delay> an_instance;
+        delay&              my_object = an_instance;
+        my_object.delaytime           = 10.0;
+        my_object.mix                 = 0.0;
+        settle(my_object);
+
+        THEN("the input passes through bitwise dry") {
+            REQUIRE(my_object(0.5, 0.0) == 0.5);
+            REQUIRE(my_object(-0.25, 0.0) == -0.25);
+        }
+    }
+}
+
+SCENARIO("tap.delay~ clamps its attributes to the documented ranges") {
     ext_main(nullptr);
 
     GIVEN("a default instance") {
         test_wrapper<delay> an_instance;
         delay&              my_object = an_instance;
 
-        THEN("a negative delay is floored at zero and echoed back") {
+        THEN("a negative delay is floored at zero") {
             my_object.delaytime = -50.0;
             REQUIRE(static_cast<double>(my_object.delaytime) == 0.0);
         }
-        THEN("a delay past the buffer size is accepted but bounded by the buffer") {
-            my_object.delaytime = 5000.0; // buffer is 1000 ms
-            REQUIRE(static_cast<double>(my_object.delaytime) == 5000.0);
-            const std::vector<double> out = impulse_response(my_object, 44100, 0.0);
-            // Clamped to buffersize - 1 samples, so the tap lands at the very end of the buffer.
-            REQUIRE(sole_tap(out) == static_cast<long>(1000.0 * k_mock_sr * 0.001) - 1);
+        THEN("feedback is capped at 0.99") {
+            my_object.feedback = 2.0;
+            REQUIRE(static_cast<double>(my_object.feedback) == 0.99);
+            my_object.feedback = -1.0;
+            REQUIRE(static_cast<double>(my_object.feedback) == 0.0);
+        }
+        THEN("mix is clamped to 0..100") {
+            my_object.mix = 150.0;
+            REQUIRE(static_cast<double>(my_object.mix) == 100.0);
+            my_object.mix = -10.0;
+            REQUIRE(static_cast<double>(my_object.mix) == 0.0);
+        }
+        THEN("interp collapses to 0 or 1") {
+            my_object.interp = 7;
+            REQUIRE(static_cast<int>(my_object.interp) == 1);
+            my_object.interp = 0;
+            REQUIRE(static_cast<int>(my_object.interp) == 0);
         }
     }
-}
 
-SCENARIO("tap.delay~ lets a non-zero delay-time signal override the attribute") {
-    ext_main(nullptr);
-
-    GIVEN("an attribute delay of 10 ms") {
+    GIVEN("a delay past the buffer size, ramps settled") {
         test_wrapper<delay> an_instance;
         delay&              my_object = an_instance;
-        my_object.delaytime           = 10.0;
+        my_object.interp              = 0;
+        my_object.delaytime           = 5000.0; // buffer is 1000 ms
+        settle(my_object, 4096);
 
-        WHEN("a 20 ms delay-time signal is present on the right inlet") {
-            const std::vector<double> out = impulse_response(my_object, 4096, 20.0);
+        WHEN("an impulse is processed") {
+            const std::vector<double> out = impulse_response(my_object, 46000);
 
-            THEN("the signal wins — the tap lands at 882 samples, not 441") {
-                REQUIRE(sole_tap(out) == static_cast<long>(20.0 * k_mock_sr * 0.001));
+            THEN("the tap is bounded by the buffer instead of wrapping") {
+                REQUIRE(out[static_cast<size_t>(1000.0 * k_mock_sr * 0.001)] == 1.0);
             }
         }
     }
@@ -132,6 +183,7 @@ SCENARIO("tap.delay~ clears its buffer on demand") {
         test_wrapper<delay> an_instance;
         delay&              my_object = an_instance;
         my_object.delaytime           = 10.0;
+        settle(my_object);
         my_object(1.0, 0.0); // write the impulse
         for (int i = 0; i < 100; ++i) {
             my_object(0.0, 0.0);
