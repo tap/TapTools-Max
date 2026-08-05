@@ -1,9 +1,9 @@
 # Plan — improvements surfaced by the Recipes chapters
 
 > **Status: executed.** §1–§6 and §8 shipped 2026-08-05 (§1–§2 kernel-first with wrappers;
-> §3–§8 in the parallel wave — see per-section status notes); still open: the `tap.5comb~`
-> MIDI `notes` message, the verb `clear`/DC-blocker one-liner, refreshed help patchers, and
-> the on-Mac validation passes. This is the design-of-record for the object improvements
+> §3–§8 in the parallel wave — see per-section status notes); still open: refreshed help
+> patchers and the on-Mac validation passes (the 5comb `notes` message and the verb
+> `clear`/DC-blocker fix shipped 2026-08-05). This is the design-of-record for the object improvements
 > discovered while drafting *Tools on Tap* Part IX (Recipes) — see `book/PLAN-recipes.md` in
 > the kernel repo for the chapters themselves. The recipe-drafting method (check every knob
 > against the wrapper source before it goes in print) doubles as an audit; this file collects
@@ -245,7 +245,7 @@ object has them). Low urgency, documented workarounds; batch with any vocoder re
 | 2026-08-05 | (sweep) | `tap.sustain~` `length` setter missing; `tap.crossfade~` `mode` is a no-op | → §7 |
 | 2026-08-05 | robot voice (songbook) | the "Hide and Seek" mechanism is a *formant-corrected multi-voice harmonizer* — no package object does formant-true shifting (`tap.shift~` moves formants with pitch; the recipe caps its stack at ±7 st for that reason). Candidate new object on the DspTap LPC substrate (`pvoc.h` already does envelope-preserving shifts) | **shipped 2026-08-05** as `tap.harmony~` (kernel `harmonizer.h` + wrapper; REVIVAL.md §13) |
 | 2026-08-05 | delay-pair decision | trash-or-rebuild resolved: rebuild behind the same names, `interp 0` legacy mode, kill the 0.0-signal trap | → §5 |
-| 2026-08-05 | §4 sweep tests | `tap.verb~` `clear` resets cores + limiter but NOT the DC-blocker state (`m_dc_l/m_dc_r`) — pre-existing, one line | open, unscheduled |
+| 2026-08-05 | §4 sweep tests | `tap.verb~` `clear` resets cores + limiter but NOT the DC-blocker state (`m_dc_l/m_dc_r`) — pre-existing, one line | **fixed 2026-08-05** |
 | 2026-08-05 | §3 implementation | min-api native enum attributes report indices; `attribute<enum class>` banned (REVIVAL §9.5) → house symbolic-enum pattern is `attribute<symbol>` + numeric fallback | recorded in §3 |
 | 2026-08-05 | wrapper wave | delay/multitap/vocoder/harmony help patchers still show pre-wave surfaces (JSON graphs, non-trivial edit) | on-Mac pass |
-| 2026-08-05 | (still open) | `tap.5comb~` MIDI `notes` message (§7) — not covered by the wave | open |
+| 2026-08-05 | (still open) | `tap.5comb~` MIDI `notes` message (§7) — not covered by the wave | **shipped 2026-08-05** (write-through-attributes; fractional MIDI; maxref + test) |

@@ -38,6 +38,17 @@
 
 	<!--MESSAGES-->
 	<methodlist>
+		<method name="notes">
+			<arglist>
+				<arg name="midi-notes" type="list" optional="0" id="0" />
+			</arglist>
+			<description>
+				Tune up to five combs from MIDI note numbers (fractional allowed, so
+				just-intonation intervals land exactly). Each note sets the corresponding
+				comb's frequency attribute; fewer than five notes retune only the first
+				combs given. <m>notes 45 57 64 69 76</m> is a voicing in one message.
+			</description>
+		</method>
 		<method name="store">
 			<arglist>
 				<arg name="slot" type="int" optional="0"/>

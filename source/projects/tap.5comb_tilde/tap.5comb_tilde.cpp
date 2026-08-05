@@ -10,6 +10,9 @@
 /// @author     Timothy Place
 /// @copyright  Copyright 2026 Timothy Place. Distributed under the New BSD License.
 
+#include <algorithm>
+#include <cmath>
+
 #include <taptools/grm_comb.h>
 
 #include "c74_min.h"
@@ -152,6 +155,22 @@ class fivecomb : public object<fivecomb>, public vector_operator<> {
     attribute<bool> mute{this, "mute", false, description{"Silence the output."}};
 
     // -- messages --------------------------------------------------------------------------------
+
+    /// Tune combs from MIDI note numbers (fractional allowed — just-intonation intervals land
+    /// exactly). Writes through the freq attributes so queries stay truthful and a DSP restart
+    /// preserves the tuning; fewer than five notes retune only the first combs given.
+    message<> notes{this, "notes",
+                    "Tune up to five combs from MIDI note numbers (fractional allowed). Fewer than "
+                    "five notes retune only the first combs given.",
+                    MIN_FUNCTION {
+                        attribute<number>* freqs[] = {&freq1, &freq2, &freq3, &freq4, &freq5};
+                        const int          n       = std::min(static_cast<int>(args.size()), 5);
+                        for (int i = 0; i < n; ++i) {
+                            const double midi = args[i];
+                            *freqs[i]         = 440.0 * std::exp2((midi - 69.0) / 12.0);
+                        }
+                        return {};
+                    }};
 
     message<> store{this, "store", "Store the current parameters in a preset slot (1..16).",
                     MIN_FUNCTION {
