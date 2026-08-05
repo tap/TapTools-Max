@@ -334,16 +334,26 @@ SCENARIO("the Min wrapper instantiates with the documented defaults") {
             REQUIRE(static_cast<double>(my_object.resonance) == 0.0);
             REQUIRE(static_cast<double>(my_object.drive) == 0.0);
             REQUIRE(static_cast<double>(my_object.comp) == 0.0);
-            REQUIRE(static_cast<int>(my_object.mode) == klf::mode_lp24);
+            REQUIRE(my_object.mode == symbol{"lp24"});
             REQUIRE(static_cast<int>(my_object.oversample) == 2);
         }
         THEN("out-of-range values are clamped") {
             my_object.resonance = 2.0;
             REQUIRE(static_cast<double>(my_object.resonance) == klf::k_res_max);
-            my_object.mode = 99;
-            REQUIRE(static_cast<int>(my_object.mode) == klf::k_num_modes - 1);
+            my_object.mode = atoms{99};
+            REQUIRE(my_object.mode == symbol{"hp24"}); // clamps to the last mode
             my_object.oversample = 3;
             REQUIRE(static_cast<int>(my_object.oversample) == 2);
+        }
+        THEN("mode and solver accept both symbolic and numeric spellings and report the symbol") {
+            my_object.mode = symbol("bp12");
+            REQUIRE(my_object.mode == symbol{"bp12"});
+            my_object.mode = atoms{klf::mode_hp12};
+            REQUIRE(my_object.mode == symbol{"hp12"});
+            my_object.solver = symbol("exact");
+            REQUIRE(my_object.solver == symbol{"exact"});
+            my_object.solver = atoms{klf::solver_fast};
+            REQUIRE(my_object.solver == symbol{"fast"});
         }
         THEN("preset and clear messages are callable") {
             my_object.store(atoms{1});

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
- 
+
 <c74object name="tap.noise~" module="msp" category="TapTools, MSP Generators">
 
 	<digest>
@@ -8,11 +8,17 @@
 	</digest>
 
 	<description>
-		The <o>tap.noise~</o> object 
-		generates various types of noise in the signal domain.
+		The <o>tap.noise~</o> object generates various types of noise in the signal domain:
+		white, pink, brown, blue, or gaussian. The white/pink/brown/blue generators are
+		faithful ports of the original TapTools noise object (an LCG white source plus the
+		same coloring filters); gaussian draws from a normal distribution with adjustable
+		mean and deviation. All generators are deterministic per seed — the same seed
+		reproduces the identical sample sequence on every render, and different seeds
+		decorrelate multiple instances (e.g. under mc.). Mono: wrap in an mc. operator for
+		multichannel.
 	</description>
 
-	
+
 	<!--METADATA-->
 	<metadatalist>
 		<metadata name="author">74 Objects</metadata>
@@ -21,23 +27,58 @@
 		<metadata name="tag">Generator</metadata>
 	</metadatalist>
 
-	
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="clear">
+			<arglist/>
+			<description>Reset the coloring-filter memory (the pink/brown/blue filter states).</description>
+		</method>
+	</methodlist>
+
+
 	<!--ATTRIBUTES-->
 	<attributelist>
-		<attribute name="mode" get="1" set="1" type="int" size="1">
+		<attribute name="mode" get="1" set="1" type="symbol" size="1">
 			<description>
-				The color of the noise to generate.  Options are white, pink, brown, and blue.
+				The color of the noise to generate: white, pink, brown, blue, or gauss.
+			</description>
+		</attribute>
+		<attribute name="seed" get="1" set="1" type="int" size="1">
+			<description>
+				Seed for the noise generators (1 or higher; default 1). The output is
+				deterministic per seed, so renders reproduce exactly; give mc. instances
+				different seeds to decorrelate them. Setting the seed restarts the sequence.
+				The default seed reproduces the legacy object's sequence.
+			</description>
+		</attribute>
+		<attribute name="gain" get="1" set="1" type="float" size="1">
+			<description>
+				Output gain in decibels (default 0). Does not apply to gaussian noise, whose
+				level is defined by mean and deviation.
+			</description>
+		</attribute>
+		<attribute name="mean" get="1" set="1" type="float" size="1">
+			<description>
+				Mean of the gaussian distribution (default 0). Used only when mode is gauss.
+			</description>
+		</attribute>
+		<attribute name="deviation" get="1" set="1" type="float" size="1">
+			<description>
+				Standard deviation of the gaussian distribution (0-1, default 1). Used only
+				when mode is gauss.
 			</description>
 		</attribute>
 	</attributelist>
 
-	
+
 	<!--SEEALSO-->
 	<seealsolist>
 		<seealso name="noise~"/>
 		<seealso name="pink~"/>
-		<seealso name="tap.noise~"/>
+		<seealso name="rand~"/>
+		<seealso name="tap.vco~"/>
 	</seealsolist>
 
-	
+
 </c74object>

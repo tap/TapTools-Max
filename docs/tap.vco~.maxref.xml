@@ -20,7 +20,9 @@
 		adds a slow random pitch drift, a fast pitch jitter, a static detune, a V/oct tracking
 		error, and a waveform-imperfection control — all in cents-calibrated units and all
 		deterministic per seed (give mc. instances different seeds: with imperfect raised, each
-		becomes a slightly different unit off the production line). Sixteen preset slots can be
+		becomes a slightly different unit off the production line). A performance-modulation
+		section adds cents-calibrated vibrato with a delayed onset re-armed on every note change,
+		and a pitch-bend control that rides the smooth ramp. Sixteen preset slots can be
 		stored and morphed between. Pairs naturally with <o>tap.ladder~</o>.
 	</description>
 
@@ -105,6 +107,24 @@
 		</attribute>
 		<attribute name="detune" get="1" set="1" type="float" size="1">
 			<description>Static detune in cents (-1200..1200).</description>
+		</attribute>
+		<attribute name="vibrato" get="1" set="1" type="float" size="1">
+			<description>Periodic pitch-modulation depth in cents (0-100, default 0) — the
+			performance companion to drift. The depth is cents-calibrated, so the musical
+			vibrato width stays constant across the keyboard with no per-note scaling of an FM
+			signal. 0 keeps the oscillator vibrato-free.</description>
+		</attribute>
+		<attribute name="vibrato_rate" get="1" set="1" type="float" size="1">
+			<description>Vibrato rate in Hz (0.05-20, default 5).</description>
+		</attribute>
+		<attribute name="vibrato_delay" get="1" set="1" type="float" size="1">
+			<description>Vibrato onset time constant in milliseconds (0-5000, default 0): after
+			a note change the vibrato swells in over roughly this time — the singing-vibrato
+			gesture. The onset is re-armed on every note change; 0 is instant.</description>
+		</attribute>
+		<attribute name="bend" get="1" set="1" type="float" size="1">
+			<description>Pitch bend in semitones (-24..24, default 0) — the wheel. Bend rides
+			the smooth ramp, so bends glide at the smooth time rather than stepping.</description>
 		</attribute>
 		<attribute name="gain" get="1" set="1" type="float" size="1">
 			<description>Output gain in dB.</description>

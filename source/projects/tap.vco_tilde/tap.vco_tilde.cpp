@@ -32,7 +32,9 @@ class vco : public object<vco>, public vector_operator<> {
                     "an analog-character section, deterministic per seed: slow pitch drift, "
                     "fast jitter, static detune, V/oct tracking error, and a waveform "
                     "imperfection control that gives every seed the component tolerances of a "
-                    "different vintage unit. All parameters glide smoothly and sixteen preset "
+                    "different vintage unit. A performance section adds cents-calibrated vibrato "
+                    "with a delayed onset re-armed per note, and a pitch-bend control riding the "
+                    "smooth ramp. All parameters glide smoothly and sixteen preset "
                     "slots can be stored and morphed between."};
     MIN_TAGS{"generators"};
     MIN_AUTHOR{"Timothy Place"};
@@ -78,6 +80,17 @@ class vco : public object<vco>, public vector_operator<> {
                  "V/oct calibration error in cents per octave (-10..10), measured from A440: the pitch offset "
                  "grows with distance from the trim point, like an analog exponential converter drifting out of "
                  "calibration.")
+    TAP_VCO_ATTR(vibrato, kernel::p_vibrato, 0.0,
+                 "Periodic pitch-modulation depth in cents (0..100) — the performance companion to drift. "
+                 "Cents-calibrated, so the musical depth stays constant across the keyboard (no per-note "
+                 "scaling of an FM signal needed). 0 keeps the oscillator vibrato-free.")
+    TAP_VCO_ATTR(vibrato_rate, kernel::p_vibrato_rate, 5.0, "Vibrato rate in Hz (0.05..20).")
+    TAP_VCO_ATTR(vibrato_delay, kernel::p_vibrato_delay, 0.0,
+                 "Vibrato onset time constant in ms (0..5000): after a note change the vibrato swells in over "
+                 "roughly this time — the singing-vibrato gesture. Re-armed on every note change; 0 is instant.")
+    TAP_VCO_ATTR(bend, kernel::p_bend, 0.0,
+                 "Pitch bend in semitones (-24..24) — the wheel. Rides the smooth ramp, so bends glide at the "
+                 "smooth time rather than stepping.")
     TAP_VCO_ATTR(gain, kernel::p_gain, 0.0, "Output gain in dB.")
 
 #undef TAP_VCO_ATTR

@@ -56,13 +56,18 @@
 	<!--ATTRIBUTES-->
 	<attributelist>
 		<attribute name="q" get="1" set="1" type="float" size="1">
-			<description>The Q factor (resonance) shared by all of the resonant bandpass filters. Higher values give narrower, more "robotic" bands. Default 20.</description>
+			<description>The Q factor (resonance) shared by all of the resonant bandpass filters
+			(0.5-200, default 20). Higher values give narrower, more "robotic" bands. A number,
+			not a symbol (the original object registered it as a symbol by mistake).</description>
 		</attribute>
 		<attribute name="response_interval" get="1" set="1" type="float" size="1">
-			<description>The envelope-follower analysis period for the excitation stage, in milliseconds. Shorter values track the modulator more sharply; longer values smooth it. Default 20.</description>
+			<description>The envelope-follower analysis period for the excitation stage, in
+			milliseconds (0.1-1000, default 20). Shorter values track the modulator more sharply;
+			longer values smooth it. A number, not a symbol (the original object registered it as
+			a symbol by mistake).</description>
 		</attribute>
 		<attribute name="gain" get="1" set="1" type="float" size="1">
-			<description>Linear makeup gain applied to the summed output. Default 1.</description>
+			<description>Linear makeup gain applied to the summed output (0-100, default 1).</description>
 		</attribute>
 	</attributelist>
 

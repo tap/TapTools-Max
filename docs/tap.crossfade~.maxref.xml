@@ -33,7 +33,10 @@
 		</attribute>
 
 		<attribute name="mode" get="1" set="1" type="int" size="1">
-			<description>Determines the algorithm to use. In most cases it is best to use the 512-point lookup table.</description>
+			<description>DEPRECATED — retained for legacy patcher compatibility only. In the
+			original Jamoma object this selected between a computed crossfade and a 512-point
+			lookup table; in the modern port both values compute the identical result, so the
+			attribute has no effect on the sound. Do not bother A/B-ing it.</description>
 		</attribute>
 
 		<attribute name="position" get="1" set="1" type="float" size="1">

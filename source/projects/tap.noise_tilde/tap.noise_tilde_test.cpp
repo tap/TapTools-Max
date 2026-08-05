@@ -84,6 +84,7 @@ SCENARIO("tap.noise~ instantiates with the documented defaults") {
 
         THEN("attribute defaults match the reference page") {
             REQUIRE(my_object.mode == symbol{"white"});
+            REQUIRE(static_cast<int>(my_object.seed) == 1);
             REQUIRE(static_cast<double>(my_object.gain) == 0.0);
             REQUIRE(static_cast<double>(my_object.mean) == 0.0);
             REQUIRE(static_cast<double>(my_object.deviation) == 1.0);
@@ -113,6 +114,68 @@ SCENARIO("tap.noise~ runs the documented white-noise LCG") {
                 REQUIRE(s <= 1.0);
             }
             REQUIRE(*std::max_element(w.begin(), w.end()) == 1.0);
+        }
+    }
+}
+
+SCENARIO("tap.noise~ is deterministic per seed — a seed is a serial number") {
+    ext_main(nullptr);
+
+    GIVEN("two instances with the same seed") {
+        test_wrapper<noise> instance_a;
+        test_wrapper<noise> instance_b;
+        noise&              a = instance_a;
+        noise&              b = instance_b;
+        a.seed                = 7;
+        b.seed                = 7;
+
+        THEN("their white sequences are identical sample for sample") {
+            for (int i = 0; i < 1024; ++i) {
+                REQUIRE(a() == b());
+            }
+        }
+        THEN("their gaussian sequences are identical sample for sample") {
+            a.mode = "gauss";
+            b.mode = "gauss";
+            for (int i = 0; i < 1024; ++i) {
+                REQUIRE(a() == b());
+            }
+        }
+    }
+    GIVEN("two instances with different seeds") {
+        test_wrapper<noise> instance_a;
+        test_wrapper<noise> instance_b;
+        noise&              a = instance_a;
+        noise&              b = instance_b;
+        a.seed                = 1;
+        b.seed                = 2;
+
+        THEN("their white sequences differ (decorrelated serial numbers)") {
+            bool any_difference = false;
+            for (int i = 0; i < 1024; ++i) {
+                if (a() != b()) {
+                    any_difference = true;
+                }
+            }
+            REQUIRE(any_difference);
+        }
+    }
+    GIVEN("one instance") {
+        test_wrapper<noise> an_instance;
+        noise&              my_object = an_instance;
+
+        THEN("re-setting the seed restarts the sequence") {
+            my_object.seed                  = 5;
+            const std::vector<double> first = generate(my_object, 256);
+            my_object.seed                  = 5;
+            const std::vector<double> again = generate(my_object, 256);
+            REQUIRE(first == again);
+        }
+        THEN("the default seed (1) reproduces the legacy sequence that started the LCG at 0") {
+            long accum = 0;
+            for (int i = 0; i < 256; ++i) {
+                REQUIRE(my_object() == lcg_white(accum));
+            }
         }
     }
 }

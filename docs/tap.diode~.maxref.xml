@@ -98,11 +98,12 @@
 		<attribute name="gain" get="1" set="1" type="float" size="1">
 			<description>Output gain in dB.</description>
 		</attribute>
-		<attribute name="solver" get="1" set="1" type="int" size="1">
-			<description>Nonlinear solver for the coupled diode equations: 0 = fast
-			(secant-linearized solve plus one corrective pass, the default), 1 = exact
+		<attribute name="solver" get="1" set="1" type="symbol" size="1">
+			<description>Nonlinear solver for the coupled diode equations: fast
+			(secant-linearized solve plus one corrective pass, the default) or exact
 			(re-linearization iterated to convergence). Audibly different only when drive and
-			resonance are both pushed hard.</description>
+			resonance are both pushed hard. Accepts the symbol or the index (fast = 0,
+			exact = 1); queries report the symbol.</description>
 		</attribute>
 		<attribute name="oversample" get="1" set="1" type="int" size="1">
 			<description>Internal oversampling factor (1, 2, or 4; default 2). Higher factors

@@ -2,13 +2,17 @@
 /// @brief      tap.noise~ — generate various colors of noise.
 /// @details    White, pink, brown, blue, or gaussian noise. The white/pink/brown/blue generators
 ///             are faithful ports of Jamoma's TTNoise (LCG white source + the same colouring
-///             filters); gaussian uses a standard normal distribution with mean/deviation. DSP is
+///             filters); gaussian uses a standard normal distribution with mean/deviation. All
+///             generators are deterministic per seed (seed attribute, default 1 — a seed is a
+///             serial number), so renders reproduce and mc. instances decorrelate by seed. DSP is
 ///             portable C++ (no min-lib). Mono — wrap in an mc. operator for multichannel.
 /// @author     Timothy Place
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright 2003-2026 Timothy Place.
 
+#include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <random>
 
 #include "c74_min.h"
@@ -29,7 +33,7 @@ class noise : public object<noise>, public sample_operator<0, 1> {
 
     double                           m_mean{0.0};
     double                           m_deviation{1.0};
-    std::mt19937                     m_rng{std::random_device{}()};
+    std::mt19937                     m_rng{1}; // deterministically re-seeded by the seed attribute
     std::normal_distribution<double> m_normal{0.0, 1.0};
 
   public:
@@ -64,6 +68,22 @@ class noise : public object<noise>, public sample_operator<0, 1> {
                                return args;
                            }},
                            description{"The color of the noise."}};
+
+    // A seed is a serial number (the tap.vco~ doctrine): the generators are deterministic per
+    // seed, so renders reproduce and different seeds decorrelate (e.g. under mc.). Setting the
+    // seed restarts both the LCG white source and the gaussian generator. The LCG state is
+    // seed - 1 so the default (seed 1) reproduces the legacy TTNoise sequence bit for bit —
+    // the previous wrapper always started the LCG at 0.
+    attribute<int> seed{this, "seed", 1, setter{MIN_FUNCTION{
+                            const int v = std::max(1, static_cast<int>(args[0]));
+                            m_accum     = v - 1;
+                            m_rng.seed(static_cast<std::uint32_t>(v));
+                            m_normal.reset();
+                            return {v};
+                        }},
+                        description{"Seed for the noise generators (>= 1, default 1). The output is deterministic "
+                                    "per seed; give mc. instances different seeds to decorrelate them. Setting the "
+                                    "seed restarts the sequence."}};
 
     attribute<number> gain{this, "gain", 0.0, setter{MIN_FUNCTION{
                                m_gain = std::pow(10.0, static_cast<double>(args[0]) * 0.05); // dB -> linear

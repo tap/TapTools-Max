@@ -10,6 +10,13 @@
 ///             look-ahead limiter, the clip stage, and internal oversampling. Oversampling runs the
 ///             reverb core at an integer multiple (1/2/4/8) of the host rate; it defaults to 1 (off),
 ///             so the default sound matches the legacy object exactly.
+/// @note       Determinism deviation from the legacy wrapper: the original deviated its comb
+///             delays/decays through std::rand(), so every instantiation (and every re-prepare)
+///             re-randomized the room — renders were not reproducible. The deviation now runs a
+///             seeded LCG restarted from the seed attribute on every configure: the comb tuning is
+///             a pure function of (seed, parameters, sample rate) — a seed is a serial number, per
+///             the package doctrine. The right core is seeded at a fixed offset from the left so
+///             the stereo decorrelation survives.
 /// @note       Oversampling deviation from the legacy wrapper: the original tap.verb~ exposed a
 ///             "downsample" attribute that ran the core at a *lower* rate (sr/factor) using a crude
 ///             sample-and-hold decimator (tt_downsample) and a zero-order-hold reconstructor
@@ -26,7 +33,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <cstdlib>
+#include <cstdint>
 #include <vector>
 
 #include "c74_min.h"
@@ -53,9 +60,17 @@ namespace {
         }
     }
 
+    // Deterministic uniform in [0, 1) from a Numerical Recipes LCG (state * 1664525 + 1013904223),
+    // replacing the former std::rand(): the deviate sequence is a pure function of the seed, so the
+    // comb tuning is bit-reproducible across instantiations and prepares.
+    double lcg_uniform(std::uint32_t& state) {
+        state = state * 1664525u + 1013904223u;
+        return static_cast<double>(state) * (1.0 / 4294967296.0);
+    }
+
     // Randomize a millisecond value by +/-1 ms and snap it to the nearest prime number of samples.
-    double deviate(double value_ms, double sr) {
-        double v = value_ms + (2.0 * (static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX)) - 1.0);
+    double deviate(double value_ms, double sr, std::uint32_t& state) {
+        double v = value_ms + (2.0 * lcg_uniform(state) - 1.0);
         v        = v * 0.001 * sr; // ms -> samples
         v        = static_cast<double>(nearest_prime(static_cast<long>(v)));
         return (v / sr) * 1000.0; // samples -> ms
@@ -127,9 +142,12 @@ namespace {
             m_lp_coef    = std::clamp(hz * 2.0 / m_sr, 0.0, 1.0);
         }
         void set_modfreq(double hz) {
-            for (auto& c : m_comb) {
-                c.lfo_inc = deviate_or(hz) / m_sr;
-            }
+            m_modfreq = hz;
+            configure();
+        }
+        void set_seed(std::uint32_t s) {
+            m_seed = s;
+            configure(); // re-deviate deterministically from the new seed
         }
         void set_moddepth(double ms) {
             for (auto& c : m_comb) {
@@ -243,7 +261,10 @@ namespace {
 
         double m_sr{44100.0};
         double m_delay{100.0}, m_decay{3.5}, m_damping{20000.0}, m_lowpass_hz{15000.0};
+        double m_modfreq{0.1};
         double m_damp_coef{0.8}, m_lp_coef{0.5};
+
+        std::uint32_t m_seed{1}; // LCG seed for the deviate sequence; set via set_seed()
 
         std::vector<double> m_er_buffer;
         long                m_er_write{0};
@@ -256,16 +277,19 @@ namespace {
 
         double m_lp_state{0.0};
 
-        double deviate_or(double v) { return deviate(v, m_sr); }
-
         void configure() {
             m_damp_coef = std::clamp(m_damping * 2.0 / m_sr, 0.0, 1.0);
             m_lp_coef   = std::clamp(m_lowpass_hz * 2.0 / m_sr, 0.0, 1.0);
+            // Restart the LCG from the seed on every configure so the deviated prime layout is a
+            // pure function of (seed, parameters, sample rate): bit-reproducible across
+            // instantiations, prepares, and parameter changes.
+            std::uint32_t state = m_seed;
             for (int i = 0; i < 6; ++i) {
-                m_comb[i].delay_base = deviate(m_delay * k_delay_mult[i], m_sr);
-                const double decay_s = deviate(m_decay * 1000.0, m_sr) * 0.001; // deviate works in ms
+                m_comb[i].delay_base = deviate(m_delay * k_delay_mult[i], m_sr, state);
+                const double decay_s = deviate(m_decay * 1000.0, m_sr, state) * 0.001; // deviate works in ms
                 const double delay_s = m_comb[i].delay_base * 0.001;
                 m_comb[i].fb_coef    = (decay_s > 0.0) ? std::pow(10.0, ((delay_s / decay_s) * -60.0) / 20.0) : 0.0;
+                m_comb[i].lfo_inc    = deviate(m_modfreq, m_sr, state) / m_sr;
             }
         }
 
@@ -400,6 +424,18 @@ class verb : public object<verb>, public sample_operator<2, 2> {
         description{"Internal oversampling factor (1, 2, 4, or 8). When >1 the reverb core runs at "
                        "that multiple of the host sample rate, with antialiasing up/downsampling around "
                        "it [default: 1 = off]."}};
+    attribute<int> seed{this, "seed", 1, setter{MIN_FUNCTION{
+                            const int v = std::max(1, static_cast<int>(args[0]));
+                            if (m_ready) { // skip during attribute construction; push_all() applies it
+                                apply_seed(static_cast<std::uint32_t>(v));
+                            }
+                            return {v};
+                        }},
+                        description{"Seed for the deviated comb-delay/decay tuning (>= 1, default 1). The room is "
+                                    "deterministic per seed — the same seed reproduces the identical reverb on every "
+                                    "instantiation and DSP restart; different seeds give slightly different rooms. "
+                                    "Setting it re-deviates immediately."}};
+
     attribute<bool> bypass{this, "bypass", false, description{"Pass the input through unprocessed."}};
     attribute<bool> mute{this, "mute", false, description{"Silence the output."}};
 
@@ -523,7 +559,16 @@ class verb : public object<verb>, public sample_operator<2, 2> {
         return y;
     }
 
+    // Seed the two cores' deviate generators. The right core is seeded at a fixed golden-ratio
+    // offset from the left so the L/R prime layouts always differ — the stereo image depends on
+    // the two cores deviating differently (the old std::rand() got this by shared-state accident).
+    void apply_seed(std::uint32_t s) {
+        m_l.set_seed(s);
+        m_r.set_seed(s + 0x9E3779B9u);
+    }
+
     void push_all() {
+        apply_seed(static_cast<std::uint32_t>(std::max(1, static_cast<int>(seed))));
         for (auto* c : {&m_l, &m_r}) {
             c->set_delay(delay);
             c->set_decay(decay);
