@@ -13,6 +13,12 @@ an attribute is a candidate hole. Items are ordered by how loudly the writing co
 
 ## 1. `tap.adsr~` — full rewrite as a virtual-analog envelope (kernel-first)
 
+> **Status: shipped 2026-08-05** — kernel `taptools/adsr.h` + eight-scenario battery +
+> capi/bridge + executed `adsr.ipynb`; wrapper shrunk to Min glue with `analog` as the new
+> default and `threshold`/`velocity` exposed; maxref rewritten; REVIVAL §14. The design
+> below was followed as written, with one refinement: the decay/release knob contract is
+> "95 % of the gap closed at the knob time" (τ = t/3), documented and pinned.
+
 **What it is today.** A faithful port of Jamoma's `TTAdsr` (2003): piecewise segments that
 are straight lines in amplitude (`linear`) or straight lines in dB (`exponential`/`hybrid`),
 with hard state switches at the targets. The DSP lives in the wrapper `.cpp` — it predates

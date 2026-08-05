@@ -1424,6 +1424,18 @@ the full external set, with clang-format/clang-tidy clean. Remaining for this ob
 in-Max validation pass and a runtime maxtest (licensed-Max, on-Mac), and the v1.1
 house-machinery items in the improvements plan (mute/bypass, 16-slot preset morph).
 
+**14. `tap.adsr~` rebuilt as virtual-analog (2026-08-05).** ✅ **Shipped** — the envelope's DSP
+moved to the kernel repo (`taptools/adsr.h`, `tap::tools::adsr::generator`) and gained a
+circuit-model `analog` default: truncated RC attack toward a 1.4× overshoot target (CEM 3310
+architecture), asymptotic decay/release (95 % closure at the knob time, pinned), retrigger from
+the current level. The Jamoma TTAdsr curves survive verbatim as `hybrid`/`linear`/`exponential`
+modes. The family trigger contract lands: `threshold` (default 0.005 — a seq row's plain 0.01
+now registers; the hard-coded 0.5 gate is retired) and `velocity` sensitivity (gate amplitude
+scales the hit; 0 = legacy). **The default mode change is deliberate and documented** — the
+recipes-improvements plan §1 carries the reasoning. Kernel: eight Catch2 scenarios + executed
+`adsr.ipynb`; wrapper shrunk to Min glue, maxref rewritten (retiring its phantom `int`/`float`
+methods), wrapper tests updated. Remaining: in-Max validation.
+
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
 they're touched. Control/utility and Jitter objects never move — they are Max message-logic, not

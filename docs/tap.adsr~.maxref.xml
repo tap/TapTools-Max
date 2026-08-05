@@ -4,103 +4,105 @@
 <c74object name="tap.adsr~" module="msp" category="TapTools, MSP Generators">
 
 	<digest>
-		An ADSR envelope generator
+		Virtual-analog ADSR envelope generator
 	</digest>
 
 	<description>
-		The <o>tap.adsr~</o> object 
-		generates a signal-rate envelope and may be triggered at either signal rate or control rate.
-		More information about ADSR envelopes is available on <a href="http://en.wikipedia.org/wiki/ADSR">this Wikipedia article</a>.
+		The <o>tap.adsr~</o> object generates an attack/decay/sustain/release envelope. The
+		default <at>mode</at>, <m>analog</m>, is a circuit model: the attack stage is an RC
+		charge toward an overshoot target above full scale, truncated at the peak — the classic
+		analog punch — and the decay and release stages are true RC discharges that taper into
+		their targets instead of stopping dead. Retrigger always rises from the current level,
+		like the capacitor it models. The legacy TapTools curves are preserved as the
+		<m>hybrid</m>, <m>linear</m>, and <m>exponential</m> modes.
+
+		A signal at the inlet gates the envelope: it opens above <at>threshold</at> (whose
+		default hears a <o>tap.808.seq~</o> row's plain hits) and closes below it, and the
+		gate's amplitude is velocity under the <at>velocity</at> sensitivity — a 303-style
+		accented 2.0 gate hits up to twice as hard. With no signal connected, the
+		<at>trigger</at> attribute drives the gate.
 	</description>
 
-	
+
 	<!--METADATA-->
 	<metadatalist>
 		<metadata name="author">74 Objects</metadata>
 		<metadata name="tag">TapTools</metadata>
 		<metadata name="tag">Audio</metadata>
-		<metadata name="tag">Time</metadata>
 		<metadata name="tag">Generator</metadata>
-		<metadata name="tag">64-bit</metadata>
 	</metadatalist>
 
-	
-	<!--INLETS-->
-	<inletlist>
-		<inlet id="0" name="INLET_NAME">
-			<digest>Trigger an envelope to begin.</digest>
-		</inlet>
-	</inletlist>
 
-	<!--OUTLETS-->
-	<outletlist>
-		<outlet id="0" name="OUTLET_NAME">
-			<digest>Audio signal: the generated envelope.</digest>
-		</outlet>
-		<outlet id="1" name="OUTLET_NAME">
-			<digest>Dumpout: for accessing object state.</digest>
-		</outlet>
-	</outletlist>
-
-	
-	<!--MESSAGES
+	<!--MESSAGES-->
 	<methodlist>
-
-		<method name="int">
-			<arglist>
-				<arg name="input" type="int" optional="0" id="0" />
-			</arglist>
-			<description>The absolute(non-negative) value of the input is sent out the output.</description>
+		<method name="clear">
+			<description>
+				Reset the envelope to silence and idle; parameter values are kept.
+			</description>
 		</method>
-		
-		<method name="float">
-			<arglist>
-				<arg name="input" type="float" optional="0" id="0" />
-			</arglist>
-			<description>Converted to <m>int</m>, unless <o>abs</o> has a float argument. </description>
-		</method>
-		
 	</methodlist>
-	-->
-	
+
+
 	<!--ATTRIBUTES-->
 	<attributelist>
-
 		<attribute name="attack" get="1" set="1" type="float" size="1">
-			<digest>Attack time in milliseconds</digest>
+			<description>
+				Attack time in milliseconds (1..60000). In analog mode this is the time to reach
+				full scale on the truncated RC charge. Default 50.
+			</description>
 		</attribute>
-
 		<attribute name="decay" get="1" set="1" type="float" size="1">
-			<digest>Decay time in milliseconds</digest>
+			<description>
+				Decay time in milliseconds (1..60000). In analog mode the stage closes 95% of
+				the way to the sustain level in this time and keeps tapering. Default 100.
+			</description>
 		</attribute>
-
 		<attribute name="sustain" get="1" set="1" type="float" size="1">
-			<digest>Sustain time in milliseconds</digest>
+			<description>Sustain level in decibels. Default -6.</description>
 		</attribute>
-
 		<attribute name="release" get="1" set="1" type="float" size="1">
-			<digest>Release time in milliseconds</digest>
+			<description>
+				Release time in milliseconds (1..60000). In analog mode the stage closes 95% of
+				the way to silence in this time, then ends at exactly zero. Default 500.
+			</description>
 		</attribute>
-
 		<attribute name="mode" get="1" set="1" type="symbol" size="1">
-			<digest>Determine the shape of the envelope</digest>
-			<description>Determines the shape of the envelope. The two options are <m>linear</m> and <m>exponential</m>.</description>
+			<description>
+				Envelope curve: <m>analog</m> (the circuit model, default), or the legacy
+				<m>hybrid</m> (linear attack, dB-linear decay/release), <m>linear</m>, and
+				<m>exponential</m> curves, preserved verbatim from the original object.
+			</description>
 		</attribute>
-
 		<attribute name="trigger" get="1" set="1" type="int" size="1">
-			<digest>Trigger a note on or off when no signal is connected to the inlet</digest>
-			<description>Triggers a note to on or off when no signal is connected to the inlet. If a signal is connected (also a 0 or 1) it overrides this attribute.</description>
+			<description>
+				Open the envelope (attack) while on; release it while off. Ignored while a
+				signal is connected to the inlet. Default off.
+			</description>
 		</attribute>
-
+		<attribute name="threshold" get="1" set="1" type="float" size="1">
+			<description>
+				Gate-open level for the signal inlet (0..1). The default (0.005) sits above the
+				trigger bus's noise floor and below a sequencer row's plain 0.01 level, so
+				un-accented hits register. Default 0.005.
+			</description>
+		</attribute>
+		<attribute name="velocity" get="1" set="1" type="float" size="1">
+			<description>
+				Velocity sensitivity (0..1). Peak and sustain scale by 1 + velocity × (gate
+				amplitude − 1): at 1, an accented 2.0 gate hits twice as hard and a half-level
+				gate lands soft; at 0 (default) the envelope ignores gate amplitude — the
+				legacy behavior.
+			</description>
+		</attribute>
 	</attributelist>
-	
+
 
 	<!--SEEALSO-->
 	<seealsolist>
-		<seealso name="tap.pulsesub~"/>
-		<seealso name="adsr~"/>
-		<seealso name="function"/>
+		<seealso name="tap.vca~" />
+		<seealso name="tap.808.seq~" />
+		<seealso name="tap.303.seq~" />
+		<seealso name="tap.sustain~" />
 	</seealsolist>
 
-	
 </c74object>
