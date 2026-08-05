@@ -150,6 +150,12 @@ object has them). Low urgency, documented workarounds; batch with any vocoder re
   restriction in the maxref (which currently documents *nothing* — see §8).
 - **`tap.crossfade~` `mode`** is a legacy no-op (both values compute identically) —
   deprecate in docs so nobody A/Bs a placebo.
+- **`tap.harmony~` v1.1 — the house machinery.** The shipped v1 lacks `mute`/`bypass` and
+  the 16-slot preset-morph engine its effect siblings carry (autowah/pitchaccum/5comb/303).
+  A timed morph between two stored *chords* is very much in the recipes' spirit; the kernel
+  already slews intervals and gains, so this is wrapper plumbing plus the store/recall
+  pattern. Also fixed post-ship: the `chord` message now writes through the attributes, so
+  queries stay truthful and a DSP restart no longer reverts the last chord.
 
 ## 8. Documentation debts (no DSP)
 
