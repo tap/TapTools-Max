@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.harmony~" module="msp" category="TapTools, MSP Modifiers">
+
+	<digest>
+		Formant-preserving multi-voice harmonizer
+	</digest>
+
+	<description>
+		The <o>tap.harmony~</o> object is the keyboard-harmonizer effect: up to four
+		pitch-shifted copies of a monophonic input, each holding a musical interval set in
+		fractional semitones (<at>interval1</at>..<at>interval4</at>, ±24), summed with a dry
+		path that is delayed inside the kernel to align with the voices — so chords land as
+		chords, not slapback. Formant preservation (<at>formant</at>, on by default) keeps the
+		singer's spectral envelope on every shifted voice, which is what separates a harmonizer
+		from a chipmunk chorus; turning it off is the bend. Interval changes glide through the
+		<at>glide</at> time constant, click-free at the 10 ms default and an audible portamento
+		in the hundreds. The <m>chord</m> message sets up to four intervals and enables exactly
+		those voices in one gesture. Each voice is a peak-locked phase vocoder with LPC formant
+		correction from the shared DspTap library. Latency is one FFT frame (<at>fftsize</at>
+		samples, dry path included). The source should be monophonic for musical results; wrap
+		the object in an mc. operator for multichannel work.
+	</description>
+
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Effect</metadata>
+	</metadatalist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="chord">
+			<arglist>
+				<arg name="intervals" type="list" optional="0" id="0" />
+			</arglist>
+			<description>
+				Set up to four intervals (in semitones, fractional allowed) and enable exactly
+				those voices at level 1; voices beyond the list length are silenced. A one-message
+				chord change.
+			</description>
+		</method>
+		<method name="clear">
+			<description>
+				Zero all running state: the voices' analysis buffers, the dry-alignment delay,
+				and the parameter slews.
+			</description>
+		</method>
+	</methodlist>
+
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="interval1" get="1" set="1" type="float" size="1">
+			<description>Voice 1 interval in semitones (-24..24, fractional allowed). Default 0.</description>
+		</attribute>
+		<attribute name="interval2" get="1" set="1" type="float" size="1">
+			<description>Voice 2 interval in semitones (-24..24, fractional allowed). Default 0.</description>
+		</attribute>
+		<attribute name="interval3" get="1" set="1" type="float" size="1">
+			<description>Voice 3 interval in semitones (-24..24, fractional allowed). Default 0.</description>
+		</attribute>
+		<attribute name="interval4" get="1" set="1" type="float" size="1">
+			<description>Voice 4 interval in semitones (-24..24, fractional allowed). Default 0.</description>
+		</attribute>
+		<attribute name="level1" get="1" set="1" type="float" size="1">
+			<description>Voice 1 level, linear 0..2. 0 disables the voice. Default 0.</description>
+		</attribute>
+		<attribute name="level2" get="1" set="1" type="float" size="1">
+			<description>Voice 2 level, linear 0..2. 0 disables the voice. Default 0.</description>
+		</attribute>
+		<attribute name="level3" get="1" set="1" type="float" size="1">
+			<description>Voice 3 level, linear 0..2. 0 disables the voice. Default 0.</description>
+		</attribute>
+		<attribute name="level4" get="1" set="1" type="float" size="1">
+			<description>Voice 4 level, linear 0..2. 0 disables the voice. Default 0.</description>
+		</attribute>
+		<attribute name="dry" get="1" set="1" type="float" size="1">
+			<description>
+				Dry level, linear 0..2. The dry path is delayed inside the kernel to stay
+				sample-aligned with the shifted voices. Default 1.
+			</description>
+		</attribute>
+		<attribute name="formant" get="1" set="1" type="int" size="1">
+			<description>
+				LPC formant preservation on every voice. On (default) keeps the singer's
+				envelope while the pitch moves; off shifts envelope and all.
+			</description>
+		</attribute>
+		<attribute name="glide" get="1" set="1" type="float" size="1">
+			<description>
+				Interval glide time constant in milliseconds (0..2000). Chord changes slew
+				click-free at the 10 ms default; hundreds of ms is an audible portamento.
+			</description>
+		</attribute>
+		<attribute name="fftsize" get="1" set="1" type="int" size="1">
+			<description>
+				FFT frame size in samples (256..4096, rounded up to a power of two). This is
+				the object's latency, dry path included. Applies when the DSP chain restarts.
+				Default 1024.
+			</description>
+		</attribute>
+	</attributelist>
+
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.tune~" />
+		<seealso name="tap.shift~" />
+		<seealso name="tap.pitchaccum~" />
+		<seealso name="tap.vocoder~" />
+	</seealsolist>
+
+</c74object>

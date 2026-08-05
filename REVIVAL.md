@@ -1411,6 +1411,17 @@ maxtest** shipped (`runtime-tests/patchers/tap.tune~.maxtest.maxpat`, generated 
 this object: the in-Max validation pass itself (help patcher + maxtest under a licensed
 Max), like the rest of the DSP set.
 
+**13. Net-new object — `tap.harmony~` (2026-08-05).** ✅ **v1 shipped** — formant-preserving
+multi-voice harmonizer (the keyboard-harmonizer effect: up to four pvoc voices at fractional-
+semitone intervals over a kernel-aligned dry path, formants preserved by default, `chord`
+message, `glide` portamento). Kernel: `taptools/harmonizer.h` (`tap::tools::harmony`),
+composing DspTap's `pvoc` (Laroche–Dolson peak locking + LPC formant correction) — seven
+Catch2 scenarios under the yin oracle, capi + ctypes bridge. Origin story: the *Tools on Tap*
+Recipes drafting flagged the gap ("Hide and Seek" is a harmonizer, not a vocoder — see
+`plans/recipes-improvements.md` §10). Remaining for this object: build verification on both
+platforms (wrapper written to the tune template but not yet compiled against Max), the in-Max
+validation pass, and a runtime maxtest.
+
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
 they're touched. Control/utility and Jitter objects never move — they are Max message-logic, not
