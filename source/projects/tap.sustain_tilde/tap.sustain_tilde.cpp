@@ -253,10 +253,16 @@ class sustain : public object<sustain>, public vector_operator<> {
                         return {};
                     }};
 
-    attribute<number> length{
-        this, "length", 1000.0,
-        description{"Maximum length of the captured loop, in milliseconds. (Changing this restarts "
-                    "the recording buffer.)"}};
+    attribute<number> length{this, "length", 1000.0, setter{MIN_FUNCTION{
+                                 // Store the requested length truthfully (so queries report what was asked for); the
+                                 // recording ring itself re-sizes to match at the next dspsetup via update_samplerate()
+                                 // — re-sizing mid-vector would drop the recording history while audio runs.
+                                 return {std::max(1.0, static_cast<double>(args[0]))};
+                             }},
+                             description{"Maximum length of the captured loop, in milliseconds (>= 1). The value is "
+                                         "stored immediately, but the recording buffer re-sizes to match at the next "
+                                         "DSP start (restart audio to apply it); until then captures keep using the "
+                                         "previous length."}};
 
     attribute<int> voices{this,
                           "voices",

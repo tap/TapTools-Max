@@ -311,6 +311,10 @@ SCENARIO("the Min wrapper instantiates with the documented defaults") {
             REQUIRE(static_cast<double>(my_object.pw) == 50.0);
             REQUIRE(static_cast<double>(my_object.drift) == 0.0);
             REQUIRE(static_cast<int>(my_object.seed) == 1);
+            REQUIRE(static_cast<double>(my_object.vibrato) == 0.0);
+            REQUIRE(static_cast<double>(my_object.vibrato_rate) == 5.0);
+            REQUIRE(static_cast<double>(my_object.vibrato_delay) == 0.0);
+            REQUIRE(static_cast<double>(my_object.bend) == 0.0);
         }
         THEN("the waveform message snaps the shape") {
             my_object.waveform(atoms{symbol("sine")});
@@ -323,6 +327,10 @@ SCENARIO("the Min wrapper instantiates with the documented defaults") {
             REQUIRE(static_cast<double>(my_object.pw) == 1.0);
             my_object.shape = 9.0;
             REQUIRE(static_cast<double>(my_object.shape) == 3.0);
+            my_object.vibrato = 500.0;
+            REQUIRE(static_cast<double>(my_object.vibrato) == 100.0);
+            my_object.bend = 99.0;
+            REQUIRE(static_cast<double>(my_object.bend) == 24.0);
         }
         THEN("preset and clear messages are callable") {
             my_object.store(atoms{1});

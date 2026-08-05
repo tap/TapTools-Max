@@ -60,7 +60,7 @@ SCENARIO("the Min wrapper instantiates with the documented defaults") {
             REQUIRE(static_cast<double>(my_object.drive) == 0.0);
             REQUIRE(static_cast<double>(my_object.fbhp) == kdf::k_fbhp_default_hz);
             REQUIRE(static_cast<double>(my_object.gain) == 0.0);
-            REQUIRE(static_cast<int>(my_object.solver) == kdf::solver_fast);
+            REQUIRE(my_object.solver == symbol{"fast"});
             REQUIRE(static_cast<int>(my_object.oversample) == 2);
             REQUIRE(static_cast<double>(my_object.smooth) == kdf::k_default_smooth_ms);
         }
@@ -79,8 +79,14 @@ SCENARIO("the Min wrapper instantiates with the documented defaults") {
             REQUIRE(static_cast<double>(my_object.drive) == kdf::k_drive_range_db);
             my_object.oversample = 3;
             REQUIRE(static_cast<int>(my_object.oversample) == 2);
-            my_object.solver = 99;
-            REQUIRE(static_cast<int>(my_object.solver) == kdf::k_num_solvers - 1);
+            my_object.solver = atoms{99};
+            REQUIRE(my_object.solver == symbol{"exact"}); // clamps to the last solver
+        }
+        THEN("solver accepts both symbolic and numeric spellings and reports the symbol") {
+            my_object.solver = symbol("exact");
+            REQUIRE(my_object.solver == symbol{"exact"});
+            my_object.solver = atoms{kdf::solver_fast};
+            REQUIRE(my_object.solver == symbol{"fast"});
         }
         THEN("attribute changes reach the kernel") {
             my_object.resonance = 0.75;

@@ -14,6 +14,8 @@
 /// @author     Timothy Place
 /// @copyright  Copyright 2026 Timothy Place. Distributed under the New BSD License.
 
+#include <array>
+
 #include <taptools/diode_ladder.h>
 
 #include "c74_min.h"
@@ -25,6 +27,24 @@ class diode : public object<diode>, public vector_operator<> {
   private:
     // Constructed before the attributes below so attribute defaults can forward into it.
     kernel::diode_filter m_filter;
+
+    // Map a symbol-or-number atom to an enum index: a symbol matches the name table, a number
+    // clamps to the valid index range — so '@solver exact' and '@solver 1' are equivalent
+    // spellings.
+    template <size_t N>
+    static int index_from_atom(const atom& a, const std::array<const char*, N>& names) {
+        if (a.type() == message_type::symbol_argument) {
+            for (size_t i = 0; i < N; ++i) {
+                if (a == names[i]) {
+                    return static_cast<int>(i);
+                }
+            }
+            return 0; // unknown symbol: fall back to the default entry
+        }
+        return std::clamp(static_cast<int>(a), 0, static_cast<int>(N) - 1);
+    }
+
+    static constexpr std::array<const char*, kernel::k_num_solvers> k_solver_names{"fast", "exact"};
 
   public:
     MIN_DESCRIPTION{"A virtual-analog diode-ladder filter — the TB-303 lowpass topology. Unlike "
@@ -79,15 +99,25 @@ class diode : public object<diode>, public vector_operator<> {
 
 #undef TAP_DIODE_ATTR
 
-    attribute<int> solver{this, "solver", kernel::solver_fast, setter{ MIN_FUNCTION {
-                              const int v = std::clamp(static_cast<int>(args[0]), 0, kernel::k_num_solvers - 1);
-                              m_filter.set_solver(v);
-                              return {v};
-                          }},
-                          description{"Nonlinear solver for the coupled diode equations: 0 = fast (secant-"
-                                      "linearized solve with one corrective pass — the default), 1 = exact "
-                                      "(re-linearization iterated to convergence). The two are audibly identical "
-                                      "until drive and resonance are both pushed hard; exact costs more CPU."}};
+    // Symbolic enum stored as attribute<symbol> with a numeric-compatible setter — the house
+    // pattern from tap.svf~ (type/circuit), extended: '@solver exact' and '@solver 1' are both
+    // accepted, and the getter reports the symbol. Not attribute<enum class> (min-api's native
+    // enum_map pattern), which stores/reports the index and trips the tap.crossfade~/tap.pan~
+    // GCC lesson (REVIVAL.md 9.5).
+    attribute<symbol> solver{this,
+                             "solver",
+                             "fast",
+                             range{"fast", "exact"},
+                             setter{ MIN_FUNCTION {
+                                 const int v = index_from_atom(args[0], k_solver_names);
+                                 m_filter.set_solver(v);
+                                 return {symbol(k_solver_names[v])};
+                             }},
+                             description{"Nonlinear solver for the coupled diode equations: fast (0) is a secant-"
+                                         "linearized solve with one corrective pass — the default; exact (1) is "
+                                         "re-linearization iterated to convergence. The two are audibly identical "
+                                         "until drive and resonance are both pushed hard; exact costs more CPU. "
+                                         "Accepts the symbol or the index."}};
 
     attribute<int> oversample{this, "oversample", 2, setter{ MIN_FUNCTION {
                                   const int req = static_cast<int>(args[0]);

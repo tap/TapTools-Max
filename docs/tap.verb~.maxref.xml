@@ -1,20 +1,27 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
- <!-- TODO: How do I account for osc messages & output messages from get messages? -->
 
 <c74object name="tap.verb~" module="msp" category="TapTools, MSP Modifiers">
 
 	<digest>
-		Simulate reverberation
+		Stereo algorithmic reverb
 	</digest>
 
 	<description>
-		The <o>tap.verb~</o> object is a simulated reverb. 
-		It can provide a reasonable reverb with minimal processing overhead which is great for real time applications.  
-		Also, all of the parameters are accessible and infinitely abuse-able which leads to all sorts of sonic mayhem.  Enjoy.
+		The <o>tap.verb~</o> object is a stereo Moorer-style algorithmic reverb: an 18-tap
+		early-reflection pattern feeds six parallel comb filters (each with a damping lowpass in
+		its feedback loop and an LFO gently chorusing its delay), summed through a Schroeder
+		allpass and an output lowpass, then crossfaded with the dry signal and gain-scaled. Two
+		independent cores (left and right), decorrelated by deviating every delay to a nearby
+		prime, give the stereo image. The deviation is deterministic per seed, so the same seed
+		reproduces the identical room on every instantiation and DSP restart. The output stage
+		offers a DC blocker, a look-ahead limiter (on by default), an optional hard clip, and
+		optional internal oversampling. It provides a reasonable reverb with minimal processing
+		overhead — and all of the parameters are accessible and infinitely abuse-able, which
+		leads to all sorts of sonic mayhem. Enjoy.
 	</description>
 
-	
+
 	<!--METADATA-->
 	<metadatalist>
 		<metadata name="author">74 Objects</metadata>
@@ -23,43 +30,120 @@
 		<metadata name="tag">Effect</metadata>
 	</metadatalist>
 
-	
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Left audio input.</digest>
+		</inlet>
+		<inlet id="1" type="signal">
+			<digest>Right audio input.</digest>
+		</inlet>
+	</inletlist>
+
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>Left audio output.</digest>
+		</outlet>
+		<outlet id="1" type="signal">
+			<digest>Right audio output.</digest>
+		</outlet>
+	</outletlist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="clear">
+			<arglist/>
+			<description>Clear the reverb's internal state (buffers, filters, and the limiter).</description>
+		</method>
+	</methodlist>
+
+
 	<!--ATTRIBUTES-->
 	<attributelist>
-		<attribute name="delay" get="1" set="1" type="float">
-			<description>Delay time in milliseconds. Relates to room size / how quickly echo density builds up in the reverberator [default: 100 ms].</description>
+		<attribute name="mix" get="1" set="1" type="float" size="1">
+			<description>Dry/wet mix from 0 (dry) to 100 (wet), as an equal-power crossfade
+			[default: 100].</description>
 		</attribute>
-		<attribute name="decay" get="1" set="1" type="float">
-			<description>Decay time in seconds. How long (in seconds) for the reverberant sound to decay 60 dB [default: 3.5 sec].</description>
+		<attribute name="gain" get="1" set="1" type="float" size="1">
+			<description>Output gain in decibels [default: 0].</description>
 		</attribute>
-		<attribute name="damping" get="1" set="1" type="float">
-			<description>Damping filter cutoff in Hz. Emulates the effect air and walls have on sound as it travels and reflects [default: 20000 Hz].</description>
+		<attribute name="delay" get="1" set="1" type="float" size="1">
+			<description>Base comb delay time in milliseconds. Relates to room size / how quickly
+			echo density builds up in the reverberator [default: 100].</description>
 		</attribute>
-		<attribute name="modfreq" get="1" set="1" type="float">
-			<description>Modulation frequency in hertz - applied to the delay times internally [default: 0.1 Hz].</description>
+		<attribute name="decay" get="1" set="1" type="float" size="1">
+			<description>Reverb decay time in seconds: how long the reverberant sound takes to
+			decay by 60 dB [default: 3.5].</description>
 		</attribute>
-		<attribute name="moddepth" get="1" set="1" type="float">
-			<description>Modulation depth for the above delay-time modulator [default: 0.1]</description>
+		<attribute name="damping" get="1" set="1" type="float" size="1">
+			<description>Cutoff in Hz of the lowpass inside each comb's feedback loop. Emulates
+			the effect air and walls have on sound as it travels and reflects
+			[default: 20000].</description>
 		</attribute>
-		<attribute name="lowpass" get="1" set="1" type="float">
-			<description>Cutoff frequency for a final lowpass filter stage to control the brightness of the reverb [default 15000 Hz].</description>
+		<attribute name="lowpass" get="1" set="1" type="float" size="1">
+			<description>Output lowpass cutoff in Hz, controlling the overall brightness of the
+			reverb [default: 15000].</description>
 		</attribute>
-		<attribute name="use_early_reflections" get="1" set="1" type="integer">
-			<description>Toggles on/off early-reflections [default = 1 (on)].</description>
+		<attribute name="modfreq" get="1" set="1" type="float" size="1">
+			<description>Comb-delay modulation frequency in Hz [default: 0.1].</description>
 		</attribute>
-		<attribute name="oversampling" get="1" set="1" type="integer">
-			<description>Internal oversampling factor (1, 2, 4, or 8). When greater than 1 the reverb core runs at that multiple of the host sample rate, with antialiasing up/downsampling filters around it, for cleaner alias-suppressed feedback at the cost of CPU. A value of 1 bypasses the resampler so the sound is unchanged. Values outside the allowed set round down to the nearest factor [default: 1 (off)].</description>
+		<attribute name="moddepth" get="1" set="1" type="float" size="1">
+			<description>Comb-delay modulation depth in milliseconds [default: 0.1].</description>
+		</attribute>
+		<attribute name="er" get="1" set="1" type="int" size="1">
+			<description>Include the 18-tap early-reflection stage [default: 1 (on)].</description>
+		</attribute>
+		<attribute name="seed" get="1" set="1" type="int" size="1">
+			<description>Seed for the deviated comb-delay/decay tuning (1 or higher; default 1).
+			The room is deterministic per seed: the same seed reproduces the identical reverb on
+			every instantiation and DSP restart, and different seeds give slightly different
+			rooms. Setting it re-deviates immediately.</description>
+		</attribute>
+		<attribute name="dcblock" get="1" set="1" type="int" size="1">
+			<description>Apply a DC blocker to the output [default: 1 (on)].</description>
+		</attribute>
+		<attribute name="limit" get="1" set="1" type="int" size="1">
+			<description>Apply a stereo look-ahead limiter to the output [default: 1 (on)].</description>
+		</attribute>
+		<attribute name="limiter_threshold" get="1" set="1" type="float" size="1">
+			<description>Limiter threshold in decibels [default: 0].</description>
+		</attribute>
+		<attribute name="limiter_lookahead" get="1" set="1" type="int" size="1">
+			<description>Limiter look-ahead in samples (1-255) [default: 100].</description>
+		</attribute>
+		<attribute name="limiter_release" get="1" set="1" type="float" size="1">
+			<description>Limiter release time in milliseconds [default: 1000].</description>
+		</attribute>
+		<attribute name="clip" get="1" set="1" type="int" size="1">
+			<description>Hard-clip the output to +/-1 [default: 0 (off)].</description>
+		</attribute>
+		<attribute name="oversampling" get="1" set="1" type="int" size="1">
+			<description>Internal oversampling factor (1, 2, 4, or 8). When greater than 1 the
+			reverb core runs at that multiple of the host sample rate, with antialiasing
+			up/downsampling filters around it, for cleaner alias-suppressed feedback at the cost
+			of CPU. A value of 1 bypasses the resampler so the sound is unchanged. Values outside
+			the allowed set round down to the nearest factor [default: 1 (off)].</description>
+		</attribute>
+		<attribute name="bypass" get="1" set="1" type="int" size="1">
+			<description>Pass the input through unprocessed [default: 0 (off)].</description>
+		</attribute>
+		<attribute name="mute" get="1" set="1" type="int" size="1">
+			<description>Silence the output [default: 0 (off)].</description>
 		</attribute>
 	</attributelist>
-	
+
 
 	<!--SEEALSO-->
 	<seealsolist>
-		<seealso name="tapin~"/>
-		<seealso name="tapout~"/>
-		<seealso name="tap.multitap~"/>
-		<seealso name="delay~"/>
+		<seealso name="tap.comb~"/>
+		<seealso name="tap.limi~"/>
+		<seealso name="tap.dcblock~"/>
+		<seealso name="gigaverb~"/>
 	</seealsolist>
 
-	
+
 </c74object>

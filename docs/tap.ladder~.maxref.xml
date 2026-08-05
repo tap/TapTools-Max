@@ -95,14 +95,16 @@
 			modeling transistor mismatch. 0 is symmetric (odd harmonics only); raising it adds
 			even-harmonic warmth. May produce slight signal-dependent DC when engaged.</description>
 		</attribute>
-		<attribute name="solver" get="1" set="1" type="int" size="1">
-			<description>Nonlinear feedback solver: 0 = fast (linear zero-delay prediction plus one
-			corrective saturation pass, the default), 1 = exact (Newton iteration to convergence).
-			Audibly different only when drive and resonance are both pushed hard.</description>
+		<attribute name="solver" get="1" set="1" type="symbol" size="1">
+			<description>Nonlinear feedback solver: fast (linear zero-delay prediction plus one
+			corrective saturation pass, the default) or exact (Newton iteration to convergence).
+			Audibly different only when drive and resonance are both pushed hard. Accepts the
+			symbol or the index (fast = 0, exact = 1); queries report the symbol.</description>
 		</attribute>
-		<attribute name="mode" get="1" set="1" type="int" size="1">
-			<description>Filter response via pole mixing: 0 = lp24, 1 = lp12, 2 = bp12,
-			3 = bp24, 4 = hp12, 5 = hp24.</description>
+		<attribute name="mode" get="1" set="1" type="symbol" size="1">
+			<description>Filter response via pole mixing: lp24, lp12, bp12, bp24, hp12, or hp24.
+			Accepts the symbol or the index (lp24 = 0, lp12 = 1, bp12 = 2, bp24 = 3, hp12 = 4,
+			hp24 = 5); queries report the symbol.</description>
 		</attribute>
 		<attribute name="oversample" get="1" set="1" type="int" size="1">
 			<description>Internal oversampling factor (1, 2, or 4; default 2). Higher factors
