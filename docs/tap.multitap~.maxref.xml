@@ -1,19 +1,26 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
- 
+
 <c74object name="tap.multitap~" module="msp" category="TapTools, MSP Modifiers">
 
 	<digest>
-		A self-contained multitap delay
+		A self-contained stereo multitap delay
 	</digest>
 
 	<description>
-		The <o>tap.multitap~</o> object 
-		is like a set of <o>tapin~</o> and <o>tapout~</o> objects, but all contained within one external for 
-		improved efficiency.
+		The <o>tap.multitap~</o> object is like a set of <o>tapin~</o> and <o>tapout~</o>
+		objects contained within one external. The input is recorded into one shared buffer
+		and up to 99 taps are summed to a stereo output pair, each tap with its own delay time
+		(<at>delay</at>, ms), gain (<at>gain</at>, dB), and equal-power pan (<at>pan</at>,
+		-1..1). A center-panned tap (the default) feeds both outlets equally, so the old mono
+		output is simply the mix of the two. Taps read with fractional Hermite interpolation
+		(<at>interp</at> 1, the default) or the legacy bit-compatible integer-sample
+		truncation (<at>interp</at> 0), and every per-tap parameter is slewed (click-free).
+		Pure feedforward: no dry path, no feedback, no master gain — gain staging is the
+		patch's job. The optional argument sets the buffer size in ms.
 	</description>
 
-	
+
 	<!--METADATA-->
 	<metadatalist>
 		<metadata name="author">74 Objects</metadata>
@@ -22,41 +29,67 @@
 		<metadata name="tag">Time</metadata>
 	</metadatalist>
 
-	
+
 	<!--ARGUMENTS-->
 	<objarglist>
 		<objarg name="buffersize" type="float" optional="1">
-			<description>Sets the initial buffersize in ms.  The default is 2000ms.</description>
+			<description>Size of the delay buffer in milliseconds (default 1000). This bounds the maximum delay time. Applied when the DSP chain starts.</description>
 		</objarg>
 	</objarglist>
+
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Audio input.</digest>
+		</inlet>
+	</inletlist>
+
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>Summed delay taps, left.</digest>
+		</outlet>
+		<outlet id="1" type="signal">
+			<digest>Summed delay taps, right.</digest>
+		</outlet>
+	</outletlist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="clear">
+			<description>Clear the delay buffer.</description>
+		</method>
+	</methodlist>
 
 
 	<!--ATTRIBUTES-->
 	<attributelist>
 		<attribute name="taps" get="1" set="1" type="int" size="1">
-			<description>
-				The number of taps in the multitap delay.
-			</description>
+			<description>The number of active delay taps (1..99). Default 1.</description>
 		</attribute>
-		<attribute name="delay" get="1" set="1" type="int" size="1">
-			<description>
-				Sets the delay time for one of the taps.  
-				The first int specifies the tap, the second number specifies the delay time.
-			</description>
+		<attribute name="delay" get="1" set="1" type="float" size="100">
+			<description>A list of delay times in milliseconds, one per tap, slewed by the kernel.</description>
 		</attribute>
-		<attribute name="gain" get="1" set="1" type="int" size="1">
-			<description>
-				Sets the gain for one of the taps.  
-				The first int specifies the tap, the second number specifies the gain.
-			</description>
+		<attribute name="gain" get="1" set="1" type="float" size="100">
+			<description>A list of gains in dB, one per tap, slewed by the kernel. Default 0 dB.</description>
+		</attribute>
+		<attribute name="pan" get="1" set="1" type="float" size="100">
+			<description>A list of equal-power pan positions (-1 hard left .. 1 hard right), one per tap, slewed by the kernel. A center-panned tap (0, the default) feeds both outlets equally; the endpoints are exact — a hard-panned tap is absent from the far outlet.</description>
+		</attribute>
+		<attribute name="interp" get="1" set="1" type="int" size="1">
+			<description>Interpolation mode for all taps: 1 (default) reads fractional delays with a 4-point Hermite; 0 restores the legacy bit-compatible integer-sample truncation.</description>
 		</attribute>
 	</attributelist>
-	
-	
+
+
 	<!--SEEALSO-->
 	<seealsolist>
 		<seealso name="tap.delay~"/>
+		<seealso name="tapin~"/>
+		<seealso name="tapout~"/>
 	</seealsolist>
 
-	
 </c74object>

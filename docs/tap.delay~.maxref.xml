@@ -4,36 +4,92 @@
 <c74object name="tap.delay~" module="msp" category="TapTools, MSP Modifiers">
 
 	<digest>
-		Sample-accurate delay
+		Feedback delay line
 	</digest>
 
 	<description>
-		A simple audio delay.
+		The <o>tap.delay~</o> object is a feedback delay line. The input is delayed by a number
+		of milliseconds set via the right inlet (signal or float) or the <at>delay</at>
+		attribute, with a DC-blocked <at>feedback</at> path, an equal-power dry/wet
+		<at>mix</at> (default 100 — wet-only, matching the original object), and a choice of
+		fractional Hermite interpolation (<at>interp</at> 1, the default) or the legacy
+		bit-compatible integer-sample truncation (<at>interp</at> 0). Parameter changes ride
+		per-sample slews, so they are click-free. NOTE: a signal connected to the right inlet
+		always drives the delay time, including at 0.0 — unlike the pre-rebuild object, where
+		a 0.0 signal meant "use the attribute". The optional argument sets the size (ms) of
+		the delay buffer, which bounds the maximum delay. For multichannel signals, wrap the
+		object in an mc. operator.
 	</description>
 
-	
+
 	<!--METADATA-->
 	<metadatalist>
 		<metadata name="author">74 Objects</metadata>
 		<metadata name="tag">TapTools</metadata>
 		<metadata name="tag">Audio</metadata>
 		<metadata name="tag">Time</metadata>
-		<metadata name="tag">Obsolete</metadata>
 	</metadatalist>
 
-	
+
 	<!--ARGUMENTS-->
 	<objarglist>
 		<objarg name="buffersize" type="float" optional="1">
-			<description>An initial size of the sample buffer memory of the delay.</description>
+			<description>Size of the delay buffer in milliseconds (default 1000). This bounds the maximum delay time. Applied when the DSP chain starts.</description>
 		</objarg>
 	</objarglist>
-	
-	
+
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Audio input.</digest>
+		</inlet>
+		<inlet id="1" type="signal/float">
+			<digest>Delay time in milliseconds. A connected signal always wins, including at 0.0.</digest>
+		</inlet>
+	</inletlist>
+
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>The delayed audio output.</digest>
+		</outlet>
+	</outletlist>
+
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="clear">
+			<description>Clear the delay buffer and the feedback-path filter state.</description>
+		</method>
+	</methodlist>
+
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="delay" get="1" set="1" type="float" size="1">
+			<description>Delay time in milliseconds, slewed (click-free). Clamped to the buffer size. Ignored while a signal is connected to the right inlet. Default 0.</description>
+		</attribute>
+		<attribute name="feedback" get="1" set="1" type="float" size="1">
+			<description>Feedback amount (0..0.99). The feedback path is DC-blocked and capped so the loop always decays. Default 0.</description>
+		</attribute>
+		<attribute name="mix" get="1" set="1" type="float" size="1">
+			<description>Dry/wet mix in percent (0..100), equal-power. 0 is bitwise dry, 100 bitwise wet. Default 100, matching the old wet-only object.</description>
+		</attribute>
+		<attribute name="interp" get="1" set="1" type="int" size="1">
+			<description>Interpolation mode: 1 (default) reads fractional delays with a 4-point Hermite; 0 restores the legacy bit-compatible integer-sample truncation.</description>
+		</attribute>
+	</attributelist>
+
+
 	<!--SEEALSO-->
 	<seealsolist>
 		<seealso name="delay~"/>
+		<seealso name="tapin~"/>
+		<seealso name="tapout~"/>
+		<seealso name="tap.multitap~"/>
+		<seealso name="tap.comb~"/>
 	</seealsolist>
 
-	
 </c74object>

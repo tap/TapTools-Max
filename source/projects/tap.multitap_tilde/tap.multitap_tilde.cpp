@@ -1,93 +1,119 @@
 /// @file
-/// @brief      tap.multitap~ — a self-contained multitap delay line.
-/// @details    Records the input into a circular buffer and sums any number of delayed taps, each
-///             with its own delay time (ms) and gain (dB). Faithful port of the ttblue tt_multitap —
-///             DSP is portable C++ (no Jamoma).
+/// @brief      tap.multitap~ — a self-contained multitap delay line on the portable delay kernel.
+/// @details    Records the input into one shared circular buffer and sums up to 99 taps, each with
+///             its own delay time (ms), gain (dB), and equal-power pan (-1..1), to a stereo bus.
+///             Rebuilt on tap::tools::delay::multitap (taptools/delay.h): fractional Hermite reads
+///             by default (@interp 1) with the legacy bit-compatible integer-sample truncation at
+///             @interp 0, and every per-tap parameter riding a per-sample kernel slew (no zippers).
+///
+///             The object now has TWO signal outlets (left/right). A center-panned tap (@pan 0,
+///             the default) contributes equally to both — so the old mono output is simply the
+///             mix of the two busses. Gain is set in dB (converted to linear for the kernel, as
+///             the old wrapper did); pure feedforward, no dry path, no master gain — gain staging
+///             is the patch's job (see delay.h "Honest limits").
 /// @author     Timothy Place
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright 2003-2026 Timothy Place.
 
 #include <algorithm>
-#include <array>
 #include <cmath>
-#include <vector>
+
+#include <taptools/delay.h>
 
 #include "c74_min.h"
 
 using namespace c74::min;
+namespace kernel = tap::tools::delay;
 
-class multitap : public object<multitap>, public sample_operator<1, 1> {
+class multitap : public object<multitap>, public sample_operator<1, 2> {
   private:
-    // Cached state — declared before the attributes so it is initialized before their setters run.
-    // Members are initialized in declaration order, so state declared *after* an attribute is
-    // default-initialized again after that attribute's setter has already written to it. That is
-    // what silently zeroed m_gain_lin here: the gain attribute's 0 dB default converts to a linear
-    // 1.0, and a trailing `m_gain_lin{}` threw it away, leaving a fresh object silent. (tap.noise~
-    // carries the same note; dspsetup does not recompute the gains, so nothing recovered it.)
-    static constexpr int    k_max_taps{100};
-    static constexpr double k_master_gain{1.0};
-
-    std::vector<double>            m_buffer;
-    long                           m_write{0};
-    int                            m_num_taps{1};
-    std::array<double, k_max_taps> m_delay_ms{};
-    std::array<long, k_max_taps>   m_delay_samples{};
-    std::array<double, k_max_taps> m_gain_lin{};
+    // Constructed before the attributes below so their defaults can forward into it.
+    kernel::multitap m_engine;
 
   public:
-    MIN_DESCRIPTION{"A self-contained multitap delay. Records the input into a buffer and sums any "
-                    "number of taps, each with its own delay time (ms) and gain (dB)."};
+    MIN_DESCRIPTION{"A self-contained multitap delay. Records the input into a buffer and sums up "
+                    "to 99 taps, each with its own delay time (ms), gain (dB), and equal-power pan "
+                    "(-1..1), to a stereo output pair. A center-panned tap feeds both outlets "
+                    "equally; the old mono output is the mix of the two."};
     MIN_TAGS{"delays"};
     MIN_AUTHOR{"Timothy Place"};
-    MIN_RELATED{"tapin~, tapout~, delay~, tap.procrastinate~"};
+    MIN_RELATED{"tapin~, tapout~, delay~, tap.delay~, tap.procrastinate~"};
 
     inlet<>  m_in{this, "(signal) audio input"};
-    outlet<> m_out{this, "(signal) summed delay taps", "signal"};
+    outlet<> m_out_left{this, "(signal) summed delay taps, left", "signal"};
+    outlet<> m_out_right{this, "(signal) summed delay taps, right", "signal"};
 
-    attribute<number> buffersize{this, "buffersize", 1000.0,
-                                 description{"Size of the delay buffer in milliseconds (fixed at instantiation)."}};
+    attribute<number> buffersize{
+        this, "buffersize", 1000.0,
+        description{"Size of the delay buffer in milliseconds (set by the first object argument; "
+                    "applied when the DSP chain starts). This bounds the maximum delay time."}};
 
     attribute<int> taps{this, "taps", 1, setter{MIN_FUNCTION{
-                            m_num_taps = std::clamp(static_cast<int>(args[0]), 1, k_max_taps - 1);
-                            return {m_num_taps};
+                            const int n = std::clamp(static_cast<int>(args[0]), 1, kernel::k_max_taps - 1);
+                            m_engine.set_taps(n);
+                            return {n};
                         }},
-                        description{"Number of active delay taps."}};
+                        description{"Number of active delay taps (1..99)."}};
 
     attribute<std::vector<number>> delay{this,
                                          "delay",
                                          {0.0},
                                          setter{MIN_FUNCTION{
-                                             for (size_t i = 0; i < args.size() && i < static_cast<size_t>(k_max_taps);
-                                                  ++i) {
-                                                 m_delay_ms[i] = args[i];
+                                             for (size_t i = 0;
+                                                  i < args.size() && i < static_cast<size_t>(kernel::k_max_taps); ++i) {
+                                                 m_engine.set_time_ms(static_cast<int>(i), args[i]);
                                              }
-                                             update_delays();
                                              return args;
                                          }},
-                                         description{"Delay time (ms) for each tap."}};
+                                         description{"Delay time (ms) for each tap, slewed by the kernel."}};
 
     attribute<std::vector<number>> gain{
         this,
         "gain",
         {0.0},
         setter{MIN_FUNCTION{
-            for (size_t i = 0; i < args.size() && i < static_cast<size_t>(k_max_taps); ++i) {
-                m_gain_lin[i] = std::pow(10.0, static_cast<double>(args[i]) * 0.05); // dB -> linear
+            for (size_t i = 0; i < args.size() && i < static_cast<size_t>(kernel::k_max_taps); ++i) {
+                m_engine.set_gain(static_cast<int>(i),
+                                  std::pow(10.0, static_cast<double>(args[i]) * 0.05)); // dB -> linear
             }
             return args;
         }},
-        description{"Gain (dB) for each tap."}};
+        description{"Gain (dB) for each tap, slewed by the kernel."}};
+
+    attribute<std::vector<number>> pan{
+        this,
+        "pan",
+        {0.0},
+        setter{MIN_FUNCTION{
+            for (size_t i = 0; i < args.size() && i < static_cast<size_t>(kernel::k_max_taps); ++i) {
+                m_engine.set_pan(static_cast<int>(i), std::clamp(static_cast<double>(args[i]), -1.0, 1.0));
+            }
+            return args;
+        }},
+        description{"Equal-power pan (-1 hard left .. 1 hard right, default 0 center) for each "
+                    "tap, slewed by the kernel. A center-panned tap feeds both outlets equally; "
+                    "the endpoints are exact (a hard-panned tap is absent from the far outlet)."}};
+
+    attribute<int> interp{this, "interp", kernel::interp_hermite, setter{MIN_FUNCTION{
+                              const int v = (static_cast<int>(args[0]) == kernel::interp_trunc)
+                                                ? kernel::interp_trunc
+                                                : kernel::interp_hermite;
+                              m_engine.set_interp(v);
+                              return {v};
+                          }},
+                          description{"Interpolation mode for all taps: 1 (default) reads fractional delays with a "
+                                      "4-point Hermite; 0 restores the legacy bit-compatible integer-sample "
+                                      "truncation."}};
 
     message<> clear{this, "clear", "Clear the delay buffer.",
                     MIN_FUNCTION{
-                        std::fill(m_buffer.begin(), m_buffer.end(), 0.0);
+                        m_engine.clear();
                         return {};
                     }};
 
-    message<> dspsetup{this, "dspsetup", "Allocate and recompute when the DSP chain starts.",
+    message<> dspsetup{this, "dspsetup", "Re-prepare for the sample rate and buffer size when the DSP chain starts.",
                        MIN_FUNCTION{
-                           allocate();
-                           update_delays();
+                           m_engine.prepare(samplerate(), buffersize);
                            return {};
                        }};
 
@@ -95,53 +121,14 @@ class multitap : public object<multitap>, public sample_operator<1, 1> {
         if (!args.empty() && static_cast<double>(args[0]) > 0.0) {
             buffersize = args[0];
         }
-        allocate();
+        m_engine.prepare(samplerate(), buffersize);
     }
 
-    sample operator()(sample x) {
-        const long N = static_cast<long>(m_buffer.size());
-        if (N < 1) {
-            return 0.0;
-        }
-
-        m_buffer[m_write] = x;
-
-        double out = 0.0;
-        for (int i = 0; i < m_num_taps; ++i) {
-            long read = m_write - m_delay_samples[i];
-            read %= N;
-            if (read < 0) {
-                read += N;
-            }
-            out += m_buffer[read] * m_gain_lin[i];
-        }
-
-        if (++m_write >= N) {
-            m_write = 0;
-        }
-
-        return out * k_master_gain;
-    }
-
-  private:
-    void allocate() {
-        const double sr = samplerate();
-        long         n  = static_cast<long>(static_cast<double>(buffersize) * (sr * 0.001));
-        if (n < 1) {
-            n = 1;
-        }
-        if (static_cast<long>(m_buffer.size()) != n) {
-            m_buffer.assign(n, 0.0);
-            m_write = 0;
-        }
-    }
-
-    void update_delays() {
-        const double sr = samplerate();
-        const long   N  = std::max(1L, static_cast<long>(m_buffer.size()));
-        for (int i = 0; i < k_max_taps; ++i) {
-            m_delay_samples[i] = std::clamp(static_cast<long>(m_delay_ms[i] * (sr * 0.001)), 0L, N - 1);
-        }
+    samples<2> operator()(sample x) {
+        double left  = 0.0;
+        double right = 0.0;
+        m_engine.process(x, left, right);
+        return {left, right};
     }
 };
 

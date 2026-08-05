@@ -20,6 +20,39 @@ SCENARIO("tap.vocoder~ has the documented defaults") {
             REQUIRE(static_cast<double>(my_object.response_interval) == 20.0);
             REQUIRE(static_cast<double>(my_object.gain) == 1.0);
         }
+        THEN("sibilance defaults to 0, mix to 100 (fully vocoded), seed to 1, bypass and mute off") {
+            REQUIRE(static_cast<double>(my_object.sibilance) == 0.0);
+            REQUIRE(static_cast<double>(my_object.mix) == 100.0);
+            REQUIRE(static_cast<int>(my_object.seed) == 1);
+            REQUIRE(static_cast<bool>(my_object.bypass) == false);
+            REQUIRE(static_cast<bool>(my_object.mute) == false);
+        }
+    }
+}
+
+SCENARIO("tap.vocoder~ bypasses and mutes wrapper-side") {
+    ext_main(nullptr);
+
+    GIVEN("a default instance") {
+        test_wrapper<vocoder> an_instance;
+        vocoder&              my_object = an_instance;
+
+        WHEN("bypass is on") {
+            my_object.bypass = true;
+
+            THEN("the carrier passes through bitwise, whatever the modulator does") {
+                REQUIRE(my_object(1.0, 0.5) == 0.5);
+                REQUIRE(my_object(0.0, -0.25) == -0.25);
+            }
+        }
+        WHEN("mute is on") {
+            my_object.mute = true;
+
+            THEN("the output is silent") {
+                REQUIRE(my_object(1.0, 0.5) == 0.0);
+                REQUIRE(my_object(0.5, -1.0) == 0.0);
+            }
+        }
     }
 }
 

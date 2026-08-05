@@ -69,6 +69,21 @@
 		<attribute name="gain" get="1" set="1" type="float" size="1">
 			<description>Linear makeup gain applied to the summed output (0-100, default 1).</description>
 		</attribute>
+		<attribute name="sibilance" get="1" set="1" type="float" size="1">
+			<description>Sibilance amount (0..1). Blends a deterministic seeded noise source into the carrier path of the bands above ~4 kHz, so unvoiced consonants come through while the modulator gates them. At 0 the output is identical to the noise-free vocoder. Default 0.</description>
+		</attribute>
+		<attribute name="mix" get="1" set="1" type="float" size="1">
+			<description>Wet/dry mix in percent (0..100), equal-power. The dry side is the carrier (the program material); 100 is fully vocoded, 0 passes the carrier through untouched. Default 100.</description>
+		</attribute>
+		<attribute name="seed" get="1" set="1" type="int" size="1">
+			<description>Seed for the sibilance noise source (&gt;= 1). The noise is deterministic per seed; give mc. instances different seeds to decorrelate them. Default 1.</description>
+		</attribute>
+		<attribute name="bypass" get="1" set="1" type="int" size="1">
+			<description>Pass the carrier through unprocessed. Default 0 (off).</description>
+		</attribute>
+		<attribute name="mute" get="1" set="1" type="int" size="1">
+			<description>Silence the output. Default 0 (off).</description>
+		</attribute>
 	</attributelist>
 
 
