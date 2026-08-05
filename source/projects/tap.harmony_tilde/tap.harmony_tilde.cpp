@@ -121,15 +121,19 @@ class harmony : public object<harmony>, public sample_operator<1, 1> {
                                        "of two). This is the latency. Applies when DSP restarts."}};
 
     /// Set up to four intervals at once and enable exactly those voices at level 1.
+    /// Writes through the attributes (not the engine directly) so queries stay truthful
+    /// and a DSP restart's re-apply preserves the chord instead of reverting it.
     message<> chord{this, "chord", "Set up to four intervals (semitones) and enable those voices.",
                     MIN_FUNCTION{
+                        attribute<number>* intervals[] = {&interval1, &interval2, &interval3, &interval4};
+                        attribute<number>* levels[]    = {&level1, &level2, &level3, &level4};
                         for (int v = 0; v < 4; ++v) {
                             if (v < static_cast<int>(args.size())) {
-                                m_engine.set_interval(v, static_cast<double>(args[v]));
-                                m_engine.set_gain(v, 1.0);
+                                *intervals[v] = static_cast<double>(args[v]);
+                                *levels[v]    = 1.0;
                             }
                             else {
-                                m_engine.set_gain(v, 0.0);
+                                *levels[v] = 0.0;
                             }
                         }
                         return {};

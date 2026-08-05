@@ -1418,9 +1418,11 @@ message, `glide` portamento). Kernel: `taptools/harmonizer.h` (`tap::tools::harm
 composing DspTap's `pvoc` (Laroche–Dolson peak locking + LPC formant correction) — seven
 Catch2 scenarios under the yin oracle, capi + ctypes bridge. Origin story: the *Tools on Tap*
 Recipes drafting flagged the gap ("Hide and Seek" is a harmonizer, not a vocoder — see
-`plans/recipes-improvements.md` §10). Remaining for this object: build verification on both
-platforms (wrapper written to the tune template but not yet compiled against Max), the in-Max
-validation pass, and a runtime maxtest.
+`plans/recipes-improvements.md` §10). Build verification landed the same day: CI built the
+wrapper green on both platforms (macOS universal, lipo-checked, and Windows x64) alongside
+the full external set, with clang-format/clang-tidy clean. Remaining for this object: the
+in-Max validation pass and a runtime maxtest (licensed-Max, on-Mac), and the v1.1
+house-machinery items in the improvements plan (mute/bypass, 16-slot preset morph).
 
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
