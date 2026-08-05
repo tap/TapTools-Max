@@ -4,7 +4,7 @@
 > discovered while drafting *Tools on Tap* Part IX (Recipes) — see `book/PLAN-recipes.md` in
 > the kernel repo for the chapters themselves. The recipe-drafting method (check every knob
 > against the wrapper source before it goes in print) doubles as an audit; this file collects
-> what the audit found. **Append to the discovery log (§7) as further chapters land.**
+> what the audit found. **Append to the discovery log (§10) as further chapters land.**
 
 The recurring tell: every place a recipe had to print a *formula or a workaround* instead of
 an attribute is a candidate hole. Items are ordered by how loudly the writing complained.
@@ -90,31 +90,80 @@ mistake can *appear* to work). Fix: symbolic enum attributes (`lp24|lp12|bp12|bp
 for the same pattern (`tap.diode~` is the likely sibling), and update the Part IX recipes'
 `@mode 0` workaround back to the symbolic spelling. Wrapper-only; no kernel change.
 
-## 4. `tap.noise~` — determinism (`seed`)
+## 4. Determinism sweep — `tap.noise~` and `tap.verb~`
 
-The only stochastic object that violates the "a seed is a serial number" doctrine: it seeds
-from `std::random_device`, so renders don't reproduce. Matters the first time a recipe wants
-reproducible sample-and-hold wobble. Add `seed` (int ≥ 1, default 1, deterministic) with the
-family semantics; document the behavior change in the release notes (an *unseeded* mode is
-not worth keeping — no other object has one).
+Two objects violate the "a seed is a serial number" doctrine:
 
-## 5. Documentation debts (no code)
+- **`tap.noise~`** seeds from `std::random_device` — renders don't reproduce. Add `seed`
+  (int ≥ 1, default 1, deterministic) with the family semantics; an *unseeded* mode is not
+  worth keeping (no other object has one).
+- **`tap.verb~`** calls `std::rand()` in `deviate()`, so its comb delays/decays
+  re-randomize on every `prepare`/`configure` — the reverb is not bit-reproducible across
+  instantiations. Same fix, same doctrine: a `seed` attribute, deterministic default,
+  behavior change in the release notes.
+
+## 5. `tap.delay~` / `tap.multitap~` — below the house bar
+
+The second-wave sweep found the delay pair is the weakest DSP in the package: **integer-
+sample delays with no interpolation** (modulating the time zipper-steps — while `tap.5comb~`
+and `tap.pitchaccum~` Hermite-interpolate as a point of pride), no feedback, no `mix`, no
+`bypass`/`mute`, and a trap on `tap.delay~`'s time inlet (a signal value of exactly 0.0
+means "use the attribute," not "zero delay"). The sequenced-modular recipe had to warn
+readers off them for anything modulated. Candidate: a kernel-first rebuild (Hermite taps,
+`feedback` with the DC-blocked loop the comb already has, `mix`, per-tap pans on multitap),
+keeping the current objects' defaults as the compatibility surface.
+
+## 6. `tap.vocoder~` — the missing conveniences
+
+The robot-voice recipe works around three absences: no unvoiced/**sibilance path** (the
+recipe's fix — ride 10 % noise in the carrier full-time — is the classic patch, but a
+detector-switched noise path is the classic *hardware* answer and a good kernel exercise
+from published vocoder literature), no `mix`, no `bypass`/`mute` (every comparable effect
+object has them). Low urgency, documented workarounds; batch with any vocoder revisit.
+
+## 7. Small QoL and bug notes
+
+- **`tap.5comb~`:** tuning is Hz-only; a `notes <midi×5>` message would make the voicing
+  tables in the comb-drones recipe one message instead of five attributes. (Fractional
+  MIDI for JI intervals, as the 303 pair already does.)
+- **`tap.vco~` driven by a pitch signal loses glide** — the frequency signal inlet
+  bypasses `smooth` by design, so sequencer-driven patches need an external slew
+  (`slide~`) to get portamento. Fold into §2: either a documented `glide` that applies to
+  the signal inlet, or a MIDI-note signal input mode with the 303-style RC.
+- **`tap.sustain~` `length`** has no setter — runtime changes silently wait for a DSP
+  restart. Either wire the setter (re-size at next `dspsetup`, documented) or document the
+  restriction in the maxref (which currently documents *nothing* — see §8).
+- **`tap.crossfade~` `mode`** is a legacy no-op (both values compute identically) —
+  deprecate in docs so nobody A/Bs a placebo.
+
+## 8. Documentation debts (no DSP)
 
 - The vco chapter should say once that `smooth` is a per-object ramp time shared by every
   parameter — 280 ms of Lucky-Man portamento also slows `pw`/`gain` changes on that object.
 - After §3 lands, sweep the book for `@mode 0`-style numeric workarounds and restore the
   symbolic spellings.
+- **Maxref drift found by the sweep:** `tap.verb~` XML documents `use_early_reflections`
+  (wrapper: `er`) and omits most of the real surface; `tap.vocoder~` XML types `q` /
+  `response_interval` as symbols (wrapper: number); `tap.sustain~` XML documents no
+  attributes or methods at all; `tap.adsr~` XML lists `int`/`float` methods the wrapper
+  doesn't define. The wrapper is the source of truth — regenerate or hand-fix the four.
+- **Fixed already (book repo, this branch):** the pitchaccum chapter's `pitch1`/`feedback1`
+  spellings → `trans1`/`fb1` with the 0–99 feedback scale.
 
-## 6. Sequencing and priorities
+## 9. Sequencing and priorities
 
-1. §3 (small, self-contained, un-breaks shipped documentation) and §4 (small).
+1. §3 (small, self-contained, un-breaks shipped documentation), §4 (small), and the §7
+   bug notes (`tap.sustain~` setter, `tap.crossfade~` deprecation).
 2. §1 (kernel `adsr.h` + tests + notebook, then wrapper + pin bump) — the big one, and the
    gate for any recipe that leans on envelopes driven from the sequencer family.
 3. §2 (kernel `vco.h` + tests, wrapper attribute plumbing, then simplify the
-   famous-patches chapter's vibrato plumbing to the new attributes).
-4. §5 doc sweep rides along with whichever PR touches each page.
+   famous-patches chapter's vibrato plumbing to the new attributes), absorbing the §7
+   pitch-signal glide note.
+4. §5 (the delay pair rebuild) — real work, worth its own design pass and plan file when
+   picked up.
+5. §6 and the §8 doc sweep ride along with whichever PR touches each object or page.
 
-## 7. Discovery log — append as further recipes land
+## 10. Discovery log — append as further recipes land
 
 | date | chapter being drafted | finding | disposition |
 |---|---|---|---|
@@ -122,3 +171,11 @@ not worth keeping — no other object has one).
 | 2026-08-05 | (drum scaffold audit) | `tap.adsr~` level-gate vs. family contract; not VA; DSP in wrapper | → §1 |
 | 2026-08-05 | Moog voice | book's `@mode lp24` spelling doesn't match `attribute<int>` | → §3 |
 | 2026-08-05 | (kit audit) | `tap.noise~` unseeded | → §4 |
+| 2026-08-05 | shimmer | pitchaccum chapter's `pitch1`/`feedback1` don't match wrapper `trans1`/`fb1` (0–99) | fixed in book; → §8 |
+| 2026-08-05 | sequenced modular | vco frequency-signal inlet bypasses `smooth` — sequenced pitch can't glide without external `slide~` | → §2 / §7 |
+| 2026-08-05 | sequenced modular | `tap.delay~`/`tap.multitap~`: integer-sample, no feedback/mix; 0.0-signal trap | → §5 |
+| 2026-08-05 | shimmer | `tap.verb~` uses `std::rand()` — not reproducible | → §4 |
+| 2026-08-05 | robot voice | vocoder has no sibilance path, no mix/bypass | → §6 |
+| 2026-08-05 | comb drones | `tap.5comb~` tunes in Hz only — voicing tables want a MIDI list message | → §7 |
+| 2026-08-05 | (sweep) | maxref drift: verb `er`, vocoder attr types, sustain XML empty, adsr phantom methods | → §8 |
+| 2026-08-05 | (sweep) | `tap.sustain~` `length` setter missing; `tap.crossfade~` `mode` is a no-op | → §7 |
