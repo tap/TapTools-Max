@@ -1458,8 +1458,9 @@ incommensurate loops; record/freeze bit-exact, per-loop lengths/levels/pans/dark
 `period` reporting the lcm; a guarded `dspsetup` so a DSP restart never erases running tape),
 and `tap.garden~` (a `<0,1>` source: `note` plants, scale as the symbolic-enum house pattern,
 seeded gardener). Full vertical slice each: maxref + help patcher + maxtest starter + mock-
-kernel unit tests (green), clang-tidy/format clean; submodule pin bumped to the kernel branch
-(repoint at the identical tree on `main` after the kernel PR merges by rebase/squash). Still
+kernel unit tests (green), clang-tidy/format clean; submodule pin at the kernel family's tree
+on `main` (9d63666; repointed from the topic branch after the kernel PR merged by rebase —
+identical tree, so the wrappers are byte-for-byte unaffected). Still
 open: the on-Mac validation pass (open the three help/maxtest patchers once in Max), and the
 in-Max audition.
 
