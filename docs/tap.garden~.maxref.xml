@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.garden~" module="msp" category="TapTools, MSP Generators">
+	<digest>A generative event loop — the garden that plays itself</digest>
+	<description>
+		The <o>tap.garden~</o> object is a garden you tend rather than play: the <m>note</m> message plants a note, which snaps to <at>root</at>/<at>scale</at> at entry, blooms on a soft two-operator FM bell, and returns every <at>loop</at> pass a step quieter (<at>decay</at>) and purer (<at>soften</at>) until it retires below <at>floor</at>. Left alone past <at>idle</at> seconds, a seeded gardener plants about one scale note per pass — deterministic per <at>seed</at>: same seed, same garden, bit for bit. The population converges by construction (per-pass decay is the stabilizer), a fixed sixteen-bell pool bounds the sound, and a sixty-four-event ring bounds the score, the oldest bloom yielding when full. Wrong notes are unrepresentable. A recreation of the published principle behind Eno/Chilvers' generative instruments.
+	</description>
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Generator</metadata>
+	</metadatalist>
+
+	<!--ARGUMENTS-->
+	<objarglist>
+	</objarglist>
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="message">
+			<digest>note messages plant; clear uproots; attributes tend.</digest>
+		</inlet>
+	</inletlist>
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>The garden.</digest>
+		</outlet>
+	</outletlist>
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="note">
+			<arglist>
+				<arg name="pitch" type="float" optional="0"/>
+				<arg name="velocity" type="float" optional="1"/>
+			</arglist>
+			<description>Plant a note: MIDI pitch (fractional accepted) snaps to <at>root</at>/<at>scale</at> at entry; velocity 0..1 (default 0.8). The bell sounds on the next sample and the bloom returns at this loop position every pass until it fades below <at>floor</at>. Resets the gardener's idle clock. A full garden retires its oldest bloom to make room.</description>
+		</method>
+		<method name="clear">
+			<description>Uproot everything: kill all blooms and bells, rewind the loop, re-seed the gardener, restart the idle clock. Parameters are kept.</description>
+		</method>
+	</methodlist>
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="loop" get="1" set="1" type="float" size="1">
+			<description>Loop length in seconds (0.25..120). Instant — the loop is a counter, no tape is bought; blooms keep their positions modulo the new length.</description>
+		</attribute>
+		<attribute name="decay" get="1" set="1" type="float" size="1">
+			<description>Velocity multiplier per pass (0..1) — the stabilizer: a bloom lives ceil(log(floor/velocity)/log(decay)) passes, always.</description>
+		</attribute>
+		<attribute name="soften" get="1" set="1" type="float" size="1">
+			<description>Brightness multiplier per pass (0..1): each return is purer, collapsing toward a sine as it recedes.</description>
+		</attribute>
+		<attribute name="floor" get="1" set="1" type="float" size="1">
+			<description>Retirement threshold (0.0001..1): a bloom whose velocity decays below this is done.</description>
+		</attribute>
+		<attribute name="bell" get="1" set="1" type="float" size="3">
+			<description>The bell as an attack/decay/brightness triple: envelope times in seconds, brightness 0..1 scaling the FM index. Applies to future blooms; ringing bells keep their envelope.</description>
+		</attribute>
+		<attribute name="root" get="1" set="1" type="int" size="1">
+			<description>Root pitch class, 0..11 (0 = C). Instant; affects future plants only — nothing already planted re-pitches.</description>
+		</attribute>
+		<attribute name="scale" get="1" set="1" type="symbol" size="1">
+			<description>The field plants snap to: chromatic, major, minor, majorpentatonic (default), or minorpentatonic. Accepts the symbol or the index (0..4). Instant; affects future plants only.</description>
+		</attribute>
+		<attribute name="idle" get="1" set="1" type="float" size="1">
+			<description>The gardener's patience: seconds of silence before the garden starts planting for itself. 0 disables self-seeding entirely.</description>
+		</attribute>
+		<attribute name="seed" get="1" set="1" type="int" size="1">
+			<description>The gardener's seed. Deterministic: same seed, same garden, bit for bit; different instances decorrelate by seed. 0 folds to the stock seed.</description>
+		</attribute>
+		<attribute name="level" get="1" set="1" type="float" size="1">
+			<description>Master linear output level, slewed over <at>smooth</at> milliseconds.</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>Slew time for the level attribute, in milliseconds (0 = instant).</description>
+		</attribute>
+	</attributelist>
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.discreet~"/>
+		<seealso name="tap.airport~"/>
+		<seealso name="tap.808.seq~"/>
+		<seealso name="makenote"/>
+	</seealsolist>
+</c74object>

@@ -1449,6 +1449,20 @@ rebuilt (multitap now stereo with per-tap pan; the 0.0-time-signal trap retired 
 documented breaking change). Still open in the plan: 5comb `notes`, the verb `clear`
 DC-blocker one-liner, help-patcher refreshes, and the on-Mac validation passes.
 
+**16. The Eno family (2026-08-12).** ✅ Three new objects on the freshly-landed kernel family
+(`tap/taptools` PR #30: `tape_loop.h` + `discreet.h` / `airport.h` / `garden.h` — the
+degradation-is-the-stabilizer inversion, fully tested and notebook-verified kernel-side):
+`tap.discreet~` (the Discreet Music two-machine loop; regen legally 1.0, doppler loop moves,
+deterministic wow/flutter, the input send fader), `tap.airport~` (eight free-running
+incommensurate loops; record/freeze bit-exact, per-loop lengths/levels/pans/darken lists,
+`period` reporting the lcm; a guarded `dspsetup` so a DSP restart never erases running tape),
+and `tap.garden~` (a `<0,1>` source: `note` plants, scale as the symbolic-enum house pattern,
+seeded gardener). Full vertical slice each: maxref + help patcher + maxtest starter + mock-
+kernel unit tests (green), clang-tidy/format clean; submodule pin bumped to the kernel branch
+(repoint at the identical tree on `main` after the kernel PR merges by rebase/squash). Still
+open: the on-Mac validation pass (open the three help/maxtest patchers once in Max), and the
+in-Max audition.
+
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
 they're touched. Control/utility and Jitter objects never move — they are Max message-logic, not

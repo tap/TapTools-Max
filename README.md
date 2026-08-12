@@ -29,6 +29,10 @@ Around eighty objects across MSP, control, and Jitter. The headliners, by family
 - **Rooms and strings** — `tap.convolve~` (exact true-stereo partitioned convolution),
   `tap.verb~` (algorithmic Moorer reverb), `tap.5comb~` (the GRM tuned comb bank),
   `tap.comb~`, `tap.delay~`, `tap.multitap~`.
+- **The Eno machines** — `tap.discreet~` (the Discreet Music two-machine tape loop:
+  regeneration to 1.0, stabilized by wear), `tap.airport~` (the Music for Airports
+  incommensurate loop bank), `tap.garden~` (a generative event loop on the Bloom
+  principle, with a seeded gardener).
 - **The pedalboard and the spectral set** — `tap.overdrive~` (voiced feedback overdrive),
   `tap.nr~` (per-bin spectral gate), `tap.spectra~` (bin remapper), `tap.fft.*`.
 - **Dynamics, utility, Jitter** — `tap.limi~`, `tap.vca~`, `tap.adsr~`, `tap.crossfade~`,
