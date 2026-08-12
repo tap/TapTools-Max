@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.airport~" module="msp" category="TapTools, MSP Modifiers">
+	<digest>The Music for Airports incommensurate loop bank</digest>
+	<description>
+		The <o>tap.airport~</o> object recreates the tape system behind "2/1" on Brian Eno's Music for Airports: up to eight free-running tape loops of unequal, incommensurate <at>lengths</at>, each with a single head that both plays and records. No setter ever resets a phase — the free-run is the piece. The <m>record</m> message punches the input onto a loop at wherever its head happens to be (replacing, no overdub) and freezes it bit-exactly on release; per-loop <at>levels</at>, equal-power <at>pans</at>, and a playback <at>darken</at> corner place the phrases in the stereo field. The <m>period</m> message reports the composite period — the least common multiple of the active lengths — which with well-chosen lengths exceeds a lifetime.
+	</description>
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Time</metadata>
+	</metadatalist>
+
+	<!--ARGUMENTS-->
+	<objarglist>
+		<objarg name="maxloop" type="float" optional="1">
+			<description>Worst-case loop length in seconds (default 30). All eight reels are bought at DSP start — about 92 MB of tape at 48 kHz at the default; size it to the piece.</description>
+		</objarg>
+	</objarglist>
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Audio input — punched onto any recording loop.</digest>
+		</inlet>
+	</inletlist>
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>The loop sum, left.</digest>
+		</outlet>
+		<outlet id="1" type="signal">
+			<digest>The loop sum, right.</digest>
+		</outlet>
+		<outlet id="2" type="list">
+			<digest>Reports: period (seconds), phase (loop, 0..1).</digest>
+		</outlet>
+	</outletlist>
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<description>Audio to be punched onto any loop whose record gate is open.</description>
+		</method>
+		<method name="record">
+			<arglist>
+				<arg name="loop" type="int" optional="0"/>
+				<arg name="on" type="int" optional="0"/>
+			</arglist>
+			<description>Punch the input onto that loop's tape at wherever its head happens to be (1), or freeze the tape bit-exactly (0). Recording replaces — no overdub; there is no quantized punch-in, and the phase is never reset.</description>
+		</method>
+		<method name="period">
+			<description>Report the composite period — the lcm of the active loop lengths, in seconds — out the right outlet. inf means it left the 64-bit range: the piece will not repeat.</description>
+		</method>
+		<method name="phase">
+			<arglist>
+				<arg name="loop" type="int" optional="0"/>
+			</arglist>
+			<description>Report that loop's head position as a fraction of its length (0..1) out the right outlet.</description>
+		</method>
+		<method name="clear">
+			<description>Erase every tape and rewind every head — a full restart of the piece. Parameters are kept.</description>
+		</method>
+	</methodlist>
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="maxloop" get="1" set="1" type="float" size="1">
+			<description>Worst-case loop length in seconds (set by the first object argument). Changing it erases every loop when the DSP chain restarts.</description>
+		</attribute>
+		<attribute name="loops" get="1" set="1" type="int" size="1">
+			<description>Number of active loops (1..8). Newly activated loops come in at their stored settings, their heads wherever they last were.</description>
+		</attribute>
+		<attribute name="lengths" get="1" set="1" type="float" size="8">
+			<description>Per-loop length in seconds (0.5 up to <at>maxloop</at>). The lengths are the score: keep them incommensurate and the coincidences never repeat. A change is a splice — the head re-wraps and never rewinds. It can click; splices do.</description>
+		</attribute>
+		<attribute name="levels" get="1" set="1" type="float" size="8">
+			<description>Per-loop linear playback level, slewed. Unclamped (negative flips polarity, like a mixer).</description>
+		</attribute>
+		<attribute name="pans" get="1" set="1" type="float" size="8">
+			<description>Per-loop equal-power pan, -1 (hard left) to 1 (hard right), slewed. Endpoints are exact: a hard-panned loop is bitwise absent from the far bus.</description>
+		</attribute>
+		<attribute name="darken" get="1" set="1" type="float" size="8">
+			<description>Per-loop playback darkening corner in Hz. A static tone, not generation loss (a frozen loop replays the same imprint); at 20000 (the default) the stage is bypassed and playback is bit-transparent.</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>Anti-zipper ramp time for level, pan, and darken moves, in milliseconds (0 = instant).</description>
+		</attribute>
+	</attributelist>
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.discreet~"/>
+		<seealso name="tap.garden~"/>
+		<seealso name="tap.multitap~"/>
+		<seealso name="groove~"/>
+	</seealsolist>
+</c74object>
