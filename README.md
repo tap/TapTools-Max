@@ -3,6 +3,9 @@
 [![build](https://github.com/tap/TapTools-Max/actions/workflows/build.yml/badge.svg)](https://github.com/tap/TapTools-Max/actions/workflows/build.yml)
 [![Tap House Style](https://github.com/tap/TapTools-Max/actions/workflows/style.yml/badge.svg)](https://github.com/tap/TapTools-Max/actions/workflows/style.yml)
 
+**📖 [*Tools on Tap*](https://timothy.place/TapTools/)** — the field guide to these objects,
+one measured chapter per family, with recipes — is published from the kernel repo.
+
 A potpourri of objects for [Max](https://cycling74.com/products/max) — roots back to 1999,
 rebuilt in 2026 on a modern toolchain: the [Min SDK](https://github.com/Cycling74/min-api),
 CMake, GitHub Actions, macOS universal (arm64 + x86_64) and Windows x64 binaries. All DSP
