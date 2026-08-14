@@ -4,7 +4,7 @@
 <c74object name="tap.garden~" module="msp" category="TapTools, MSP Generators">
 	<digest>A generative event loop — the garden that plays itself</digest>
 	<description>
-		The <o>tap.garden~</o> object is a garden you tend rather than play: the <m>note</m> message plants a note, which snaps to <at>root</at>/<at>scale</at> at entry, blooms on a soft two-operator FM bell, and returns every <at>loop</at> pass a step quieter (<at>decay</at>) and purer (<at>soften</at>) until it retires below <at>floor</at>. Left alone past <at>idle</at> seconds, a seeded gardener plants about one scale note per pass — deterministic per <at>seed</at>: same seed, same garden, bit for bit. The population converges by construction (per-pass decay is the stabilizer), a fixed sixteen-bell pool bounds the sound, and a sixty-four-event ring bounds the score, the oldest bloom yielding when full. Wrong notes are unrepresentable. A recreation of the published principle behind Eno/Chilvers' generative instruments.
+		The <o>tap.garden~</o> object is a garden you tend rather than play: the <m>note</m> message plants a note, which snaps to <at>root</at>/<at>scale</at> at entry, strikes a small modal wind chime (four bar-mode doublets at <at>material</at>'s ratios — free-free tubes or tuned bars), and returns every <at>loop</at> pass a step quieter (<at>decay</at>) and purer (<at>soften</at>) until it retires below <at>floor</at>. Every pitch is its own tube: its upper modes sit a fixed few cents off the ideal ratios and it hangs at a fixed seat on the stereo rack (<at>spread</at> widens it). Left alone past <at>idle</at> seconds, a seeded gardener strikes on a calm/gust wind cycle (<at>gust</at> sizes the flurries) — deterministic per <at>seed</at>: same seed, same garden, bit for bit. The population converges by construction (per-pass decay is the stabilizer), a fixed sixteen-chime pool bounds the sound, and a sixty-four-event ring bounds the score, the oldest bloom yielding when full. Wrong notes are unrepresentable. A recreation of the published principle behind Eno/Chilvers' generative instruments.
 	</description>
 
 	<!--METADATA-->
@@ -29,7 +29,10 @@
 	<!--OUTLETS-->
 	<outletlist>
 		<outlet id="0" type="signal">
-			<digest>The garden.</digest>
+			<digest>The garden, left.</digest>
+		</outlet>
+		<outlet id="1" type="signal">
+			<digest>The garden, right.</digest>
 		</outlet>
 	</outletlist>
 
@@ -40,10 +43,10 @@
 				<arg name="pitch" type="float" optional="0"/>
 				<arg name="velocity" type="float" optional="1"/>
 			</arglist>
-			<description>Plant a note: MIDI pitch (fractional accepted) snaps to <at>root</at>/<at>scale</at> at entry; velocity 0..1 (default 0.8). The bell sounds on the next sample and the bloom returns at this loop position every pass until it fades below <at>floor</at>. Resets the gardener's idle clock. A full garden retires its oldest bloom to make room.</description>
+			<description>Plant a note: MIDI pitch (fractional accepted) snaps to <at>root</at>/<at>scale</at> at entry; velocity 0..1 (default 0.8). The chime sounds on the next sample and the bloom returns at this loop position every pass until it fades below <at>floor</at>. Resets the gardener's idle clock. A full garden retires its oldest bloom to make room.</description>
 		</method>
 		<method name="clear">
-			<description>Uproot everything: kill all blooms and bells, rewind the loop, re-seed the gardener, restart the idle clock. Parameters are kept.</description>
+			<description>Uproot everything: kill all blooms and chimes, rewind the loop, re-seed the gardener, restart the idle clock. Parameters are kept.</description>
 		</method>
 	</methodlist>
 
@@ -62,7 +65,13 @@
 			<description>Retirement threshold (0.0001..1): a bloom whose velocity decays below this is done.</description>
 		</attribute>
 		<attribute name="bell" get="1" set="1" type="float" size="3">
-			<description>The bell as an attack/decay/brightness triple: envelope times in seconds, brightness 0..1 scaling the FM index. Applies to future blooms; ringing bells keep their envelope.</description>
+			<description>The chime as an attack/decay/brightness triple: envelope times in seconds, brightness 0..1 weighting the upper modes. Applies to future blooms; ringing chimes keep their envelope.</description>
+		</attribute>
+		<attribute name="material" get="1" set="1" type="symbol" size="1">
+			<description>What the tubes are made of: chime (free-free tube, ratios 1 : 2.756 : 5.404 : 8.933) or bar (tuned bar, double octaves 1 : 4 : 10 : 20). Accepts the symbol or the index (0..1). Instant — read at strike time, so live blooms re-voice at their next return.</description>
+		</attribute>
+		<attribute name="spread" get="1" set="1" type="float" size="1">
+			<description>Stereo width of the rack (0..1, default 0.7). Every tube hangs at a fixed seat keyed by its pitch; spread scales how far off center. 0 collapses to mono.</description>
 		</attribute>
 		<attribute name="root" get="1" set="1" type="int" size="1">
 			<description>Root pitch class, 0..11 (0 = C). Instant; affects future plants only — nothing already planted re-pitches.</description>
@@ -72,6 +81,9 @@
 		</attribute>
 		<attribute name="idle" get="1" set="1" type="float" size="1">
 			<description>The gardener's patience: seconds of silence before the garden starts planting for itself. 0 disables self-seeding entirely.</description>
+		</attribute>
+		<attribute name="gust" get="1" set="1" type="float" size="1">
+			<description>The gardener's wind (0..1, default 0.5): at 0 single unhurried strikes, about one per pass; up from there, flurries of up to five neighboring tubes with longer calms between — the average rate holds.</description>
 		</attribute>
 		<attribute name="seed" get="1" set="1" type="int" size="1">
 			<description>The gardener's seed. Deterministic: same seed, same garden, bit for bit; different instances decorrelate by seed. 0 folds to the stock seed.</description>

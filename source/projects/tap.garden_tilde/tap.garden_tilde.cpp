@@ -3,18 +3,25 @@
 /// @details    A garden you tend rather than play, wrapping tap::tools::garden::bed
 ///             (taptools/garden.h) — the family's recreation of the published principle behind
 ///             Eno/Chilvers' generative instruments: `note <pitch> <velocity>` plants a note,
-///             which snaps to @root/@scale at entry, blooms on a soft two-operator FM bell, and
+///             which snaps to @root/@scale at entry, strikes a small modal wind chime (four
+///             bar-mode doublets at @material's ratios — free-free tubes or tuned bars, per
+///             Fletcher & Rossing — hardness-coupled, small high tubes ringing shorter), and
 ///             returns every @loop pass a step quieter (@decay) and purer (@soften) until it
-///             retires below @floor. Left alone past @idle seconds, a seeded gardener plants
-///             about one scale note per pass (@seed makes it reproducible: same seed, same
-///             garden, bit for bit; @idle 0 disables it entirely). The population converges by
-///             construction — per-pass decay is the stabilizer — and a fixed sixteen-bell pool
-///             (quietest stolen, envelopes re-aimed, never reset) hard-bounds the audio.
+///             retires below @floor. Each pitch is its own tube: its upper modes sit a fixed
+///             few cents off the ideal ratios and it hangs at a fixed seat on the stereo rack
+///             (@spread widens it; 0 collapses to mono) — both keyed by the pitch itself, so
+///             the rack is the same rack in every instance. Left alone past @idle seconds, a
+///             seeded gardener strikes on a calm/gust wind cycle (@gust sizes the flurries;
+///             @seed makes it reproducible: same seed, same garden, bit for bit; @idle 0
+///             disables it entirely). The population converges by construction — per-pass decay
+///             is the stabilizer — and a fixed sixteen-chime pool (quietest stolen, envelopes
+///             re-aimed, never reset) hard-bounds the audio.
 ///
-///             A source: no signal inlet, one signal outlet. Wrong notes are unrepresentable
-///             (quantization is always on; @scale chromatic is the widest field), event timing is
-///             the loop grid exactly, and the timbre is one bell family — it is an instrument,
-///             not a polysynth. `clear` uproots everything and re-seeds the gardener.
+///             A source: no signal inlet, a stereo signal outlet pair. Wrong notes are
+///             unrepresentable (quantization is always on; @scale chromatic is the widest
+///             field), event timing is the loop grid exactly, and the timbre is one chime
+///             family in two materials — it is an instrument, not a polysynth. `clear` uproots
+///             everything and re-seeds the gardener.
 ///
 ///             All DSP lives in the Min-free kernel; this file is only the Max plumbing. For a
 ///             wider garden, run several instances with different seeds.
@@ -32,7 +39,7 @@
 using namespace c74::min;
 namespace kernel = tap::tools::garden;
 
-class garden : public object<garden>, public sample_operator<0, 1> {
+class garden : public object<garden>, public sample_operator<0, 2> {
   private:
     // Constructed before the attributes below so their defaults can forward into it.
     kernel::bed m_bed;
@@ -40,35 +47,38 @@ class garden : public object<garden>, public sample_operator<0, 1> {
     // Same symbol-or-index helper as tap.ladder~ / tap.diode~ (min enum attributes report
     // indices; the house pattern is attribute<symbol> + range{} with a numeric fallback).
     template <size_t N>
-    static int index_from_atom(const atom& a, const std::array<const char*, N>& names) {
+    static int index_from_atom(const atom& a, const std::array<const char*, N>& names, int fallback) {
         if (a.type() == message_type::symbol_argument) {
             for (size_t i = 0; i < N; ++i) {
                 if (a == names[i]) {
                     return static_cast<int>(i);
                 }
             }
-            return kernel::scale_major_pentatonic; // unknown symbol: the kernel default
+            return fallback; // unknown symbol: the kernel default
         }
         return std::clamp(static_cast<int>(a), 0, static_cast<int>(N) - 1);
     }
 
-    static constexpr std::array<const char*, kernel::k_num_scales> k_scale_names{"chromatic", "major", "minor",
+    static constexpr std::array<const char*, kernel::k_num_scales>    k_scale_names{"chromatic", "major", "minor",
                                                                                  "majorpentatonic", "minorpentatonic"};
+    static constexpr std::array<const char*, kernel::k_num_materials> k_material_names{"chime", "bar"};
 
   public:
     MIN_DESCRIPTION{"A generative event loop: note messages plant notes that snap to the scale, "
-                    "bloom on a soft FM bell, and return every loop pass a step quieter (decay) "
-                    "and purer (soften) until they retire below the floor. Left idle, a seeded "
-                    "gardener plants about one scale note per pass — same seed, same garden, bit "
-                    "for bit. A fixed sixteen-bell pool bounds the sound; a sixty-four-event "
-                    "ring bounds the score (the oldest bloom yields when full). A source: no "
-                    "signal inlet. For a wider garden, run several instances on different seeds."};
+                    "strike a small modal wind chime (tubes or tuned bars), and return every "
+                    "loop pass a step quieter (decay) and purer (soften) until they retire below "
+                    "the floor. Every pitch is its own tube with its own fixed flaws and its own "
+                    "seat on the stereo rack (spread). Left idle, a seeded gardener strikes on a "
+                    "calm/gust wind cycle — same seed, same garden, bit for bit. A fixed "
+                    "sixteen-chime pool bounds the sound; a sixty-four-event ring bounds the "
+                    "score (the oldest bloom yields when full). A source: no signal inlet."};
     MIN_TAGS{"generators"};
     MIN_AUTHOR{"Timothy Place"};
     MIN_RELATED{"tap.discreet~, tap.airport~, tap.808.seq~, makenote"};
 
     inlet<>  m_in{this, "(message) note <pitch> <velocity>; 'clear' uproots the garden"};
-    outlet<> m_out{this, "(signal) the garden", "signal"};
+    outlet<> m_out_left{this, "(signal) the garden, left", "signal"};
+    outlet<> m_out_right{this, "(signal) the garden, right", "signal"};
 
     attribute<number> loop{this, "loop", kernel::k_default_loop_seconds, setter{MIN_FUNCTION{
                                const double v = std::clamp(static_cast<double>(args[0]), kernel::k_min_loop_seconds,
@@ -115,9 +125,31 @@ class garden : public object<garden>, public sample_operator<0, 1> {
             m_bed.set_bell(attack, decay_s, brightness);
             return {attack, decay_s, brightness};
         }},
-        description{"The bell as an attack/decay/brightness triple: envelope times "
-                    "in seconds, brightness 0..1 scaling the FM index. Applies to "
-                    "future blooms; ringing bells keep their envelope."}};
+        description{"The chime as an attack/decay/brightness triple: envelope times "
+                    "in seconds, brightness 0..1 weighting the upper modes. Applies "
+                    "to future blooms; ringing chimes keep their envelope."}};
+
+    attribute<symbol> material{this,
+                               "material",
+                               "chime",
+                               range{"chime", "bar"},
+                               setter{MIN_FUNCTION{
+                                   const int v = index_from_atom(args[0], k_material_names, kernel::material_chime);
+                                   m_bed.set_material(v);
+                                   return {symbol(k_material_names[static_cast<size_t>(v)])};
+                               }},
+                               description{"What the tubes are made of: chime (free-free tube, ratios "
+                                           "1 : 2.756 : 5.404 : 8.933) or bar (tuned bar, double octaves "
+                                           "1 : 4 : 10 : 20). Accepts the symbol or the index. Instant — read at "
+                                           "strike time, so live blooms re-voice at their next return."}};
+
+    attribute<number> spread{this, "spread", kernel::k_default_spread, setter{MIN_FUNCTION{
+                                 const double v = std::clamp(static_cast<double>(args[0]), 0.0, 1.0);
+                                 m_bed.set_spread(v);
+                                 return {v};
+                             }},
+                             description{"Stereo width of the rack (0..1). Every tube hangs at a fixed seat keyed "
+                                         "by its pitch; spread scales how far off center. 0 collapses to mono."}};
 
     attribute<int> root{this, "root", 0, setter{MIN_FUNCTION{
                             const int v = ((static_cast<int>(args[0]) % 12) + 12) % 12;
@@ -132,7 +164,7 @@ class garden : public object<garden>, public sample_operator<0, 1> {
                             "majorpentatonic",
                             range{"chromatic", "major", "minor", "majorpentatonic", "minorpentatonic"},
                             setter{MIN_FUNCTION{
-                                const int v = index_from_atom(args[0], k_scale_names);
+                                const int v = index_from_atom(args[0], k_scale_names, kernel::scale_major_pentatonic);
                                 m_bed.set_scale(v);
                                 return {symbol(k_scale_names[static_cast<size_t>(v)])};
                             }},
@@ -147,6 +179,15 @@ class garden : public object<garden>, public sample_operator<0, 1> {
                            }},
                            description{"The gardener's patience: seconds of silence before the garden starts "
                                        "planting for itself. 0 disables self-seeding entirely."}};
+
+    attribute<number> gust{this, "gust", kernel::k_default_gust, setter{MIN_FUNCTION{
+                               const double v = std::clamp(static_cast<double>(args[0]), 0.0, 1.0);
+                               m_bed.set_gust(v);
+                               return {v};
+                           }},
+                           description{"The gardener's wind (0..1): at 0 single unhurried strikes, about one per "
+                                       "pass; up from there, flurries of up to five neighboring tubes with longer "
+                                       "calms between — the average rate holds."}};
 
     attribute<int> seed{this, "seed", 0, setter{MIN_FUNCTION{
                             const int v = static_cast<int>(args[0]);
@@ -203,7 +244,12 @@ class garden : public object<garden>, public sample_operator<0, 1> {
 
     garden(const atoms& = {}) { m_bed.prepare(samplerate()); }
 
-    sample operator()() { return m_bed.process(); }
+    samples<2> operator()() {
+        double left  = 0.0;
+        double right = 0.0;
+        m_bed.process(left, right);
+        return {left, right};
+    }
 };
 
 MIN_EXTERNAL(garden);

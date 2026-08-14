@@ -39,7 +39,7 @@
   "enablehscroll": 1,
   "enablevscroll": 1,
   "devicewidth": 0.0,
-  "description": "note messages plant notes that snap to the scale, bloom on a soft FM bell, and return every loop pass a step quieter (decay) and purer (soften) until they retire. Left idle, a seeded gardener plants about one scale note per pass \u2014 same seed, same garden, bit for bit.",
+  "description": "note messages plant notes that snap to the scale, strike a small modal wind chime (tubes or tuned bars, each pitch its own tube with its own seat on the stereo rack), and return every loop pass a step quieter (decay) and purer (soften) until they retire. Left idle, a seeded gardener strikes on a calm/gust wind cycle \u2014 same seed, same garden, bit for bit.",
   "digest": "A generative event loop \u2014 the garden that plays itself",
   "tags": "TapTools",
   "style": "",
@@ -150,7 +150,7 @@
      ],
      "numinlets": 1,
      "numoutlets": 0,
-     "text": "note messages plant notes that snap to the scale, bloom on a soft FM bell, and return every loop pass a step quieter (decay) and purer (soften) until they retire. Left idle, a seeded gardener plants about one scale note per pass \u2014 same seed, same garden, bit for bit.",
+     "text": "note messages plant notes that snap to the scale, strike a small modal wind chime (tubes or tuned bars, each pitch its own tube with its own seat on the stereo rack), and return every loop pass a step quieter (decay) and purer (soften) until they retire. Left idle, a seeded gardener strikes on a calm/gust wind cycle \u2014 same seed, same garden, bit for bit.",
      "fontsize": 12.0
     }
    },
@@ -282,8 +282,9 @@
       22
      ],
      "numinlets": 1,
-     "numoutlets": 1,
+     "numoutlets": 2,
      "outlettype": [
+      "signal",
       "signal"
      ],
      "text": "tap.garden~ @loop 6. @idle 4. @seed 2008 @level 0.4"
@@ -392,7 +393,7 @@
      ],
      "numinlets": 1,
      "numoutlets": 0,
-     "text": "the bell (attack s, decay s, brightness):"
+     "text": "the chime (attack s, decay s, brightness):"
     }
    },
    {
@@ -649,6 +650,18 @@
      ],
      "destination": [
       "obj-24",
+      1
+     ]
+    }
+   },
+   {
+    "patchline": {
+     "destination": [
+      "obj-23",
+      0
+     ],
+     "source": [
+      "obj-13",
       1
      ]
     }
