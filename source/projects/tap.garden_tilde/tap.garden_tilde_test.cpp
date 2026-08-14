@@ -24,7 +24,8 @@ namespace {
     double peak(garden& my_object, long n) {
         double p = 0.0;
         for (long i = 0; i < n; ++i) {
-            p = std::max(p, std::abs(static_cast<double>(my_object())));
+            const auto y = my_object();
+            p            = std::max({p, std::abs(static_cast<double>(y[0])), std::abs(static_cast<double>(y[1]))});
         }
         return p;
     }
@@ -38,13 +39,17 @@ SCENARIO("tap.garden~ instantiates with the documented defaults") {
         test_wrapper<garden> an_instance;
         garden&              my_object = an_instance;
 
-        THEN("an 8 s loop, decay 0.85, soften 0.9, floor 0.03, the pentatonic, a patient gardener") {
+        THEN("an 8 s loop, decay 0.85, soften 0.9, floor 0.03, the pentatonic, a patient gardener, "
+             "a chime rack at spread 0.7 in a moderate wind") {
             REQUIRE(static_cast<double>(my_object.loop) == 8.0);
             REQUIRE(static_cast<double>(my_object.decay) == 0.85);
             REQUIRE(static_cast<double>(my_object.soften) == 0.9);
             REQUIRE(static_cast<double>(my_object.floor) == 0.03);
             REQUIRE(static_cast<double>(my_object.idle) == 30.0);
             REQUIRE(my_object.scale == symbol{"majorpentatonic"});
+            REQUIRE(my_object.material == symbol{"chime"});
+            REQUIRE(static_cast<double>(my_object.spread) == 0.7);
+            REQUIRE(static_cast<double>(my_object.gust) == 0.5);
         }
     }
 }
@@ -67,6 +72,49 @@ SCENARIO("tap.garden~ accepts the scale as a symbol or an index") {
         THEN("an unknown symbol falls back to the default field") {
             my_object.scale = "phrygian";
             REQUIRE(my_object.scale == symbol{"majorpentatonic"});
+        }
+    }
+}
+
+SCENARIO("tap.garden~ accepts the material as a symbol or an index") {
+    ext_main(nullptr);
+
+    GIVEN("a default instance") {
+        test_wrapper<garden> an_instance;
+        garden&              my_object = an_instance;
+
+        THEN("a symbol sets and reports itself") {
+            my_object.material = "bar";
+            REQUIRE(my_object.material == symbol{"bar"});
+        }
+        THEN("an index reports back as its symbol") {
+            my_object.material = atoms{1};
+            REQUIRE(my_object.material == symbol{"bar"});
+        }
+        THEN("an unknown symbol falls back to the chime rack") {
+            my_object.material = "glass";
+            REQUIRE(my_object.material == symbol{"chime"});
+        }
+    }
+}
+
+SCENARIO("tap.garden~ at spread 0 sounds the same garden on both outlets, bitwise") {
+    ext_main(nullptr);
+
+    GIVEN("spread 0 and a planted note") {
+        test_wrapper<garden> an_instance;
+        garden&              my_object = an_instance;
+        my_object.idle                 = 0.0;
+        my_object.spread               = 0.0;
+        my_object.note(atoms{69, 0.8});
+
+        THEN("left and right agree to the bit") {
+            bool same = true;
+            for (long i = 0; i < samples_for(0.5); ++i) {
+                const auto y = my_object();
+                same         = same && (y[0] == y[1]);
+            }
+            REQUIRE(same);
         }
     }
 }

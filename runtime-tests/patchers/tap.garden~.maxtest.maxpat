@@ -121,8 +121,9 @@
      "id": "obj-7",
      "maxclass": "newobj",
      "numinlets": 1,
-     "numoutlets": 1,
+     "numoutlets": 2,
      "outlettype": [
+      "signal",
       "signal"
      ],
      "patching_rect": [
