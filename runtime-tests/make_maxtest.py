@@ -8,7 +8,7 @@ faithful, structurally-valid starting point — but because this generator runs
 headless (no Max), each new patcher should be opened once in Max to confirm the
 timing/assert wiring before trusting it in CI. See runtime-tests/README.md.
 
-Two topologies are supported:
+Three topologies are supported:
 
   audio_test(...)   sig~ IN -> OBJECT -> round~ tol -> test.sample~
                     -> test.equals EXPECTED -> test.assert NAME
@@ -18,8 +18,14 @@ Two topologies are supported:
   control_test(...) loadbang -> delay -> trigger MSG -> OBJECT
                     -> test.equals EXPECTED -> test.assert NAME -> test.terminate
 
+  null_test(...)    sig~ IN -> MONOLITH ------------------\
+                    sig~ IN -> COMPONENT chain -> +~ -> -~ -> abs~ -> ... -> assert 0
+                    For the objects that were split into components: proves the patch
+                    and the object are the same machine by subtracting one from the
+                    other. Audio-clock objects only — see the note on the garden below.
+
 Usage:  python3 make_maxtest.py        # (re)generates the bundled examples
-        # or import and call audio_test()/control_test() from your own script.
+        # or import and call audio_test()/control_test()/null_test() from your own script.
 """
 
 import json
@@ -84,6 +90,85 @@ def _write(name, doc):
     json.load(open(path))
     print(f"wrote {path}")
     return path
+
+
+def null_test(filename, monolith, components, assert_name, input_value="0.5",
+              setup_messages=(), settle_ms=1500, tolerance=0.000001, description="",
+              monolith_outlets=3, component_outlets=3):
+    """A null test: drive a monolith and a hand-wired chain of its components from one
+    source, subtract the two left busses, and assert the difference is zero.
+
+    This is how "the patch IS the object" stops being a claim and becomes a measurement.
+    It only applies where both sides run on the audio clock — see the note in
+    runtime-tests/README.md about why there is no garden equivalent.
+
+    `setup_messages` are (message_text, [target_indices]) pairs sent BEFORE DSP starts,
+    where index 0 is the monolith and 1..n are the components. Sending them with the DSP
+    chain off is what keeps the two sides sample-aligned: no audio has been processed, so
+    every head is still at zero when the gates open.
+    """
+    b = _Builder()
+    loadbang = b.box("loadbang", x=40, y=20, w=70)
+
+    # Phase 1 (immediately on load, DSP still off): open the record gates.
+    setup_trigger = b.box("t b b", numoutlets=2, outlettype=["bang", "bang"], x=40, y=60, w=70)
+
+    src = b.box(f"sig~ {input_value}", numoutlets=1, outlettype=["signal"], x=300, y=100, w=110)
+    mono = b.box(monolith, numinlets=1, numoutlets=monolith_outlets,
+                 outlettype=["signal"] * (monolith_outlets - 1) + [""], x=300, y=150, w=380)
+
+    comp_ids = []
+    for i, text in enumerate(components):
+        comp_ids.append(b.box(text, numinlets=1, numoutlets=component_outlets,
+                              outlettype=["signal"] * (component_outlets - 1) + [""],
+                              x=300, y=200 + 30 * i, w=380))
+
+    # Sum the component lanes, then subtract the monolith's left bus from the sum.
+    summed = b.box("+~", numinlets=2, numoutlets=1, outlettype=["signal"],
+                   x=300, y=210 + 30 * len(components), w=60)
+    diff = b.box("-~", numinlets=2, numoutlets=1, outlettype=["signal"],
+                 x=300, y=250 + 30 * len(components), w=60)
+    mag = b.box("abs~", numoutlets=1, outlettype=["signal"], x=300, y=290 + 30 * len(components), w=60)
+    rnd = b.box(f"round~ {tolerance}", numoutlets=1, outlettype=["signal"],
+                x=300, y=330 + 30 * len(components), w=110)
+    sample = b.box("test.sample~", numoutlets=1, outlettype=[""], x=300, y=370 + 30 * len(components), w=90)
+    equals = b.box("test.equals 0.", x=300, y=410 + 30 * len(components), w=150)
+    assert_ = b.box(f"test.assert {assert_name}", x=300, y=450 + 30 * len(components), w=220)
+
+    # Phase 2 (after the gates are open): start DSP, let it settle, then sample once.
+    delay_dsp = b.box("delay 20", numoutlets=1, outlettype=["bang"], x=40, y=110, w=70)
+    msg_on = b.box("1", maxclass="message", x=40, y=150, w=30)
+    dac = b.box("dac~", numinlets=2, numoutlets=0, outlettype=[], x=40, y=190, w=45)
+    delay_settle = b.box(f"delay {settle_ms}", numoutlets=1, outlettype=["bang"], x=120, y=150, w=90)
+    terminate = b.box("test.terminate", x=120, y=230, w=110)
+
+    b.link(loadbang, 0, setup_trigger, 0)
+    # right outlet fires first in a trigger: the gates open before DSP is asked for
+    for text, targets in setup_messages:
+        msg = b.box(text, maxclass="message", x=700, y=100 + 30 * len(b.boxes) % 300, w=110)
+        b.link(setup_trigger, 1, msg, 0)
+        for t in targets:
+            b.link(msg, 0, mono if t == 0 else comp_ids[t - 1], 0)
+
+    b.link(setup_trigger, 0, delay_dsp, 0)
+    b.link(delay_dsp, 0, msg_on, 0)
+    b.link(msg_on, 0, dac, 0)
+    b.link(delay_dsp, 0, delay_settle, 0)
+    b.link(delay_settle, 0, sample, 0)
+
+    b.link(src, 0, mono, 0)
+    for c in comp_ids:
+        b.link(src, 0, c, 0)
+        b.link(c, 0, summed, 0)
+    b.link(mono, 0, diff, 1)
+    b.link(summed, 0, diff, 0)
+    b.link(diff, 0, mag, 0)
+    b.link(mag, 0, rnd, 0)
+    b.link(rnd, 0, sample, 0)
+    b.link(sample, 0, equals, 0)
+    b.link(equals, 0, assert_, 0)
+    b.link(assert_, 0, terminate, 0)
+    return _write(filename, b.patcher(description))
 
 
 def audio_test(filename, object_text, input_value, expected, assert_name,
@@ -212,4 +297,40 @@ if __name__ == "__main__":
         expected="0.5",
         assert_name="tap.overdrive~-bypass-passthrough",
         description="tap.overdrive~ @bypass 1: sig~ 0.5 passes unprocessed.",
+    )
+    # The null test: three tap.reel~ summed must BE tap.airport~. The kernel suite
+    # already pins this bitwise (airport_test.cpp, "standalone lanes summed are the
+    # bank, bitwise"); this is the same claim made against the real externals loaded
+    # in Max, which is where wrapper-level mistakes — a mis-forwarded attribute, a
+    # dspsetup that re-prepares one side and not the other — would show up instead.
+    #
+    # All three lanes are hard-panned left so the left bus carries the whole sum, and
+    # the record gates open while the DSP chain is still off, which is what keeps the
+    # two sides sample-aligned: no audio has been processed, so every head is at zero.
+    #
+    # There is deliberately no tap.garden~ equivalent. tap.bloom and tap.gardener run
+    # on Max's scheduler rather than the audio clock, so their returns land within a
+    # tick of the grid instead of exactly on it — the patched garden is the same
+    # machine but not the same sample stream, and a null test would be asserting
+    # something untrue. That claim is pinned in the kernel instead (garden_test.cpp,
+    # "the bed is exactly its components wired together, bitwise").
+    null_test(
+        "tap.reel~-is-airport.maxtest.maxpat",
+        monolith=("tap.airport~ 12. @loops 3 @lengths 6.3 7.7 9.1 "
+                  "@pans -1. -1. -1. @levels 1. 1. 1. @smooth 0."),
+        components=[
+            "tap.reel~ 12. @length 6.3 @pan -1. @level 1. @smooth 0.",
+            "tap.reel~ 12. @length 7.7 @pan -1. @level 1. @smooth 0.",
+            "tap.reel~ 12. @length 9.1 @pan -1. @level 1. @smooth 0.",
+        ],
+        assert_name="tap.reel~-sum-equals-tap.airport~",
+        input_value="0.5",
+        setup_messages=[
+            ("record 0 1", [0]),
+            ("record 1 1", [0]),
+            ("record 2 1", [0]),
+            ("record 1", [1, 2, 3]),
+        ],
+        description=("Null test: three tap.reel~ summed against tap.airport~ with the same "
+                     "lengths. The difference must be zero — the patch IS the object."),
     )

@@ -31,6 +31,34 @@ instead of `snapshot~`), `test.equals` (tolerant float compare),
 `max-test/patchers/` for the upstream reference examples (the audio example
 `2087-bitxor~.maxtest.maxpat` is the topology our generator mirrors).
 
+## Null tests: proving a patch is an object
+
+`tap.airport~` and `tap.garden~` were split into components you can patch
+(`tap.reel~`; `tap.chime~` / `tap.bloom` / `tap.scale` / `tap.gardener`). That
+split makes a claim — *these parts wired together ARE that object* — and a claim
+like that should be measured rather than asserted.
+
+`patchers/tap.reel~-is-airport.maxtest.maxpat` measures it: one `sig~` drives
+both a `tap.airport~` and three `tap.reel~` at the same lengths, the component
+lanes are summed, the monolith is subtracted from that sum, and the result must
+be zero. The record gates open while the DSP chain is still **off**, which is
+what keeps the two sides sample-aligned — no audio has been processed yet, so
+every tape head is still at zero when the gates open.
+
+The kernel repo already pins the same identity bitwise in C++
+(`airport_test.cpp`, "standalone lanes summed are the bank, bitwise"). This
+patcher covers what that test cannot see: the wrappers. A mis-forwarded
+attribute, or a `dspsetup` that re-prepares one side and not the other, would
+pass in the kernel and fail here.
+
+**There is deliberately no garden equivalent.** `tap.bloom` and `tap.gardener`
+run on Max's scheduler rather than the audio clock, so their returns land within
+an `@interval` tick of the grid instead of exactly on it. The patched garden is
+the same machine but not the same sample stream, and a null test would be
+asserting something that is not true. That identity is pinned in the kernel
+instead (`garden_test.cpp`, "the bed is exactly its components wired together,
+bitwise"), where both sides can share one clock.
+
 ## First-time setup (one-time, on your Mac)
 
 The harness needs the **Max application** installed (it can't run in a headless
