@@ -1512,6 +1512,45 @@ commensurate as decimals are not as samples.
 76 ctest cases green. Still open: the on-Mac validation pass (open the seven help patchers and the
 null-test patcher once in Max), and maxtest starters for the objects that do not have them yet.
 
+**18. The tape echo, and the start of the Radiohead family (2026-08-15).** ✅ `tap.tapecho~` — a
+multi-head tape echo in the Copicat / Space Echo tradition, and the first object of a new family
+planned in the kernel repo's `book/PLAN-radiohead-family.md` (drawn from Radiohead's *performed*
+electronics: the tape echoes, the live Max stutter rigs, the Ondes Martenot, the Kaoss-pad
+scrubbing). The family's spine, where the Eno family's was "degradation is the stability
+mechanism": **the control is the instrument** — these are objects you ride, so the no-zipper rule
+is the feature rather than the hygiene.
+
+The object is one record head, a span of moving tape, and up to four playback heads along it,
+summed to stereo. `@span` is the motor — the delay of a head at the far end of the path — and each
+head sits at `@span` times its `@ratios` entry, so the motor moves the whole layout together and
+bends pitch on the way, the `tap.discreet~` doppler contract. The default layout is four evenly
+spaced heads; that spacing is nominal, deliberately *not* claimed as measured from any unit, and
+`@ratios` builds a Copicat-style three in one message.
+
+It carries the tape family's inversion one step further, which is the reason the object exists.
+`tap.delay~` caps feedback at 0.99; `tap.discreet~` reaches exactly 1.0 because the wear path is
+the stabilizer; here `@regen` goes **past** 1.0 into deliberate sound-on-sound self-oscillation,
+bounded by the `@drive` saturator (≤ 1/drive) rather than by a gain cap. Because that bound only
+exists while the saturator is engaged, the effective regeneration is capped back to 1.0 *per
+sample* whenever `@drive` is 0 — the attribute keeps its value and it returns when drive does, so
+dropping drive mid-howl lands the loop rather than letting it run away.
+
+The claim that mattered most was structural, and it is measured rather than asserted: with the tape
+path neutral (no transport error, no regeneration) a one-head echo is **bitwise** `delay.h`'s
+Hermite multitap — pinned in the kernel suite and again across the C ABI in the notebook. That is
+what makes "`tape_loop.h` is a library and this kernel is only composition" a measurement; the
+shared machinery needed no changes at all to serve a second topology. Also measured at ship:
+per-pass generation loss within 0.2% of the analytic wear transfer, wow at 10.91 cents against
+10.88 predicted, and every past-unity drive setting plateauing under its analytic ceiling.
+
+Kernel side (`tap/taptools`): `tapecho.h`, eleven Catch2 scenarios, the C ABI plus ctypes surface
+(`TapEcho`), the executed `notebooks/tapecho.ipynb`, and `radiohead_render` with four *performed*
+scenarios — the controls move while rendering, including a self-oscillation take that pushes past
+unity, drops the input, rides the tone control and brings it home. Here: the wrapper, six min-api
+scenarios, the reference page and the help patcher, and the submodule pin bumped to match. Still
+open for this object: the on-Mac validation pass (open the help patcher once in Max), a maxtest
+starter, and the book chapter.
+
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
 they're touched. Control/utility and Jitter objects never move — they are Max message-logic, not
