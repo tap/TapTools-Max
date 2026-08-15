@@ -1489,10 +1489,28 @@ kernel rather than in a patch. (3) Two name collisions the compiler caught and t
 should avoid: a message named `samples` shadows Min's `samples<N>` return type, and a class named
 `scale` collides with Min's own `scale()` utility badly enough to make the class template invalid.
 
-Full vertical slice each: maxref + help patcher + mock-kernel unit tests (74 ctest cases green),
-clang-tidy/format clean. Still open: the on-Mac validation pass (open the five help patchers once in
-Max), maxtest starters for the new objects, and a `tap.period` utility for the one thing the airport
-decomposition genuinely loses — the composite-period readout, which needs all the lengths at once.
+Full vertical slice each: maxref + help patcher + mock-kernel unit tests, clang-tidy/format clean.
+
+Then two follow-ups closed the gaps that split left. **`tap.chime.voices~`** is the same rack with
+every bell on its own outlet — sixteen mono signals, each carrying its tube dry, before the seat in
+the stereo image — so a patch can filter, gate, or place one voice without touching the other
+fifteen. It is a separate object rather than a mode because outlet count is fixed when a Min object
+is constructed; and it is sixteen discrete outlets rather than one mc outlet because min-api's mc
+support is inlet-side only (it sets `Z_MC_INLETS` and provides no `multichanneloutputs`, which Max
+requires before an external may declare a variable-channel mc outlet). If a later Min gains that,
+this object is where to adopt it. Kernel side, `bell::process_mono` was factored out and `process`
+rewritten in terms of it, so there is still one oscillator path — bit-identical, and pinned by a new
+scenario requiring the per-voice taps put back through their seats to equal the stereo pair exactly.
+
+**`tap.period`** closes the other one: the composite period needs every length at once, so it had
+nowhere to live in a patch of independent reels. `composite_period_seconds` came out of `loop_bank`
+as a free function and the bank now calls it, and the seconds-to-samples quantization is shared
+rather than copied (`loop_samples_for`), so `tap.period` and the reels it is asked about cannot
+drift apart. That detail carries weight: the lcm is over sample counts, and lengths that look
+commensurate as decimals are not as samples.
+
+76 ctest cases green. Still open: the on-Mac validation pass (open the seven help patchers and the
+null-test patcher once in Max), and maxtest starters for the objects that do not have them yet.
 
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as

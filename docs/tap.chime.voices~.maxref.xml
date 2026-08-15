@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.chime.voices~" module="msp" category="TapTools, MSP Synthesis">
+	<digest>The wind-chime rack with every bell on its own outlet</digest>
+	<description>
+		The <o>tap.chime.voices~</o> object is the same rack <o>tap.chime~</o> wraps, tapped per voice instead of summed to stereo: sixteen mono signal outlets, one per bell, each carrying its tube dry — before the seat in the stereo image is applied. Put them back through the seats (which <m>voice</m> reports) and you have <o>tap.chime~</o> again to the bit; the point is that you do not have to. Place, filter, gate, or send each tube wherever you like. Note that the pool reassigns bells as it steals, so a slot holds whatever tube was last put there rather than a fixed pitch — <m>voice</m> is how you find out which.
+	</description>
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Synthesis</metadata>
+	</metadatalist>
+
+	<!--ARGUMENTS-->
+	<objarglist>
+		<objarg name="material" type="int" optional="1">
+			<description>What the tubes are made of: 0 the free-free chime tube (the default), 1 the tuned bar.</description>
+		</objarg>
+	</objarglist>
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="list">
+			<digest>Strike a tube: note (pitch, velocity, brightness), or a bare list.</digest>
+		</inlet>
+	</inletlist>
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>Voice 0 — the bell in pool slot 0, dry (before its seat).</digest>
+		</outlet>
+		<outlet id="1" type="signal">
+			<digest>Voice 1 — the bell in pool slot 1, dry (before its seat).</digest>
+		</outlet>
+		<outlet id="2" type="signal">
+			<digest>Voice 2 — the bell in pool slot 2, dry (before its seat).</digest>
+		</outlet>
+		<outlet id="3" type="signal">
+			<digest>Voice 3 — the bell in pool slot 3, dry (before its seat).</digest>
+		</outlet>
+		<outlet id="4" type="signal">
+			<digest>Voice 4 — the bell in pool slot 4, dry (before its seat).</digest>
+		</outlet>
+		<outlet id="5" type="signal">
+			<digest>Voice 5 — the bell in pool slot 5, dry (before its seat).</digest>
+		</outlet>
+		<outlet id="6" type="signal">
+			<digest>Voice 6 — the bell in pool slot 6, dry (before its seat).</digest>
+		</outlet>
+		<outlet id="7" type="signal">
+			<digest>Voice 7 — the bell in pool slot 7, dry (before its seat).</digest>
+		</outlet>
+		<outlet id="8" type="signal">
+			<digest>Voice 8 — the bell in pool slot 8, dry (before its seat).</digest>
+		</outlet>
+		<outlet id="9" type="signal">
+			<digest>Voice 9 — the bell in pool slot 9, dry (before its seat).</digest>
+		</outlet>
+		<outlet id="10" type="signal">
+			<digest>Voice 10 — the bell in pool slot 10, dry (before its seat).</digest>
+		</outlet>
+		<outlet id="11" type="signal">
+			<digest>Voice 11 — the bell in pool slot 11, dry (before its seat).</digest>
+		</outlet>
+		<outlet id="12" type="signal">
+			<digest>Voice 12 — the bell in pool slot 12, dry (before its seat).</digest>
+		</outlet>
+		<outlet id="13" type="signal">
+			<digest>Voice 13 — the bell in pool slot 13, dry (before its seat).</digest>
+		</outlet>
+		<outlet id="14" type="signal">
+			<digest>Voice 14 — the bell in pool slot 14, dry (before its seat).</digest>
+		</outlet>
+		<outlet id="15" type="signal">
+			<digest>Voice 15 — the bell in pool slot 15, dry (before its seat).</digest>
+		</outlet>
+		<outlet id="16" type="list">
+			<digest>Reports: voices (n ringing), voice (slot, hz, level, gainL, gainR).</digest>
+		</outlet>
+	</outletlist>
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="note">
+			<arglist>
+				<arg name="pitch" type="float" optional="0"/>
+				<arg name="velocity" type="float" optional="0"/>
+				<arg name="brightness" type="float" optional="1"/>
+			</arglist>
+			<description>Strike the tube at that MIDI pitch. Which outlet it lands on is the pool's choice — an idle bell if there is one, otherwise the quietest is stolen and re-aimed.</description>
+		</method>
+		<method name="list">
+			<description>The same as <m>note</m> — which is what arrives from <o>route</o> downstream of <o>tap.bloom</o>.</description>
+		</method>
+		<method name="hz">
+			<arglist>
+				<arg name="frequency" type="float" optional="0"/>
+				<arg name="velocity" type="float" optional="0"/>
+				<arg name="brightness" type="float" optional="1"/>
+			</arglist>
+			<description>Strike at a raw frequency rather than a MIDI pitch.</description>
+		</method>
+		<method name="voice">
+			<arglist>
+				<arg name="slot" type="int" optional="1"/>
+			</arglist>
+			<description>Report that outlet's tube — its frequency in Hz (0 if never struck), its current level, and the seat gains <o>tap.chime~</o> would have used — out the right outlet. With no argument, reports every slot in turn.</description>
+		</method>
+		<method name="voices">
+			<description>Report how many bells are currently ringing, out the right outlet.</description>
+		</method>
+		<method name="clear">
+			<description>Silence every bell at once. Parameters are kept.</description>
+		</method>
+	</methodlist>
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="attack" get="1" set="1" type="float" size="1">
+			<description>Strike attack time in seconds — a clapper, not a bow.</description>
+		</attribute>
+		<attribute name="decay" get="1" set="1" type="float" size="1">
+			<description>Ring time in seconds for the fundamental. Each strike scales this by sqrt(440/f), so small high tubes ring shorter.</description>
+		</attribute>
+		<attribute name="material" get="1" set="1" type="int" size="1">
+			<description>0 the free-free chime tube, 1 the tuned bar. Read at strike time, so every later strike re-voices.</description>
+		</attribute>
+		<attribute name="spread" get="1" set="1" type="float" size="1">
+			<description>The rack's stereo width, 0 to 1. It does not affect these outlets, which are always dry — it sets the seat gains that <m>voice</m> reports, so a patch rebuilding the image downstream can honour it.</description>
+		</attribute>
+		<attribute name="brightness" get="1" set="1" type="float" size="1">
+			<description>Default upper-mode weight (0 to 1) for strikes that do not carry their own.</description>
+		</attribute>
+	</attributelist>
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.chime~"/>
+		<seealso name="tap.garden~"/>
+		<seealso name="tap.bloom"/>
+		<seealso name="poly~"/>
+	</seealsolist>
+</c74object>
