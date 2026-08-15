@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.gardener" module="max" category="TapTools, Max Timing">
+	<digest>The idle wind that plants the garden when you stop</digest>
+	<description>
+		The <o>tap.gardener</o> object is the self-seeding half of <o>tap.garden~</o>. After <at>idle</at> seconds with nobody planting, it starts planting for you: strikes arrive on a calm and gust cycle, where <at>gust</at> sizes the clusters — up to five neighbouring tubes within a fraction of a second — with the calms between them stretched so the average rate stays near one strike per loop pass at any setting. It is wind, not a sequence. The random stream is drawn from only while idling, which is what makes <at>seed</at> a contract: the same seed gives the same wind every run, a different seed decorrelates two instances, and with <at>idle</at> 0 the seed cannot matter at all because the stream is never touched. Pitches come out raw and unquantized on purpose — the scale is the patch's field, not the wind's, so put <o>tap.scale</o> after it.
+	</description>
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Max</metadata>
+		<metadata name="tag">Timing</metadata>
+	</metadatalist>
+
+	<!--ARGUMENTS-->
+	<objarglist>
+		<objarg name="seed" type="int" optional="1">
+			<description>The wind's seed (default 0).</description>
+		</objarg>
+	</objarglist>
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="bang">
+			<digest>planted or bang — close the idle gate, something else just planted.</digest>
+		</inlet>
+	</inletlist>
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="list">
+			<digest>plant (pitch, velocity) — raw and unquantized.</digest>
+		</outlet>
+	</outletlist>
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="planted">
+			<description>Close the idle gate: something else just planted, so the wind drops and waits out another idle period before it starts again.</description>
+		</method>
+		<method name="bang">
+			<description>The same as <m>planted</m>.</description>
+		</method>
+		<method name="clear">
+			<description>Re-seed the random stream and restart both the idle clock and the wind.</description>
+		</method>
+	</methodlist>
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="idle" get="1" set="1" type="float" size="1">
+			<description>Seconds of quiet before the wind picks up. 0 disables it entirely — and then the <at>seed</at> cannot matter, because the random stream is never consumed.</description>
+		</attribute>
+		<attribute name="gust" get="1" set="1" type="float" size="1">
+			<description>The wind, 0 to 1. At 0 strikes arrive singly and evenly, about one per pass; up from there they cluster into gusts with longer calms between, at the same average rate.</description>
+		</attribute>
+		<attribute name="seed" get="1" set="1" type="int" size="1">
+			<description>The wind's seed. Same seed, same wind, every run — so a render reproduces, and two instances decorrelate by seeding them differently.</description>
+		</attribute>
+		<attribute name="loop" get="1" set="1" type="float" size="1">
+			<description>The loop length in seconds this wind is blowing across — match it to the <o>tap.bloom</o> it feeds. It sizes the gusts and the calms.</description>
+		</attribute>
+		<attribute name="interval" get="1" set="1" type="float" size="1">
+			<description>Scheduler tick in milliseconds (0.1 to 100) — both how often the wind is advanced and its time resolution. Changing it re-seeds and restarts the wind.</description>
+		</attribute>
+	</attributelist>
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.garden~"/>
+		<seealso name="tap.bloom"/>
+		<seealso name="tap.scale"/>
+		<seealso name="tap.chime~"/>
+		<seealso name="tap.random"/>
+	</seealsolist>
+</c74object>

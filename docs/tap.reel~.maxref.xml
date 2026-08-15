@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.reel~" module="msp" category="TapTools, MSP Modifiers">
+	<digest>One free-running tape loop — the lane tap.airport~ is made of</digest>
+	<description>
+		The <o>tap.reel~</o> object is a single tape loop with one head that both plays and records. <o>tap.airport~</o> is up to eight of these summed and nothing more, so several <o>tap.reel~</o> at deliberately awkward <at>length</at>s patched into a stereo sum <em>are</em> the Music for Airports system — with every loop reachable. That gets you what the monolith cannot: an insert on one phrase, a varispeed on one reel, more than eight loops, and tape bought per reel rather than eight worst-case reels whether you use them or not. The discipline is the same one loop deep: nothing resets the phase — not <m>record</m>, not a setter, not a <at>length</at> change (a splice: the head re-wraps modulo the new length and never rewinds).
+	</description>
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Time</metadata>
+	</metadatalist>
+
+	<!--ARGUMENTS-->
+	<objarglist>
+		<objarg name="maxloop" type="float" optional="1">
+			<description>Worst-case loop length in seconds (default 30). The reel is bought at DSP start — about 11 MB of tape at 48 kHz at the default; size it to the piece.</description>
+		</objarg>
+	</objarglist>
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Audio input — punched onto the tape while recording.</digest>
+		</inlet>
+	</inletlist>
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>Playback, left.</digest>
+		</outlet>
+		<outlet id="1" type="signal">
+			<digest>Playback, right.</digest>
+		</outlet>
+		<outlet id="2" type="list">
+			<digest>Reports: phase (0..1), length (seconds), samples (n).</digest>
+		</outlet>
+	</outletlist>
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<description>Audio to be punched onto the tape while the record gate is open.</description>
+		</method>
+		<method name="record">
+			<arglist>
+				<arg name="on" type="int" optional="0"/>
+			</arglist>
+			<description>Punch the input onto the tape at wherever the head happens to be (1), or freeze the tape bit-exactly (0). Recording replaces — no overdub; there is no quantized punch-in, and the phase is never reset.</description>
+		</method>
+		<method name="phase">
+			<description>Report the head position as a fraction of the loop length (0..1) out the right outlet.</description>
+		</method>
+		<method name="loopsamples">
+			<description>Report the loop length in samples, and in seconds as quantized to the sample grid, out the right outlet — what you need to work out when a set of reels realigns.</description>
+		</method>
+		<method name="clear">
+			<description>Erase the tape and rewind the head. Parameters are kept.</description>
+		</method>
+	</methodlist>
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="maxloop" get="1" set="1" type="float" size="1">
+			<description>Worst-case loop length in seconds (set by the first object argument). Changing it erases the tape when the DSP chain restarts.</description>
+		</attribute>
+		<attribute name="length" get="1" set="1" type="float" size="1">
+			<description>Loop length in seconds (0.5 up to <at>maxloop</at>). Across several reels the lengths are the score: keep them incommensurate and the coincidences never repeat. A change is a splice — the head re-wraps and never rewinds. It can click; splices do.</description>
+		</attribute>
+		<attribute name="level" get="1" set="1" type="float" size="1">
+			<description>Linear playback level, slewed. Unclamped (negative flips polarity, like a mixer).</description>
+		</attribute>
+		<attribute name="pan" get="1" set="1" type="float" size="1">
+			<description>Equal-power pan, -1 (hard left) to 1 (hard right), slewed. Endpoints are exact: a hard-panned reel is bitwise absent from the far bus.</description>
+		</attribute>
+		<attribute name="darken" get="1" set="1" type="float" size="1">
+			<description>Playback darkening corner in Hz. A static tone, not generation loss (a frozen loop replays the same imprint every pass); at 20000 (the default) the stage is bypassed and playback is bit-transparent.</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>Anti-zipper ramp time for level, pan, and darken moves, in milliseconds (0 = instant).</description>
+		</attribute>
+	</attributelist>
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.airport~"/>
+		<seealso name="tap.discreet~"/>
+		<seealso name="tap.multitap~"/>
+		<seealso name="groove~"/>
+	</seealsolist>
+</c74object>

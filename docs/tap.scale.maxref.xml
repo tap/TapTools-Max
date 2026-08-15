@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.scale" module="max" category="TapTools, Max Utilities">
+	<digest>Snap a MIDI pitch to the nearest degree of a root and scale</digest>
+	<description>
+		The <o>tap.scale</o> object is the entry quantizer behind <o>tap.garden~</o>'s promise that anything you plant sounds consonant. It is a nearest-allowed search: any non-empty scale has a degree within a tritone, so nothing is ever left unsnapped, and it looks up before it looks down when a pitch sits exactly between two degrees. A float in gives the snapped pitch out; a pitch and velocity pair passes the velocity through untouched, so it drops straight into a note chain. In a patched garden it goes between <o>tap.gardener</o> and <o>tap.bloom</o>, because the wind emits raw pitches on purpose. Quantizing happens at entry, the same contract the monolith keeps: changing <at>root</at> or <at>scale</at> re-pitches nothing already planted downstream, only what passes through next.
+	</description>
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Max</metadata>
+		<metadata name="tag">Utilities</metadata>
+	</metadatalist>
+
+	<!--ARGUMENTS-->
+	<objarglist>
+		<objarg name="root" type="int" optional="1">
+			<description>Root pitch class, 0 to 11 (default 0 = C).</description>
+		</objarg>
+		<objarg name="scale" type="int" optional="1">
+			<description>Scale preset (default 3, major pentatonic).</description>
+		</objarg>
+	</objarglist>
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="float">
+			<digest>A MIDI pitch, or a (pitch, velocity) list.</digest>
+		</inlet>
+	</inletlist>
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="float">
+			<digest>The snapped pitch; velocity passed through when given a list.</digest>
+		</outlet>
+	</outletlist>
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="float">
+			<arglist>
+				<arg name="pitch" type="float" optional="0"/>
+			</arglist>
+			<description>A MIDI pitch (fractional accepted) — the snapped pitch comes out.</description>
+		</method>
+		<method name="int">
+			<arglist>
+				<arg name="pitch" type="int" optional="0"/>
+			</arglist>
+			<description>As <m>float</m>.</description>
+		</method>
+		<method name="list">
+			<arglist>
+				<arg name="pitch" type="float" optional="0"/>
+				<arg name="velocity" type="float" optional="1"/>
+			</arglist>
+			<description>The pitch is snapped; the velocity, and anything after it, passes through untouched, so this drops into a note chain without rebuilding the message.</description>
+		</method>
+	</methodlist>
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="root" get="1" set="1" type="int" size="1">
+			<description>Root pitch class, 0 to 11 (0 = C). Values outside the range wrap.</description>
+		</attribute>
+		<attribute name="scale" get="1" set="1" type="int" size="1">
+			<description>0 chromatic, 1 major, 2 minor, 3 major pentatonic (the default — it is the one where nothing can sound wrong), 4 minor pentatonic. Public-domain scale theory, not any app's preset list.</description>
+		</attribute>
+	</attributelist>
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.garden~"/>
+		<seealso name="tap.bloom"/>
+		<seealso name="tap.gardener"/>
+		<seealso name="tap.tune~"/>
+		<seealso name="tap.semitone2ratio"/>
+	</seealsolist>
+</c74object>

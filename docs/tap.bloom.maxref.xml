@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.bloom" module="max" category="TapTools, Max Timing">
+	<digest>The generative event loop — plant a note and it comes back</digest>
+	<description>
+		The <o>tap.bloom</o> object is the event ring <o>tap.garden~</o> recirculates its notes on. Plant a note and it returns at its own position on the loop, every pass a step quieter (<at>decay</at>) and a step purer (<at>soften</at>), until it falls below <at>floor</at> and retires. The arithmetic is the stability story: a plant at velocity v retires after exactly ceil(log(<at>floor</at>/v)/log(<at>decay</at>)) strikes, so the live population converges however fast you plant. Sixty-four blooms fit, and a full ring retires its oldest to make room, because a touch must always speak. It emits notes rather than sound, which is the point — send them to <o>tap.chime~</o> for the garden's own voice, or to <o>makenote</o>, <o>poly~</o>, a sampler, or MIDI out for something else entirely.
+	</description>
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Max</metadata>
+		<metadata name="tag">Timing</metadata>
+	</metadatalist>
+
+	<!--ARGUMENTS-->
+	<objarglist>
+		<objarg name="loop" type="float" optional="1">
+			<description>Loop length in seconds (default 8).</description>
+		</objarg>
+	</objarglist>
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="list">
+			<digest>plant (pitch, velocity), or a bare pitch/velocity pair.</digest>
+		</inlet>
+	</inletlist>
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="list">
+			<digest>note (pitch, velocity, brightness) — a bloom firing.</digest>
+		</outlet>
+		<outlet id="1" type="list">
+			<digest>Reports: events (n live).</digest>
+		</outlet>
+	</outletlist>
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="plant">
+			<arglist>
+				<arg name="pitch" type="float" optional="0"/>
+				<arg name="velocity" type="float" optional="0"/>
+			</arglist>
+			<description>Plant a bloom at the current loop position. It fires on the next tick and then every pass until it retires. Pitches are not quantized here — put <o>tap.scale</o> in front if you want a scale.</description>
+		</method>
+		<method name="list">
+			<arglist>
+				<arg name="pitch" type="float" optional="0"/>
+				<arg name="velocity" type="float" optional="0"/>
+			</arglist>
+			<description>The same as <m>plant</m>.</description>
+		</method>
+		<method name="events">
+			<description>Report how many blooms are live, out the right outlet.</description>
+		</method>
+		<method name="clear">
+			<description>Uproot everything: kill every bloom and rewind the loop. Parameters are kept.</description>
+		</method>
+	</methodlist>
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="loop" get="1" set="1" type="float" size="1">
+			<description>Loop length in seconds (0.25 to 120). Instant — the loop is a counter, so live blooms keep their positions modulo the new length.</description>
+		</attribute>
+		<attribute name="decay" get="1" set="1" type="float" size="1">
+			<description>Velocity multiplier per pass (0 to 1) — the stabiliser.</description>
+		</attribute>
+		<attribute name="soften" get="1" set="1" type="float" size="1">
+			<description>Brightness multiplier per pass (0 to 1): each return is purer than the last, so a bloom does not merely fade, it loses its edge first.</description>
+		</attribute>
+		<attribute name="floor" get="1" set="1" type="float" size="1">
+			<description>Retirement threshold (0.0001 to 1): a bloom whose velocity falls below this is done and leaves the ring.</description>
+		</attribute>
+		<attribute name="brightness" get="1" set="1" type="float" size="1">
+			<description>The brightness a new plant starts at (0 to 1); it softens from there.</description>
+		</attribute>
+		<attribute name="interval" get="1" set="1" type="float" size="1">
+			<description>Scheduler tick in milliseconds (0.1 to 100). This is both how often the ring is advanced and its time resolution, so returns land within a tick rather than on the exact sample — inside <o>tap.garden~</o> the same ring is sample-accurate. Changing it re-prepares the ring, which uproots every live bloom.</description>
+		</attribute>
+	</attributelist>
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.garden~"/>
+		<seealso name="tap.chime~"/>
+		<seealso name="tap.gardener"/>
+		<seealso name="tap.scale"/>
+		<seealso name="makenote"/>
+	</seealsolist>
+</c74object>
