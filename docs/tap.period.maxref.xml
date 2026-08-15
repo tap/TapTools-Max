@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.period" module="max" category="TapTools, Max Utilities">
+	<digest>How long until a set of free-running loops realigns</digest>
+	<description>
+		The <o>tap.period</o> object reports the composite period of a set of loop lengths — their least common multiple, in seconds. It is the one thing a patch of independent <o>tap.reel~</o> genuinely loses next to <o>tap.airport~</o>, since the arithmetic needs every length at once and so has nowhere to live inside a single reel. Send it a list of lengths in seconds and it reports the period. Each length is first quantized to whole samples exactly as a reel quantizes it, because the lcm is over sample counts and not over decimals — 6.3 and 7.7 seconds look commensurate written down and are nothing of the kind as sample counts. <b>inf</b> is a correct and desirable answer rather than an error: it means the period left the 64-bit range, so the piece will not repeat on any timescale you care about, which is the whole idea of the Music for Airports system.
+	</description>
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Max</metadata>
+		<metadata name="tag">Utilities</metadata>
+	</metadatalist>
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="list">
+			<digest>Loop lengths in seconds, or samples (n, n, ...).</digest>
+		</inlet>
+	</inletlist>
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="float">
+			<digest>The composite period in seconds; inf means it will not repeat.</digest>
+		</outlet>
+	</outletlist>
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="list">
+			<description>A list of loop lengths in seconds. Each is floored at 0.5 s and rounded up to whole samples, exactly as <o>tap.reel~</o> does, then the lcm of those sample counts is reported in seconds.</description>
+		</method>
+		<method name="samples">
+			<description>The same question asked in whole samples — what <o>tap.reel~</o>'s <m>loopsamples</m> message reports. Exact, since it skips the quantization entirely.</description>
+		</method>
+	</methodlist>
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="sr" get="1" set="1" type="float" size="1">
+			<description>The sample rate the loops are running at. The lcm is over sample counts, so this must match the reels or the answer is for a different machine. Defaults to the current global rate.</description>
+		</attribute>
+	</attributelist>
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.reel~"/>
+		<seealso name="tap.airport~"/>
+		<seealso name="tap.prime"/>
+	</seealsolist>
+</c74object>
