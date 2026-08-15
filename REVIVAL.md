@@ -1464,6 +1464,36 @@ identical tree, so the wrappers are byte-for-byte unaffected). Still
 open: the on-Mac validation pass (open the three help/maxtest patchers once in Max), and the
 in-Max audition.
 
+**17. The Eno family, opened up (2026-08-15).** ✅ `tap.airport~` and `tap.garden~` were monoliths
+by accident rather than design — the kernel already held the parts, but nothing outside the
+monolith could reach one. Both were split kernel-side into components that are now objects, so the
+block diagram is patchable: `tap.reel~` (one free-running tape loop — sum several at awkward
+lengths and you have the airport, with every loop reachable for an insert, a varispeed, or a
+different source), and `tap.chime~` / `tap.bloom` / `tap.scale` / `tap.gardener` (the rack, the
+event ring, the entry quantizer, and the idle wind — chained, they are the garden). The monoliths
+stay: they are the put-it-on-and-walk-away objects, and the split is additive.
+
+The extractions are behavior-preserving and shown to be: multi-second renders of both kernels
+through splices, punch-ins, mode changes and the seeded gardener hash bit-for-bit identical before
+and after, and the kernel suite gained null-test scenarios requiring the hand-wired components to
+match the monolith bitwise (a 1e-12 nudge on one lane fails the airport one). This repo's own
+notebooks reach the components through new C ABI entry points.
+
+Three decisions worth keeping. (1) `tap.chime~` is the whole sixteen-voice rack rather than a mono
+voice you wrap in `poly~`: `poly~` steals round-robin and is Max-only, so delegating voice stealing
+would have cost both the glide-not-click promise and every non-Max target the kernel is meant to
+reach. (2) `tap.bloom` and `tap.gardener` run on Max's scheduler, not the audio clock, so returns
+land within an `@interval` tick rather than on the exact sample — inaudible at loop lengths measured
+in seconds, but a real difference from the monolith, and the reason the null tests live in the
+kernel rather than in a patch. (3) Two name collisions the compiler caught and the next object
+should avoid: a message named `samples` shadows Min's `samples<N>` return type, and a class named
+`scale` collides with Min's own `scale()` utility badly enough to make the class template invalid.
+
+Full vertical slice each: maxref + help patcher + mock-kernel unit tests (74 ctest cases green),
+clang-tidy/format clean. Still open: the on-Mac validation pass (open the five help patchers once in
+Max), maxtest starters for the new objects, and a `tap.period` utility for the one thing the airport
+decomposition genuinely loses — the composite-period readout, which needs all the lengths at once.
+
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
 they're touched. Control/utility and Jitter objects never move — they are Max message-logic, not

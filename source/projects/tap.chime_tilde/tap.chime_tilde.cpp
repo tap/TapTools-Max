@@ -119,6 +119,18 @@ class chime : public object<chime>, public sample_operator<0, 2> {
                        return {};
                    }};
 
+    // Without this a bare list would not reach the rack, and a bare list is exactly what comes
+    // out of `route note` downstream of tap.bloom — the patched garden's own wiring.
+    message<> list{this, "list", "A bare <pitch> <velocity> [brightness] list is the same as note.",
+                   MIN_FUNCTION{
+                       if (args.size() >= 2 && static_cast<double>(args[1]) > 0.0) {
+                           const double b =
+                               (args.size() >= 3) ? static_cast<double>(args[2]) : static_cast<double>(brightness);
+                           m_rack.strike(args[0], args[1], b);
+                       }
+                       return {};
+                   }};
+
     message<> hz{
         this, "hz", "hz <frequency> <velocity> [brightness]: strike at a raw frequency rather than a MIDI pitch.",
         MIN_FUNCTION{

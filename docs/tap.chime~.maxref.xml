@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.chime~" module="msp" category="TapTools, MSP Synthesis">
+	<digest>A rack of sixteen wind chimes — tap.garden~'s voice</digest>
+	<description>
+		The <o>tap.chime~</o> object is the voice <o>tap.garden~</o> sounds its blooms on. Each strike is four decaying mode doublets at the transverse-vibration ratios of the chosen <at>material</at> — the free-free tube's 1 : 2.756 : 5.404 : 8.933 or the tuned bar's double-octave 1 : 4 : 10 : 20 (Fletcher and Rossing, The Physics of Musical Instruments, 2nd ed.) — with the upper modes softer, faster-dying, and scattered a fixed few cents by the struck tube's own identity. Every pitch is its own tube: the same flaws and the same seat in the stereo field, in every instance, forever. Polyphony is the object's own rather than something you wrap in <o>poly~</o>: an idle bell is used if there is one, otherwise the quietest ringing bell is stolen and re-aimed — its phases keep free-running and its seat glides — so a steal sounds like a chime struck again, not a voice cut off.
+	</description>
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Synthesis</metadata>
+	</metadatalist>
+
+	<!--ARGUMENTS-->
+	<objarglist>
+		<objarg name="material" type="int" optional="1">
+			<description>What the tubes are made of: 0 the free-free chime tube (the default), 1 the tuned bar.</description>
+		</objarg>
+	</objarglist>
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="list">
+			<digest>Strike a tube: note (pitch, velocity, brightness), or a bare list.</digest>
+		</inlet>
+	</inletlist>
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>The rack, left.</digest>
+		</outlet>
+		<outlet id="1" type="signal">
+			<digest>The rack, right.</digest>
+		</outlet>
+		<outlet id="2" type="list">
+			<digest>Reports: voices (n ringing).</digest>
+		</outlet>
+	</outletlist>
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="note">
+			<arglist>
+				<arg name="pitch" type="float" optional="0"/>
+				<arg name="velocity" type="float" optional="0"/>
+				<arg name="brightness" type="float" optional="1"/>
+			</arglist>
+			<description>Strike the tube at that MIDI pitch. Fractional pitches are accepted and are distinct tubes, with their own scatter and their own seat. Velocity is 0 to 1; brightness defaults to the <at>brightness</at> attribute. A soft strike is a duller strike regardless.</description>
+		</method>
+		<method name="list">
+			<arglist>
+				<arg name="pitch" type="float" optional="0"/>
+				<arg name="velocity" type="float" optional="0"/>
+				<arg name="brightness" type="float" optional="1"/>
+			</arglist>
+			<description>The same as <m>note</m> — which is what arrives from <o>route</o> downstream of <o>tap.bloom</o>.</description>
+		</method>
+		<method name="hz">
+			<arglist>
+				<arg name="frequency" type="float" optional="0"/>
+				<arg name="velocity" type="float" optional="0"/>
+				<arg name="brightness" type="float" optional="1"/>
+			</arglist>
+			<description>Strike at a raw frequency rather than a MIDI pitch.</description>
+		</method>
+		<method name="voices">
+			<description>Report how many bells are currently ringing, out the right outlet.</description>
+		</method>
+		<method name="clear">
+			<description>Silence every bell at once. Parameters are kept.</description>
+		</method>
+	</methodlist>
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="attack" get="1" set="1" type="float" size="1">
+			<description>Strike attack time in seconds — a clapper, not a bow. Applies to future strikes; a ringing chime keeps its envelope until retriggered.</description>
+		</attribute>
+		<attribute name="decay" get="1" set="1" type="float" size="1">
+			<description>Ring time in seconds for the fundamental. The upper modes die much faster (radiation damping), and each strike scales this by sqrt(440/f) — small high tubes ring shorter.</description>
+		</attribute>
+		<attribute name="material" get="1" set="1" type="int" size="1">
+			<description>0 the free-free chime tube, 1 the tuned bar. A mode, not a fader — it is read at strike time, so every later strike re-voices.</description>
+		</attribute>
+		<attribute name="spread" get="1" set="1" type="float" size="1">
+			<description>The rack's stereo width, 0 to 1. Each tube's seat comes from its pitch, so the image is a fixed rack rather than a moving one; 0 collapses it to centre mono, bitwise equal on both busses.</description>
+		</attribute>
+		<attribute name="brightness" get="1" set="1" type="float" size="1">
+			<description>Default upper-mode weight (0 to 1) for strikes that do not carry their own.</description>
+		</attribute>
+	</attributelist>
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.garden~"/>
+		<seealso name="tap.bloom"/>
+		<seealso name="tap.808.cowbell~"/>
+		<seealso name="tap.808.cymbal~"/>
+	</seealsolist>
+</c74object>
