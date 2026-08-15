@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.tapecho~" module="msp" category="TapTools, MSP Modifiers">
+	<digest>A multi-head tape echo</digest>
+	<description>
+		The <o>tap.tapecho~</o> object is a tape echo in the Copicat / Space Echo tradition: one record head, a span of moving tape, and up to four playback heads at settable positions along it, summed to stereo. <at>span</at> is the motor — the delay of a head at the far end of the path — and each head sits at <at>span</at> times its <at>ratios</at> entry, so moving <at>span</at> moves the whole layout together and bends pitch while it moves, which is what a tape speed change is. It shares its tape machinery with <o>tap.discreet~</o> and carries that object's inversion further: where <o>tap.delay~</o> caps feedback below 1 and <o>tap.discreet~</o> reaches exactly 1.0, here <at>regen</at> goes <em>past</em> 1.0 into deliberate sound-on-sound self-oscillation, bounded by the <at>drive</at> saturator rather than by a gain cap — and capped back to 1.0 whenever <at>drive</at> is 0, since the saturator is the only thing holding that regime.
+	</description>
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Time</metadata>
+	</metadatalist>
+
+	<!--ARGUMENTS-->
+	<objarglist>
+		<objarg name="maxspan" type="float" optional="1">
+			<description>Worst-case tape span in seconds (default 4). The tape is bought at DSP start — about 1.5 MB per 4 s at 48 kHz — and bounds the <at>span</at> attribute.</description>
+		</objarg>
+	</objarglist>
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Audio input — the send into the record head.</digest>
+		</inlet>
+	</inletlist>
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>The head sum plus dry, left.</digest>
+		</outlet>
+		<outlet id="1" type="signal">
+			<digest>The head sum plus dry, right.</digest>
+		</outlet>
+	</outletlist>
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<description>Audio to be recorded onto the tape, at the <at>input</at> send level.</description>
+		</method>
+		<method name="clear">
+			<description>Erase the tape and the transport and wear state — the eject button, and the fastest way to stop a self-oscillating loop. Parameters are kept.</description>
+		</method>
+	</methodlist>
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="maxspan" get="1" set="1" type="float" size="1">
+			<description>Worst-case tape span in seconds (set by the first object argument). Changing it erases the tape when the DSP chain restarts.</description>
+		</attribute>
+		<attribute name="span" get="1" set="1" type="float" size="1">
+			<description>The motor: the delay in milliseconds of a head at the far end of the path (ratio 1.0), so every head moves with it. Slewed — and the slew is tape-speed doppler: the pitch bends while the motor changes speed. <at>smooth</at> sets how long that takes.</description>
+		</attribute>
+		<attribute name="heads" get="1" set="1" type="int" size="1">
+			<description>Number of active playback heads (0 to 4). A mute, not a freeze: inactive heads keep ramping, so bringing one back mid-glide does not jump.</description>
+		</attribute>
+		<attribute name="ratios" get="1" set="1" type="float" size="4">
+			<description>Per-head position along the tape path as a fraction of <at>span</at>, 0 to 1, slewed. The default is four evenly spaced heads (0.25 0.5 0.75 1.) — a nominal layout, not measured from any machine. Set 0.333 0.667 1. with <at>heads</at> 3 for a Copicat-style three.</description>
+		</attribute>
+		<attribute name="levels" get="1" set="1" type="float" size="4">
+			<description>Per-head linear level, slewed. Unclamped (negative flips polarity, like a mixer). This is also the head selector: a head's level is its send into the regeneration path too.</description>
+		</attribute>
+		<attribute name="pans" get="1" set="1" type="float" size="4">
+			<description>Per-head equal-power pan, -1 (hard left) to 1 (hard right), slewed. Endpoints are exact: a hard-panned head is bitwise absent from the far bus.</description>
+		</attribute>
+		<attribute name="regen" get="1" set="1" type="float" size="1">
+			<description>Regeneration into the record head (0..1.5). Past 1.0 the loop self-oscillates, bounded by the <at>drive</at> saturator; values above 1.0 only take effect while <at>drive</at> is above zero.</description>
+		</attribute>
+		<attribute name="darken" get="1" set="1" type="float" size="1">
+			<description>Per-pass darkening corner in Hz (20..20000). Every trip through the regeneration path runs through this one-pole lowpass: the repeats lose treble first. Riding it while the loop howls is a performance control.</description>
+		</attribute>
+		<attribute name="drive" get="1" set="1" type="float" size="1">
+			<description>Record-head saturation drive (0 or more). Above zero the loop is absolutely bounded (the returned signal can never exceed 1/drive), which is what makes <at>regen</at> above 1.0 safe; 0 is exactly linear and caps the effective regeneration back to 1.0.</description>
+		</attribute>
+		<attribute name="input" get="1" set="1" type="float" size="1">
+			<description>Input level into the record head, linear, slewed. Fading this to zero while the loop self-oscillates is the sound-on-sound move: the machine keeps playing what you already gave it.</description>
+		</attribute>
+		<attribute name="mix" get="1" set="1" type="float" size="1">
+			<description>Dry/wet mix in percent (0..100), equal-power. 0 is bitwise dry on both outlets, 100 bitwise the head sum.</description>
+		</attribute>
+		<attribute name="wow" get="1" set="1" type="float" size="2">
+			<description>Wow as a depth/rate pair: excursion in milliseconds of tape position, rate in Hz (up to 5). One motor moves the whole path, so every head is displaced together. Deterministic and periodic; 0 0 parks the transport.</description>
+		</attribute>
+		<attribute name="flutter" get="1" set="1" type="float" size="2">
+			<description>Flutter as a depth/rate pair — the faster, shallower partner (rate up to 30 Hz).</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>Anti-zipper ramp time for the setters in milliseconds (0 = instant). For <at>span</at> moves this is how long the motor takes to change speed, and therefore how deep the doppler bend is.</description>
+		</attribute>
+	</attributelist>
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.delay~"/>
+		<seealso name="tap.multitap~"/>
+		<seealso name="tap.discreet~"/>
+		<seealso name="tap.comb~"/>
+	</seealsolist>
+</c74object>
