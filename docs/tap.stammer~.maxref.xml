@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.stammer~" module="msp" category="TapTools, MSP Modifiers">
+	<digest>A live buffer-stutter rig</digest>
+	<description>
+		The <o>tap.stammer~</o> object captures its input continuously and, on a <at>step</at> grid, rolls dice and re-fires a slice of what just went past. <at>density</at> is how often it grabs, <at>divisions</at> how finely it chops (a slice is <at>step</at> divided by a number drawn from 1 to <at>divisions</at>), <at>repeats</at> how many passes it holds on for, <at>reverse</at> the per-repeat chance of running backwards, and <at>jump</at> how far further back it may reach. Riding those while a part plays is the instrument. <at>seed</at> is a real contract rather than a suggestion: every draw comes from a seeded generator in a fixed order, so the same seed and the same moves give the same performance, bit for bit, and two instances decorrelate by seed. At <at>density</at> 0 the dice are never rolled at all — the seed cannot matter and the object is a bitwise bypass. It wants transient material: on a sustained pad a stutter is barely distinguishable from a tremolo, because it re-articulates rhythm that is already in the sound rather than inventing it.
+	</description>
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Time</metadata>
+	</metadatalist>
+
+	<!--ARGUMENTS-->
+	<objarglist>
+		<objarg name="maxhistory" type="float" optional="1">
+			<description>Captured history in seconds (default 4). Bought at DSP start — about 1.5 MB per 4 s at 48 kHz. A repeat train longer than this reads fresher material as the write head laps it.</description>
+		</objarg>
+	</objarglist>
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Audio input — captured continuously.</digest>
+		</inlet>
+	</inletlist>
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>The input, or the slice while one is firing.</digest>
+		</outlet>
+	</outletlist>
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<description>Audio to be captured, at the <at>input</at> level.</description>
+		</method>
+		<method name="clear">
+			<description>Erase the capture, drop the slice in flight, and rewind the seeded stream — the same seed replays the same performance from here. Parameters are kept.</description>
+		</method>
+	</methodlist>
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="maxhistory" get="1" set="1" type="float" size="1">
+			<description>Captured history in seconds (set by the first object argument). Changing it erases the capture when the DSP chain restarts.</description>
+		</attribute>
+		<attribute name="step" get="1" set="1" type="float" size="1">
+			<description>The rhythmic grid in milliseconds: how often the machine may decide to grab. Takes effect at the next grid point — it is a rhythm, not a level, so there is nothing to zipper.</description>
+		</attribute>
+		<attribute name="density" get="1" set="1" type="float" size="1">
+			<description>Chance of firing at an idle grid point (0..1). At exactly 0 the dice are never rolled, so the seed cannot matter and the object is a bitwise bypass.</description>
+		</attribute>
+		<attribute name="divisions" get="1" set="1" type="int" size="1">
+			<description>How finely the grid may be chopped (1..8): a slice is <at>step</at> divided by a number drawn from 1 to this. 1 means whole-step slices only.</description>
+		</attribute>
+		<attribute name="repeats" get="1" set="1" type="int" size="1">
+			<description>Upper bound on passes per fired slice (1..16); the count is drawn from 1 to this. A slice in flight is never interrupted, so this — not <at>density</at> — is what decides how long the machine stays busy.</description>
+		</attribute>
+		<attribute name="reverse" get="1" set="1" type="float" size="1">
+			<description>Chance that any given repeat plays backwards (0..1). Drawn per repeat, so one train can stagger forwards and back.</description>
+		</attribute>
+		<attribute name="jump" get="1" set="1" type="float" size="1">
+			<description>How far back beyond the material just past a slice may reach, in milliseconds; the actual reach is drawn from 0 to this. 0 is the classic stutter — open it and the machine starts quoting older material.</description>
+		</attribute>
+		<attribute name="fade" get="1" set="1" type="float" size="1">
+			<description>Raised-sine flank per repeat in milliseconds — the anti-click. Clamped per slice to half its length. Repeats are sequential, so each junction dips to zero: that is the articulation of a stutter, not a crossfade that failed.</description>
+		</attribute>
+		<attribute name="seed" get="1" set="1" type="int" size="1">
+			<description>The performance seed. Same seed and same moves, same render, bit for bit; different instances decorrelate by seed. 0 folds to the stock seed.</description>
+		</attribute>
+		<attribute name="input" get="1" set="1" type="float" size="1">
+			<description>Input level into the capture, linear, slewed.</description>
+		</attribute>
+		<attribute name="mix" get="1" set="1" type="float" size="1">
+			<description>Balance between the live input and the slice in percent (0..100), equal-power — and it only bites while a slice is firing. When the machine is idle the input passes through bitwise at any mix.</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>Anti-zipper ramp time for the <at>input</at> and <at>mix</at> setters, in milliseconds (0 = instant).</description>
+		</attribute>
+	</attributelist>
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.tapecho~"/>
+		<seealso name="tap.sustain~"/>
+		<seealso name="tap.multitap~"/>
+		<seealso name="tap.shift~"/>
+	</seealsolist>
+</c74object>
