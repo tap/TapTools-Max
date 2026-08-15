@@ -1551,6 +1551,41 @@ scenarios, the reference page and the help patcher, and the submodule pin bumped
 open for this object: the on-Mac validation pass (open the help patcher once in Max), a maxtest
 starter, and the book chapter.
 
+**19. The stutter rig (2026-08-15).** ✅ `tap.stammer~` — the second Radiohead-family object, and
+an **original design** rather than a port: the input is captured continuously and, on a `@step`
+grid, the machine rolls dice and re-fires a slice of what just went past. `@density` is how often
+it grabs, `@divisions` how finely it chops, `@repeats` how many passes it holds on for, `@reverse`
+the per-repeat chance of running backwards, `@jump` how far further back it may reach. It sits in
+the brassage/granular tradition (Roads, *Microsound*); the band's own Max rigs are known from
+published interviews and broadcast films, and that record informs what the object is *for* and
+nothing about what the code does. This is the object with the most direct lineage to this package —
+a Max stutter patch, arriving as a Max object.
+
+Two things are worth carrying forward from building it. The first is the **pinned-dice identity**
+the kernel suite is built on: set density 1, whole-step slices, one forward pass and no flank, and
+only one outcome is possible, so the machine must reduce to *exactly* a one-step delay, bitwise.
+That single identity pins the grid countdown, the slice origin arithmetic and the playback head
+together — much stronger than chasing three off-by-ones separately, and it is the technique to
+reach for the next time an object has several interacting integer clocks. The second is that the
+**material contract got measured at its premise** rather than asserted: slices of a sustained sine
+are 1.000 alike by magnitude spectrum and slices of a plucked phrase 0.286, so "feed it transients"
+stops being taste and becomes the observation that re-ordering interchangeable things cannot do
+much.
+
+The seeded-randomness convention carries over from the garden intact and is now a family habit:
+every draw comes from the shared xorshift64* in a fixed order, so the same seed and the same moves
+give the same render bit for bit (a different seed changes 89% of samples), and at `@density` 0 the
+dice are never rolled at all — the seed provably cannot matter and the object is a bitwise bypass
+at any mix. That last one is the contract a patcher can check without a scope, and it is pinned
+here as well as in the kernel.
+
+Kernel side (`tap/taptools`): `stammer.h` with the planned `capture` + `slicer` split under a thin
+`machine`, nine Catch2 scenarios, the C ABI plus ctypes surface (`Stammer`), the executed
+`notebooks/stammer.ipynb`, and three more `radiohead_render` scenarios including a forty-second
+performed disintegration. Here: the wrapper, five min-api scenarios, the reference page, the help
+patcher, and the pin bumped to match. Still open for this object: the on-Mac validation pass, a
+maxtest starter, and the book chapter — the same three that `tap.tapecho~` is waiting on.
+
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
 they're touched. Control/utility and Jitter objects never move — they are Max message-logic, not
