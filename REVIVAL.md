@@ -1586,6 +1586,55 @@ performed disintegration. Here: the wrapper, five min-api scenarios, the referen
 patcher, and the pin bumped to match. Still open for this object: the on-Mac validation pass, a
 maxtest starter, and the book chapter — the same three that `tap.tapecho~` is waiting on.
 
+**20. The fuzz, and a house pattern that measured wrong (2026-08-15).** ✅ `tap.fuzz~` — two
+cascaded clipping stages and a bass/contrast/treble voicing section: the OK Computer-era dirt,
+and the harder, more scooped school beside `tap.overdrive~`'s feedback soft-clipper. It is a
+recreation of a circuit *class*, not a component model of any one pedal — no value or corner is
+claimed as measured from a unit, and the control names follow the class's conventional layout.
+
+The method is Yeh, Abel & Smith's DAFx-07 **simplified cascade** (conditioning filter →
+memoryless nonlinearity → equalization filter, twice), which supplies the architecture *and*
+the justification for the central simplification: the diode limiter is really a lowpass whose
+pole moves with voltage, its exact ODE is expensive, and approximating it as a static curve
+between fixed filters is defended and measured there against real pedals. The same paper's note
+that a real op-amp stage clips asymmetrically — producing the even harmonics an odd-only model
+predicts away — is why `@asymmetry` exists.
+
+Two findings worth carrying, both caught by measurement and neither by listening.
+
+The first is about **gain staging in a cascade**. The tanh family's small-signal slope is
+`knee/tanh(knee)`, which is greater than one and grows with the knee. The first cut put a fixed
+×2.2 in front of a knee-3 curve, so the second stage saw an effective ×6.6 and was already fully
+clipped with the gain knob at zero — the knob did nothing over most of its travel, and it
+sounded like a distortion the whole way, which is exactly why ears did not catch it. Retuned,
+the harmonic-to-fundamental ratio now sweeps 0.010 → 0.358 across the knob.
+
+The second is a **correction to a house pattern**, and it is the one to remember. The
+oversampling chain in `tap.ladder~` / `tap.svf~` / `overdrive.h` uses a 4th-order Butterworth
+anti-image/anti-alias pair. In this kernel that is not steep enough: alias energy at 4× measured
+*worse* than at 2×. Eighth order improves 4× about sixfold — but it does **not** make the
+sequence monotone, and an earlier draft of this entry wrongly said it did. Measured against a
+3733 Hz tone, fold energy runs 1.2e-1 / 2.7e-5 / 7.4e-4 / 1.8e-3 at 1× / 2× / 4× / 8×, so
+**every factor is worth having over none and 2× is the best of them** — which is why
+`@oversample` defaults to 2 rather than to the largest available factor. The cause is open: the
+obvious suspect, biquads going ill-conditioned at the low normalized cutoffs a high factor
+needs, was tested and ruled out by an impulse-response check showing clean decay to denormal at
+every factor; the untested hypothesis is imaging from zero-stuff upsampling intermodulating in
+the clipper, which would point at cascaded 2× resampling as the real fix. Whether `overdrive.h`
+is owed the 8th-order change is a separate live question — different nonlinearity, different
+gain structure, so it needs its own measurement rather than this one's conclusion.
+
+Two test-design errors are recorded in the kernel suite because both are easy to repeat: an
+alias test whose tone divided the sample rate (every fold lands on a harmonic and is invisible),
+and probe frequencies close enough to the fundamental to measure window leakage instead of
+aliasing.
+
+Kernel side (`tap/taptools`): `fuzz.h`, nine Catch2 scenarios, the C ABI plus ctypes surface
+(`Fuzz`), the executed `notebooks/fuzz.ipynb`, and three more `radiohead_render` scenarios. Here:
+the wrapper, five min-api scenarios, the reference page, the help patcher, and the pin bumped to
+match. Still open: the on-Mac validation pass and a maxtest starter — the same two every object
+in this family is waiting on.
+
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
 they're touched. Control/utility and Jitter objects never move — they are Max message-logic, not
