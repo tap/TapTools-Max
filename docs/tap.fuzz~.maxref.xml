@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.fuzz~" module="msp" category="TapTools, MSP Effects">
+	<digest>A two-stage tone-stacked fuzz</digest>
+	<description>
+		The <o>tap.fuzz~</o> object is a two-stage distortion with a bass / contrast / treble voicing section — the harder, more scooped school that sits beside <o>tap.overdrive~</o> rather than replacing it (that object is a feedback soft-clipper chasing the Tube Screamer lineage). <at>gain</at> sweeps the first stage's drive from a clean boost to wide open, <at>edge</at> sharpens the second stage's knee from a soft limiter toward a hard corner, and <at>asymmetry</at> brings in the even harmonics that a symmetric curve structurally cannot produce. The architecture is the simplified cascade of Yeh, Abel and Smith (DAFx-07): conditioning filter, memoryless nonlinearity, equalization filter — twice. It is a recreation of a circuit <em>class</em>: no component value or corner frequency is claimed as measured from any pedal, and the control names follow that class's conventional layout rather than asserting what any particular unit does.
+	</description>
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Effects</metadata>
+	</metadatalist>
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Audio input.</digest>
+		</inlet>
+	</inletlist>
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>The distorted output.</digest>
+		</outlet>
+	</outletlist>
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<description>Audio to distort.</description>
+		</method>
+		<method name="clear">
+			<description>Flush the filters and the oversampling chain. Parameters are kept.</description>
+		</method>
+	</methodlist>
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="gain" get="1" set="1" type="float" size="1">
+			<description>Drive into the first clipping stage (0..1). 0 is a lit-up clean boost, 1 is the pedal wide open. The floor sits below unity on purpose — the second stage carries its own small-signal gain, and a hotter floor would arrive there already saturated, which would leave the knob doing nothing over most of its travel.</description>
+		</attribute>
+		<attribute name="edge" get="1" set="1" type="float" size="1">
+			<description>Knee sharpness of the second stage (0..1): a soft limiter at 0, close to a hard corner at 1. High settings are where a static curve aliases worst — try <at>oversample</at> before blaming the tone controls.</description>
+		</attribute>
+		<attribute name="asymmetry" get="1" set="1" type="float" size="1">
+			<description>Clipping asymmetry (0..1) — the even-harmonic control. A symmetric curve is an odd function and produces odd harmonics only; a real op-amp stage clips lopsided, which is where a pedal's even harmonics come from. It costs no DC: silence stays exactly silent.</description>
+		</attribute>
+		<attribute name="bass" get="1" set="1" type="float" size="1">
+			<description>Low shelf, -1 to 1 (full travel is 12 dB either way). Linear, and entirely outside the nonlinearity.</description>
+		</attribute>
+		<attribute name="treble" get="1" set="1" type="float" size="1">
+			<description>High shelf, -1 to 1 (full travel is 12 dB either way).</description>
+		</attribute>
+		<attribute name="contrast" get="1" set="1" type="float" size="1">
+			<description>Mid-scoop depth (0..1, up to 14 dB at 620 Hz). The scoop is this object's own curve; the control name is the pedal class's.</description>
+		</attribute>
+		<attribute name="level" get="1" set="1" type="float" size="1">
+			<description>Output level in dB (-24..24).</description>
+		</attribute>
+		<attribute name="oversample" get="1" set="1" type="int" size="1">
+			<description>Oversampling factor for the clipper pair: 1, 2, 4 or 8. The default is 2, which measures best — every factor beats 1 by orders of magnitude, but the sequence is not monotone in this object, so a bigger factor is not automatically better. Changing it reconfigures the filters and is not real-time-safe.</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>Anti-zipper ramp time for the setters, in milliseconds (0 = instant).</description>
+		</attribute>
+	</attributelist>
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.overdrive~"/>
+		<seealso name="tap.tapecho~"/>
+		<seealso name="tap.filter~"/>
+		<seealso name="overdrive~"/>
+	</seealsolist>
+</c74object>
