@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.touche~" module="msp" category="TapTools, MSP Effects">
+	<digest>The Ondes Martenot intensity key as a gain law</digest>
+	<description>
+		The <o>tap.touche~</o> object is the Ondes Martenot's <em>touche d'intensité</em> — the pressure key the player's left hand rides, which Messiaen called the instrument's greatest invention — reduced to what it is underneath the mechanism: a gain curve of unusual quality, 50 dB of range across about 4.5 mm of key travel, shaped so a player can place a crescendo where they want it rather than where the taper puts it. The curve is <em>not modelled</em>. It is the published measurement of Quartier, Meurisse, Colmars, Frelat and Vaiedelich (Acta Acustica united with Acustica 101(2), 421–428, 2015), who measured finger force, key displacement and the resulting sound simultaneously on instrument No. 320; this object interpolates their seven measured points with monotone cubic segments and does not wander between them. It is the first piece of the Ondes Martenot in the package, and it is here on its own because a measured expressive gain law is useful on anything — as a swell pedal on a guitar, or as the last VCA in any chain.
+	</description>
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Effects</metadata>
+	</metadatalist>
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Audio input.</digest>
+		</inlet>
+		<inlet id="1" type="signal">
+			<digest>Key position, 0 to 1 of the travel. Overrides the <at>position</at> attribute while connected.</digest>
+		</inlet>
+	</inletlist>
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>The input, scaled by the key.</digest>
+		</outlet>
+	</outletlist>
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<description>Audio to scale (left inlet), or the key position (right inlet).</description>
+		</method>
+		<method name="clear">
+			<description>Return the key to rest (silent).</description>
+		</method>
+	</methodlist>
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="position" get="1" set="1" type="float" size="1">
+			<description>Key position, 0 to 1 over the physical 9.5 mm travel. Roughly the first 45 % is silent — that is the key bending before it compresses the powder bag, not a dead spot in the object, and it is why the instrument can be played with such sharp attacks: the useful 50 dB is packed into the 4.5 mm right after it. Ignored while a signal is connected to the right inlet.</description>
+		</attribute>
+		<attribute name="mm" get="1" set="1" type="float" size="1">
+			<description>The same control in the published unit: millimetres of key travel. The measured band runs from 4.3 mm (the instrument's own noise floor) to 8.8 mm (full press).</description>
+		</attribute>
+		<attribute name="mode" get="1" set="1" type="int" size="1">
+			<description>Which measured column drives the gain: 0 displacement, 1 finger force. Displacement is the primary map — the paper reports that the sound depends on where the key is, and notably not on how fast the gesture was. The force axis is far from uniform (six of the seven measured points sit below 1.4 N and the seventh is at 9.6 N), so it is offered for completeness rather than as a good controller.</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>Anti-zipper ramp time for attribute-driven position moves, in milliseconds (0 = instant). The signal inlet is not ramped — a control signal is assumed smooth already.</description>
+		</attribute>
+	</attributelist>
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.vca~"/>
+		<seealso name="tap.adsr~"/>
+		<seealso name="tap.elixir~"/>
+		<seealso name="gain~"/>
+	</seealsolist>
+</c74object>

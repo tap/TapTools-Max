@@ -1635,6 +1635,52 @@ the wrapper, five min-api scenarios, the reference page, the help patcher, and t
 match. Still open: the on-Mac validation pass and a maxtest starter — the same two every object
 in this family is waiting on.
 
+**21. The first piece of the Ondes Martenot (2026-08-15).** ✅ `tap.touche~` — the *touche
+d'intensité*, the pressure key an ondes player's left hand rides, as a standalone gain object.
+It is the first part of `tap.ondes~` to land and it ships alone deliberately: a measured
+expressive gain law is useful on anything, so there is no reason to hold it back until the rest
+of the instrument exists.
+
+What makes this object different from everything else in the package is its contract. Every
+other kernel here makes design choices and then measures them; **this one is obliged to
+reproduce someone else's measurement.** Quartier, Meurisse, Colmars, Frelat & Vaiedelich (*Acta
+Acustica united with Acustica* 101(2), 421–428, 2015) measured finger force, key displacement
+and the resulting sound simultaneously on ondes No. 320 and published the boundaries of the six
+musical nuances across the key's travel. Those seven points are the specification. The kernel
+interpolates them with monotone cubic (Fritsch–Carlson) segments and reproduces them to within
+6e-5 dB — monotone cubic rather than a spline because an overshoot here is a non-monotone gain,
+which is audible as a dip while you press *harder*.
+
+Interpolating rather than fitting is the load-bearing decision. The published dB steps are equal
+by construction and the displacement steps are not — 1.0, 0.6, 0.5, 0.4, 0.5, 1.5 mm — so the
+law steepens through the middle of the travel and flattens hard at the top, and a straight line
+in dB-against-millimetres departs from it by 8.3 dB. That shape is the entire reason the key is
+famous, and fitting would have thrown it away.
+
+Two things the reproduce-the-table test caught, both worth carrying. **The normalized domain has
+to be the physical travel, not the measured band.** An early cut mapped `@position` 0..1 onto
+4.3–8.8 mm, which put position 0 exactly on the first published point while returning silence
+there — contradicting the measurement it was supposed to honour. The paper puts playable
+gestures at roughly 3–9.5 mm with the measured band inside, so position now spans 9.5 mm and the
+bottom 45 % is genuinely silent. That dead travel is the key's own first phase, bending before
+it reaches the powder bag, and it is why the instrument can be played with such sharp attacks:
+the useful 50 dB is packed into the 4.5 mm immediately after. Expect to explain that to patchers
+who think the object is broken — the help patcher says it in as many words. **And the dead zone
+belongs in the lookup, not the table**: zeroing dense-table entries below the floor put a cliff
+next to it, so a query landing exactly on the floor lerped toward zero and read 4.2 dB low.
+
+Kernel side (`tap/taptools`): `touche.h`, eleven Catch2 scenarios, the C ABI plus ctypes surface
+(`Touche`), the executed `notebooks/touche.ipynb`, and a `radiohead_render` scenario putting the
+curve against the two laws anyone would otherwise reach for — a linear fade and a fade linear in
+dB. It is audibly neither. Here: the wrapper (signal or attribute position), four min-api
+scenarios, the reference page, the help patcher, and the pin bumped to match.
+
+The rest of `tap.ondes~` is designed but unbuilt — see the kernel repo's `book/PLAN-ondes.md`,
+which was written against the sources *after* they were read and which corrects the family
+plan's original assumption that the voice was a `vco.h` descendant. It is not: the instrument is
+heterodyne, its oscillators measure as essentially pure, and the timbre comes from the triode
+stages and the diffuseur downstream.
+
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
 they're touched. Control/utility and Jitter objects never move — they are Max message-logic, not
