@@ -30,8 +30,9 @@ SCENARIO("tap.fuzz~ instantiates with the documented defaults") {
             REQUIRE(static_cast<double>(my_object.contrast) == 0.35);
             REQUIRE(static_cast<double>(my_object.level) == 0.0);
         }
-        THEN("oversample defaults to 2 — the measured best, not the largest") {
-            REQUIRE(static_cast<int>(my_object.oversample) == 2);
+        THEN("oversample defaults to 4 — measured, and not the largest") {
+            REQUIRE(static_cast<int>(my_object.oversample) == kernel::k_default_os);
+            REQUIRE(static_cast<int>(my_object.oversample) == 4);
         }
     }
 }
