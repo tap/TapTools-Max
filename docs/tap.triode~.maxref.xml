@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.triode~" module="msp" category="TapTools, MSP Effects">
+	<digest>One triode gain stage, from a published tube model</digest>
+	<description>
+		The <o>tap.triode~</o> object is a common-cathode valve stage, solved on its load line: a conditioning highpass, drive into the grid, the tube's own transfer curve, an equalization lowpass. The architecture is Yeh, Abel and Smith's DAFx-07 simplified cascade — the same one <o>tap.fuzz~</o> uses — but where that object reaches for a tanh, this one solves an actual valve. Almost nothing here is voiced by ear: the tube is the enhanced Norman Koren model (Koren, Glass Audio 8(5), 1996, with the grid-current branch from Cohen and Hélie, AES 129, 2010), and the parameter sets are fitted to the valves in ondes Martenot No. 169 by Najnudel, Hélie, Roze and Boutin (IEEE/ACM TASLP 28, 2020, Table II), along with the supply voltage, cathode resistor and plate load of each stage. Two properties matter before you patch it. The stage <em>inverts</em>, as a real common-cathode stage does — and that is not cosmetic, because the valve's asymmetry acts on whichever side of the waveform reaches its grid. And it is <em>strongly asymmetric</em>: at the demodulator's operating point, equal grid swings either way give plate swings in a 2.17 : 1 ratio, which is where a triode's even harmonics come from. <at>drive</at> is normalized out of the level, so turning it up gets dirtier rather than louder. For multichannel signals, wrap the object in an <o>mc.</o> operator.
+	</description>
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Effects</metadata>
+	</metadatalist>
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Audio input — the grid.</digest>
+		</inlet>
+	</inletlist>
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>The plate, inverted and normalized to unity small-signal gain.</digest>
+		</outlet>
+	</outletlist>
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<description>Audio to drive the grid with.</description>
+		</method>
+		<method name="clear">
+			<description>Reset the stage's filters. Parameters are kept.</description>
+		</method>
+	</methodlist>
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="tube" get="1" set="1" type="int" size="1">
+			<description>Which valve: 0 the 6F5 (the ondes oscillators'), 1 the 6C5 (the demodulator's and preamplifier's), 2 the 2A3 (the power amplifier's). A mode rather than a fader — it rebuilds the stage's curve table, which is sub-millisecond but not something to automate at audio rate.</description>
+		</attribute>
+		<attribute name="stage" get="1" set="1" type="int" size="1">
+			<description>Which published operating point: 0 demodulator (100 V supply, 1 k cathode resistor, 4 k plate load), 1 preamplifier (180 V), 2 power amplifier (230 V, 750 R, 1.5 k). Also a mode. The pairings the instrument uses are tube 1 with stages 0 and 1, and tube 2 with stage 2 — but any combination will solve, and some of the wrong ones are interesting.</description>
+		</attribute>
+		<attribute name="drive" get="1" set="1" type="float" size="1">
+			<description>Peak grid volts for a full-scale input — the distortion control. It is normalized out of the level: the small-signal gain stays at unity whatever you set, so turning it up gets dirtier rather than louder. That is the gain-staging lesson <o>tap.fuzz~</o> learned the hard way, applied here from the start.</description>
+		</attribute>
+		<attribute name="highpass" get="1" set="1" type="float" size="1">
+			<description>Conditioning highpass in Hz — the coupling capacitor and grid leak, and the first filter of the DAFx-07 cascade.</description>
+		</attribute>
+		<attribute name="lowpass" get="1" set="1" type="float" size="1">
+			<description>Equalization lowpass in Hz — Miller capacitance and the plate load's own pole, and the last filter of the cascade.</description>
+		</attribute>
+	</attributelist>
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.ondes~"/>
+		<seealso name="tap.fuzz~"/>
+		<seealso name="tap.overdrive~"/>
+		<seealso name="tap.vca~"/>
+	</seealsolist>
+</c74object>

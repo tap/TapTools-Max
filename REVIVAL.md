@@ -1767,6 +1767,86 @@ it, and book chapters for `tap.touche~`, the diffuseurs and `tap.scrub~` — the
 probably belong inside an Ondes-family chapter once the `triode` and heterodyne `source` stages
 exist, and the scrub's beside the stammer's, since they share a tape.
 
+**23. The Ondes Martenot, finished (2026-08-17).** ✅ `tap.triode~` and `tap.ondes~` — the last
+two pieces of the instrument, and the two the family plan had wrong.
+
+**The plan assumed a `vco.h` descendant with waveform registers.** The Ondes Martenot is nothing
+of the kind: it is **heterodyne**. Two oscillators near 80 kHz, one fixed and one moved by the
+ribbon, sum into an amplitude-modulated signal whose envelope is the note — and Najnudel, Hélie,
+Roze & Boutin (*IEEE/ACM TASLP* **28**, 2651–2660, 2020), who model instrument No. 169 as five
+port-Hamiltonian stages, measure those oscillators at about **0.03 % second harmonic** even
+coupled to the rest of the circuit. All the character is downstream.
+
+**`tap.triode~` is almost entirely a citation.** The design pass had framed the valve as a choice
+between "a published grid-conduction curve" and "the tanh family with an asymmetry bias, decided
+by listening". It is neither, because the circuit paper does not merely mention a tube model — it
+names one (the **enhanced Norman Koren** law: Koren, *Glass Audio* 8(5), 1996, with Cohen &
+Hélie's grid-current extension, AES 129, 2010), writes out its equations, and publishes parameter
+sets **fitted to the valves actually in No. 169** — 6F5, 6C5, 2A3 — alongside every stage's supply
+voltage, cathode resistor and plate load. So there was nothing to voice by ear. A stage is the
+static solution of its load line, which is a memoryless nonlinearity in the DAFx-07 sense, so
+tabulating it is not an approximation of the model: it *is* the model. The fitted 6C5 lands at
+8.85 mA against its datasheet's 8 mA typical, the published operating points bias sanely, and the
+curve is asymmetric in a 2.17 : 1 ratio — which is where a triode's even harmonics live.
+
+**The plan's instruction for the source was wrong, and catching it was the most valuable thing in
+this entry.** "Synthesize the difference tone directly as a sinusoid" would have thrown away the
+instrument's largest single source of harmonics. The paper's licence to substitute a sinewave
+generator applies to the **oscillators**; the demodulator is not a mixer handing you a difference
+tone, it is an envelope detector, and the envelope of two summed oscillators is `2|cos|` — whose
+series puts H2 at −14.0 dB and H3 at −21.3 dB **before any valve touches the signal**.
+
+**What replaces the carrier turned out to be an identity rather than a simplification.** For
+amplitudes 1 and *d* the envelope of `cos(Φ) + d·cos(Φ−φ)` is exactly `sqrt(1 + d² + 2d cos φ)`,
+so the 80 kHz carrier drops out of the arithmetic instead of being approximated away. Running the
+published 200 µs detector (R4·C21) on that closed form reproduces the full
+heterodyne-plus-diode-plus-RC simulation to **within 0.10 dB on every harmonic at every pitch
+tried**, with one systematic difference — a uniform 3 % level offset, because a follower chasing
+real carrier half-cycles never quite reaches the peak between them. The detector's characteristic
+pitch dependence comes free (H2 runs −14.0 dB at A2 to −19.3 dB at A6, and the level falls 2.0 dB
+across those five octaves), and because the closed form is parameterized by the two oscillator
+amplitudes, **oscillator balance becomes a real physical timbre control** rather than an invented
+knob. The ribbon law is the paper's Eq. 7 and it is simple: the ribbon is **linear in semitones**,
+which is exactly why an ondes glissando sounds the way it does.
+
+**Three defects found by measurement.** A stage that quietly un-inverted itself applied the
+valve's asymmetry to the wrong side of the waveform, so the drive knob *reduced* harmonics as it
+was turned up — a real common-cathode stage inverts, and the sign is load-bearing rather than
+cosmetic. An aliasing probe measured its own spectral leakage instead of aliasing (the same trap
+the fuzz and scrub suites already record). And the voice's anti-zipper setting never reached the
+intensity key, which keeps its own slew — so a key set to rest kept sounding for 20 ms nobody had
+asked for. That last one was caught by a **wrapper** test in this repo and fixed in the kernel,
+which is the two-layer test split doing exactly what it is for.
+
+**Two things the sources do not settle are switches, not silent guesses**, because both measure as
+audible: where the intensity key sits in the chain (`@keyplacement` — the paper's five stages do
+not include it, and placing it before the valves makes pressure mean dirt rather than level; worth
+about 0.09 of total harmonic content at a half-press) and the winding sense of the transformer
+between the two valves (`@polarity` — worth about 0.12).
+
+**And a data point for `fuzz.h`'s open oversampler question.** That kernel measured 4× coming out
+*worse* than 2× and left an untested hypothesis behind: imaging, since zero-stuffing by N leaves
+N−1 images for one filter to suppress and their residuals intermodulate in the clipper.
+`tap.ondes~` runs the same 8th-order chain around a comparably hard nonlinearity, but as a
+**source** — nothing is zero-stuffed on the way up, the detector simply runs fast, so there are no
+images at all. Its sequence never reverses: about 12 dB per doubling to 4×, and 7–12 dB more at 8×
+in the top octave. Same filters, no upsampler, no reversal. Evidence rather than proof, since the
+nonlinearity differs too, but it is the first evidence either way and it points at the upsampler.
+
+Kernel side (`tap/taptools`): `ondes.h` (`triode`, `detector`, `voice`), 18 Catch2 scenarios, the
+C ABI plus ctypes surfaces (`Triode`, `Detector`, `Ondes`, and the bare tube law so a notebook can
+plot the published valve curves from the shipping code), the executed `notebooks/ondes.ipynb`, and
+four more `radiohead_render` scenarios — including `ondes_diffuseurs`, which is the whole
+instrument wired together for the first time: the voice through the principal, the palme and the
+métallique in turn. Here: two wrappers, nine min-api scenarios, two reference pages, two help
+patchers, and the pin bumped to match.
+
+**What is still missing from the instrument, and deliberately: the waveform registers.** The real
+ondes has switchable timbres whose filter shapes are in none of the four sources obtained. Leipp
+(*Bulletin du GAM* n°60, 1972) and Laurendeau's monograph are where to look next. Until then the
+header says they are absent rather than filling the gap with invention — which, for an object
+whose whole claim is that its numbers are published, is the only defensible answer.
+
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
 they're touched. Control/utility and Jitter objects never move — they are Max message-logic, not

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.ondes~" module="msp" category="TapTools, MSP Synthesis">
+	<digest>The Ondes Martenot voice, minus its loudspeaker</digest>
+	<description>
+		The <o>tap.ondes~</o> object is the Ondes Martenot's voice: a heterodyne envelope detector into the demodulator triode into the preamplifier triode into the intensity key. It is a <em>source</em>, not an effect — patch a <o>tap.palme~</o> or a <o>tap.metallique~</o> after it and you have the instrument. It is <em>not</em> a VCO with waveform switches. The Ondes Martenot is heterodyne: two oscillators near 80 kHz, one fixed and one moved by the ribbon, summed into an amplitude-modulated signal whose envelope is the note. Najnudel, Hélie, Roze and Boutin (IEEE/ACM TASLP 28, 2020) measure those oscillators at about 0.03 % second harmonic even coupled to the rest of the circuit, so the character is entirely in what comes after them — and the biggest single part of it is the demodulator, before any valve. The envelope of two equal oscillators is 2|cos|, which puts the second harmonic 14 dB below the fundamental and the third 21 dB down. That is why this object does not synthesize a difference tone; doing so would throw the instrument's timbre away. The carrier is not simulated either: the envelope has a closed form, and running the published 200 µs detector on it matches a full 80 kHz simulation to within a tenth of a dB on every harmonic. The performance surface is the instrument's — <at>ribbon</at> is semitones above A1, because the published ribbon law is linear in semitones, so a hand moving at constant speed makes a constant-rate glissando and nothing quantizes; <at>key</at> is the published intensity-key curve from <o>tap.touche~</o>, whose bottom 45 % of travel is silent because that is the key bending before it reaches the powder bag. Both take signals. What is deliberately missing is the waveform registers: the real instrument has switchable timbres whose filter shapes are in none of the sources obtained, and inventing them is the one thing this object will not do.
+	</description>
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Synthesis</metadata>
+	</metadatalist>
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Ribbon position, semitones above A1. Overrides the <at>ribbon</at> attribute while connected.</digest>
+		</inlet>
+		<inlet id="1" type="signal">
+			<digest>Intensity key, 0 to 1 of the travel. Overrides the <at>key</at> attribute while connected.</digest>
+		</inlet>
+	</inletlist>
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>The voice, before any diffuseur.</digest>
+		</outlet>
+	</outletlist>
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<description>The ribbon position (left inlet) or the intensity key (right inlet).</description>
+		</method>
+		<method name="clear">
+			<description>Silence the detector and every filter. Parameters are kept.</description>
+		</method>
+	</methodlist>
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="ribbon" get="1" set="1" type="float" size="1">
+			<description>The note, in semitones above A1 (55 Hz). The circuit paper's Eq. 7 makes the ribbon linear in semitones, so this really is where the hand is: move it linearly and you get a linear glissando. Fractional and unquantized, because the instrument is. Ignored while a signal is connected to the left inlet.</description>
+		</attribute>
+		<attribute name="key" get="1" set="1" type="float" size="1">
+			<description>The intensity key, 0 to 1 over its physical travel — the published curve from <o>tap.touche~</o>. Roughly the bottom 45 % is silent, which is the key bending before it compresses the powder bag rather than a dead spot in the object. Ignored while a signal is connected to the right inlet.</description>
+		</attribute>
+		<attribute name="depth" get="1" set="1" type="float" size="1">
+			<description>Relative amplitude of the second oscillator, 0 to 1. At 1 (the published case, equal amplitudes) the envelope closes completely and the harmonic series is full; below that it never closes and the tone thins toward a sinusoid. A real mismatch between two oscillators, and the cheapest timbre control here.</description>
+		</attribute>
+		<attribute name="detect" get="1" set="1" type="float" size="1">
+			<description>Envelope-detector time constant in milliseconds. The published value is 0.2, from R4 × C21 = 1 MΩ × 200 pF. Longer smooths the envelope and takes the harmonics with it; it is also why the instrument gets purer and quieter as it goes up, since the RC cannot follow a fast envelope back down.</description>
+		</attribute>
+		<attribute name="drive" get="1" set="1" type="float" size="1">
+			<description>Grid drive into the two valve stages, as a multiple of the published nominal — the harmonics control. The circuit paper's own plugin exposes demodulator input gain the same way, a knob the real instrument does not have. Normalized, so it changes the distortion and not the level. Note that at 0 the tone is still harmonically rich, because the demodulator made those harmonics.</description>
+		</attribute>
+		<attribute name="keyplacement" get="1" set="1" type="int" size="1">
+			<description>Where the intensity key sits: 0 after the valves (a clean output law — pressure is level), 1 before them (pressure drives the valves, so soft is clean and hard is dirty). The circuit paper's five stages do not include the key, so this is a choice rather than a reconstruction — and a real one, worth about 0.09 of total harmonic content at a half-press.</description>
+		</attribute>
+		<attribute name="polarity" get="1" set="1" type="int" size="1">
+			<description>Sign of the coupling between the two valve stages, 1 or −1. They are coupled through a transformer whose winding sense is not in the source, and the sign decides which side of the waveform the preamplifier's asymmetry acts on. Audible: the two settings differ by about 0.12 of total harmonic content.</description>
+		</attribute>
+		<attribute name="power" get="1" set="1" type="int" size="1">
+			<description>Run the 2A3 power stage. Off by default, following the circuit paper: they measure almost 5 % second harmonic there but report its contribution as much less important than the two stages before it, and drop it for real-time. Measured here, switching it on moves total harmonic content by about 0.003 — so they were right, and it is a switch rather than a deletion.</description>
+		</attribute>
+		<attribute name="level" get="1" set="1" type="float" size="1">
+			<description>Output level, linear.</description>
+		</attribute>
+		<attribute name="oversample" get="1" set="1" type="int" size="1">
+			<description>Oversampling for the nonlinear chain: 1, 2, 4 or 8. Every doubling is worth about 12 dB of alias rejection up to 4×, and 7–12 dB more at 8× in the top octave. 4× is the default because that is where the cost stops buying uniformly.</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>Anti-zipper ramp time for the attribute-driven drive, level and key, in milliseconds (0 = instant). The signal inlets are not ramped — a control signal is assumed smooth already.</description>
+		</attribute>
+	</attributelist>
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.touche~"/>
+		<seealso name="tap.palme~"/>
+		<seealso name="tap.metallique~"/>
+		<seealso name="tap.triode~"/>
+	</seealsolist>
+</c74object>
