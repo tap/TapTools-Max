@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.metallique~" module="msp" category="TapTools, MSP Effects">
+	<digest>The Ondes Martenot's gong diffuseur, as a driven resonator</digest>
+	<description>
+		The <o>tap.metallique~</o> object is one of the Ondes Martenot's resonating loudspeakers. The instrument does not have a loudspeaker, it has a rack of them, and choosing between them is part of playing it; the <em>métallique</em> (1944–45, patented 1947) is a gong driven by a motor transducer, so everything sent through it picks up the body of a large metal plate. It is <em>driven, not struck</em> — there is no trigger and no strike envelope, and whatever you send in excites the plate continuously while the plate rings at its own rates. The signal order is the instrument's: it reaches the transducer first and the transducer's motion excites the body, so <at>drive</at>, <at>asymmetry</at> and <at>saturation</at> sit upstream of the plate, because driving a distorted waveform into a gong is a different sound from distorting a gong. What is published and what is not: the instrument, its date, its excitation and its moving-iron transducer come from the peer-reviewed sources (Najnudel and colleagues, IEEE/ACM TASLP 28, 2020; Wijnand and colleagues, Forum Acusticum 2023), but no ondes-specific measurement of the body exists in any of them, so the mode ratios are Fletcher and Rossing's free circular plate. This is a recreation of the general physics rather than a model of Martenot's gong, and the kernel header says so too. For multichannel signals, wrap the object in an <o>mc.</o> operator.
+	</description>
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Effects</metadata>
+	</metadatalist>
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Audio input — drives the transducer, which drives the body.</digest>
+		</inlet>
+	</inletlist>
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>The body, balanced against the input.</digest>
+		</outlet>
+	</outletlist>
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<description>Audio to drive the diffuseur with.</description>
+		</method>
+		<method name="clear">
+			<description>Silence the body and reset the driver. Parameters are kept.</description>
+		</method>
+	</methodlist>
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="pitch" get="1" set="1" type="float" size="1">
+			<description>Frequency of the plate's (2,0) mode in Hz — the body's perceived pitch. The other seven modes follow at the published free-plate ratios (1 : 1.730 : 2.328 : 3.910 : 4.110 : 6.300 : 6.710 : 7.340), each split into a slowly beating doublet. Retuning moves sixteen resonators, so this is set-and-hold rather than a knob to sweep fast.</description>
+		</attribute>
+		<attribute name="decay" get="1" set="1" type="float" size="1">
+			<description>Ring time of the fundamental in seconds (T60 — the time to fall 60 dB). Long values are a drone; short ones are a plate reverb.</description>
+		</attribute>
+		<attribute name="tilt" get="1" set="1" type="float" size="1">
+			<description>How much faster the upper modes die than the fundamental: their ring time is <at>decay</at> divided by ratio raised to <at>tilt</at>. 0 rings everything equally; 2 is roughly the f-squared radiation damping of a struck bar. The default is 1, because a driven gong's shimmer lives in its upper modes.</description>
+		</attribute>
+		<attribute name="brightness" get="1" set="1" type="float" size="1">
+			<description>Weight on the upper modes, 0 to 1, steepening per mode so the highest partials go first. 1 is the full published weight table; 0 leaves only the fundamental doublet.</description>
+		</attribute>
+		<attribute name="drive" get="1" set="1" type="float" size="1">
+			<description>Linear gain into the transducer, before the body. This is where the object gets loud and dirty, and it is upstream of the plate on purpose.</description>
+		</attribute>
+		<attribute name="asymmetry" get="1" set="1" type="float" size="1">
+			<description>The moving-iron squared term, 0 to 1. In a moving-iron motor the force follows the square of the gap flux, so with a bias current the residual squared term puts a second harmonic on the signal in proportion to level and nothing at the third. 0 is a linear driver — legitimate, but then a documented stage of the instrument is missing. The coefficient is not fitted to a measurement; the source establishes that the driver is nonlinear without handing over a curve.</description>
+		</attribute>
+		<attribute name="saturation" get="1" set="1" type="float" size="1">
+			<description>Soft-clip amount after the squared term; 0 is exactly linear. It is here because a squared law is expansive and something has to bound it — a modelling necessity rather than a measured stage. The output is bounded by 2 divided by this value, not 1 divided by it: removing the DC from a hard-driven squared law doubles the worst-case swing.</description>
+		</attribute>
+		<attribute name="mix" get="1" set="1" type="float" size="1">
+			<description>Balance between the dry input and the diffuseur, 0 to 100, equal-power. The ends are exact: 0 is the input bit for bit, 100 is the body alone.</description>
+		</attribute>
+		<attribute name="level" get="1" set="1" type="float" size="1">
+			<description>Output level, linear.</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>Anti-zipper ramp time for the transducer, mix and level setters, in milliseconds (0 = instant). The body's own parameters are not ramped.</description>
+		</attribute>
+	</attributelist>
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.palme~"/>
+		<seealso name="tap.touche~"/>
+		<seealso name="tap.chime~"/>
+		<seealso name="tap.5comb~"/>
+	</seealsolist>
+</c74object>
