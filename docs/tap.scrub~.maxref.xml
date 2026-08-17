@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.scrub~" module="msp" category="TapTools, MSP Effects">
+	<digest>A granular scrub pad over live capture</digest>
+	<description>
+		The <o>tap.scrub~</o> object records its input continuously and puts a granular playhead on the recording whose <em>position</em> and <em>pitch</em> are two independent performable signals. Drag the position and you rake back and forth through the last few seconds of the performance; hold it still and you have a granular freeze; move the pitch and the material transposes without the position moving at all. That decoupling is the object — a tape head cannot do it, because on tape moving the playhead <em>is</em> the pitch change. The two signal inlets are the two axes of a pad, which is the whole patching story: position in the middle inlet, pitch in the right, both at signal rate. Either falls back to its attribute when nothing is connected. What it is built on: grains are Hann-windowed and fired every <at>size</at> divided by <at>overlap</at> samples, and Hann overlap-adds to exactly 1 at those hops, so held still at <at>pitch</at> 0 with <at>spray</at> 0 the object is a plain delay of <at>position</at> milliseconds — measured at 4.4e-16 in the kernel's own suite. Everything else it does is a departure from that, which is only trustworthy because the identity is exact. The tape is the same class <o>tap.stammer~</o> records into, shared rather than copied. It wants transient material; on a sustained pad a granular playhead is barely distinguishable from a tremolo. For multichannel signals, wrap the object in an <o>mc.</o> operator.
+	</description>
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Effects</metadata>
+	</metadatalist>
+
+	<!--ARGUMENTS-->
+	<objarglist>
+		<objarg name="history" optional="1" type="float">
+			<description>Captured history in seconds (default 4). Bought once at DSP start; it is also the ceiling on <at>position</at>.</description>
+		</objarg>
+	</objarglist>
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Audio input — captured continuously unless <at>freeze</at> is on.</digest>
+		</inlet>
+		<inlet id="1" type="signal">
+			<digest>Playhead position, milliseconds behind the live edge. Overrides the <at>position</at> attribute while connected.</digest>
+		</inlet>
+		<inlet id="2" type="signal">
+			<digest>Transposition in semitones. Overrides the <at>pitch</at> attribute while connected.</digest>
+		</inlet>
+	</inletlist>
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>The scrub, balanced against the input.</digest>
+		</outlet>
+	</outletlist>
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<description>Audio to capture (left inlet), the playhead position (middle inlet), or the transposition (right inlet).</description>
+		</method>
+		<method name="clear">
+			<description>Erase the tape, kill every grain, rewind the drift, and restart the seeded stream. Parameters are kept.</description>
+		</method>
+	</methodlist>
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="maxhistory" get="1" set="1" type="float" size="1">
+			<description>Captured history in seconds (set by the first object argument; bought at DSP start). It is also the ceiling on <at>position</at>. Changing it erases the tape on the next DSP restart.</description>
+		</attribute>
+		<attribute name="position" get="1" set="1" type="float" size="1">
+			<description>Where the playhead sits, as a lag behind the live edge in milliseconds. 0 is the newest sample; the ceiling is <at>maxhistory</at>. This is the scrub gesture, so it is slewed by <at>smooth</at>. Ignored while a signal is connected to the middle inlet.</description>
+		</attribute>
+		<attribute name="pitch" get="1" set="1" type="float" size="1">
+			<description>Transposition in semitones, plus or minus two octaves, independent of the position. A granular texture rather than a clean shift: transposing means reading the tape at a rate the write head does not share, so the read pointer has to be wrapped back periodically and each wrap is a splice. Measured, 98.8 % of a clean shifter's energy still lands at the transposed pitch, but spread into a narrow comb rather than one line, which is audibly a warble. For clean transposition reach for <o>tap.pitchaccum~</o> or <o>tap.shift~</o>. Ignored while a signal is connected to the right inlet.</description>
+		</attribute>
+		<attribute name="drift" get="1" set="1" type="float" size="1">
+			<description>The playhead's own motion through the tape, in playback-rate units: positive runs forward toward the live edge, negative backwards, 0 holds station. It wraps around the captured history rather than clamping, so a slow drift is a loop. Most useful with <at>freeze</at> on.</description>
+		</attribute>
+		<attribute name="freeze" get="1" set="1" type="int" size="1">
+			<description>Stop the recorder. The playhead keeps going, so the position now addresses fixed tape — a granular hold you can still scrub, transpose and drift through. It does not stop time inside a grain already in flight: the tail of one scheduled before the freeze plays out.</description>
+		</attribute>
+		<attribute name="size" get="1" set="1" type="float" size="1">
+			<description>Grain length in milliseconds. Grains in flight keep the length they were born with. Sizes that divide evenly by <at>overlap</at> have an exactly flat window sum; others leave a small periodic ripple, inaudible at musical sizes.</description>
+		</attribute>
+		<attribute name="overlap" get="1" set="1" type="int" size="1">
+			<description>How many grains overlap: the hop is <at>size</at> divided by this. 1 leaves gaps between grains, which is a chopped texture rather than a defect; 2 and up hold a constant level, and 2 is the setting the delay identity depends on. Shrinking <at>size</at> sharply at high overlap can leave every grain slot busy when the next grain is due; that grain is dropped rather than stealing a slot mid-window, since a steal would click.</description>
+		</attribute>
+		<attribute name="spray" get="1" set="1" type="float" size="1">
+			<description>Random scatter of each grain's origin, in milliseconds back from the position. At exactly 0 the dice are never rolled, so the seed cannot matter and the object is deterministic without it. Also the way to trade the transposition's comb for a broadband smear.</description>
+		</attribute>
+		<attribute name="seed" get="1" set="1" type="int" size="1">
+			<description>The spray seed. Deterministic: the same seed and the same moves give the same render, bit for bit, and different instances decorrelate by seed. Only consumed while <at>spray</at> is above 0.</description>
+		</attribute>
+		<attribute name="mix" get="1" set="1" type="float" size="1">
+			<description>Balance between the live input and the scrub, 0 to 100, equal-power. The ends are exact: 0 is the input bit for bit, 100 is the scrub alone.</description>
+		</attribute>
+		<attribute name="level" get="1" set="1" type="float" size="1">
+			<description>Output level, linear.</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>Anti-zipper ramp time for the attribute-driven position, pitch, drift, mix and level, in milliseconds (0 = instant). The signal inlets are not ramped — a control signal is assumed smooth already.</description>
+		</attribute>
+	</attributelist>
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.stammer~"/>
+		<seealso name="tap.pitchaccum~"/>
+		<seealso name="tap.tapecho~"/>
+		<seealso name="tap.reel~"/>
+	</seealsolist>
+</c74object>

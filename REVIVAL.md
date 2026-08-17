@@ -1681,6 +1681,92 @@ plan's original assumption that the voice was a `vco.h` descendant. It is not: t
 heterodyne, its oscillators measure as essentially pure, and the timbre comes from the triode
 stages and the diffuseur downstream.
 
+**22. The diffuseurs, and the scrub pad (2026-08-17).** ✅ `tap.metallique~`, `tap.palme~` and
+`tap.scrub~` — three objects in one pass, two of them the second and third pieces of the Ondes
+Martenot and the third the last of the Radiohead family's original five.
+
+**The diffuseurs.** The Ondes Martenot does not have a loudspeaker, it has a rack of them, and
+choosing between them is part of playing it. `tap.metallique~` is the gong (1944–45, patented
+1947), a plate driven by a motor transducer; `tap.palme~` is the electromagnet driving twelve
+metal strings on a lyre-shaped soundboard (1949–50). Both ship as standalone effects because
+that is where their value is: run a guitar through the palme.
+
+Three things the build settled, all of them worth carrying.
+
+**Driven, not struck** — the correction that shaped the file. `garden.h`'s modal machinery
+carries over intact (mode ratios, doublet splitting, per-mode decay) but its strike envelopes do
+not. There is no `decay_env` here and no trigger: the input excites the body continuously and
+the body rings at its own rates, which is `grm_comb.h`'s situation rather than the chime's.
+
+**The order is a claim, so it gets a null test.** The signal reaches the transducer first and
+the transducer's motion excites the body, so the nonlinearity is *upstream* of the resonator. A
+Catch2 scenario pins that the cabinet is exactly `transducer -> plate`, bitwise, while the
+reversed wiring differs by 28 % of peak — the order is a real choice, not a notional one.
+
+**Two numbers that are not what you would guess.** The mode filter is Steiglitz's
+constant-peak-gain two-pole resonator, whose peak magnitude is 1 at *any* Q and whose zeros at
+±1 null DC and Nyquist exactly — so with weights that sum to 1 the body is bounded by its input
+and needs neither a limiter nor a DC blocker. And the transducer's output is bounded by
+**2/saturation, not 1/saturation**: a hard-driven squared law is a nearly-constant positive
+waveform, and removing its DC doubles the worst-case swing (measured 1.49 where the naive
+argument predicts 1.25).
+
+Honest about what these are. The instruments, their dates, their excitation and their
+moving-iron transducer come from the peer-reviewed sources; the *mode data does not*, because no
+ondes-specific measurement of either body exists in any of them. The ratios are Fletcher &
+Rossing's free circular plate and the harmonic series, the string tuning is a design choice, and
+both nonlinear coefficients are voiced by ear — the source establishes *that* the driver is
+nonlinear without handing over a curve. All of that is stated in the kernel header, the
+reference pages and the help patchers rather than left to be discovered. The palme gets twelve
+strings per the peer-reviewed source, not the twenty-four the widely copied hobbyist build pages
+claim.
+
+**The scrub pad.** `tap.scrub~` records continuously and rakes a granular playhead through the
+recording, with **position and pitch as two independent signals** — the two axes of a pad. Its
+tape is `tap.stammer~`'s capture class *itself*, shared rather than copied, which is what that
+object's header promised when it shipped; the only addition the stutter needed was the
+fractional read its ±1-rate slices never used.
+
+The object rests on a null: Hann overlap-adds to exactly 1 at hop = size/2, so held still at
+pitch 0 with no spray, `tap.scrub~` is the input delayed and nothing else — 4.4e-16 in the
+kernel suite, and re-pinned at the wrapper so a plumbing mistake cannot hide it.
+
+**One real defect, found by measurement, and one measurement trap, worth both entries.** The
+first cut anchored every grain at the position. Grain origins then advance at the *write head's*
+speed while each grain plays at the pitch ratio, so the transposition applied only inside a
+grain, the average read rate came back to 1, and a steady tone emerged at its **original** pitch
+with a comb of grain-rate sidebands around it. The pitch knob did nothing but add texture, and
+no other test on the page could see it. The fix is a phase-continuous read head, wrapped back
+toward the position only after it has wandered ±1.5 grains — a bound chosen by sweep (band
+energy retained 0.933 / 0.958 / 0.965 / 0.990 / 0.993 at ±0.5 / ±1 / ±2 / ±3 / ±4 grains, flat
+past 3, and every extra grain of wander is a grain of position error).
+
+Then the trap: **a single-bin probe reads the fixed kernel as badly broken.** The wraps spread
+the transposed partial into a comb a few Hz wide, and a rectangular-window Goertzel on one line
+sees whichever comb tooth happens to sit there — 0.02 where the band figure was 0.43. Measured
+properly, 98.8 % of a clean shifter's energy lands within ±15 Hz of the transposed pitch (worst
+91.7 %); what the wraps cost is *concentration*, 92.0 % as focused as a clean shift and 75.0 %
+at worst, which is audibly a warble. Measure the band, not the bin.
+
+That measurement also turned up something about a shipped object, recorded rather than acted on:
+on the same sweep, **`tap.pitchaccum~` returns mean 0.908 and worst 0.004** — a near-total
+cancellation at 311 Hz up nineteen semitones, where its ratio is exactly 3 and its two taps land
+a half-window apart. Fixing that is its own job with its own tests and its own consumers, and it
+should not ride along on an unrelated kernel; it is logged as an open question in the kernel
+repo's `book/PLAN-radiohead-family.md`.
+
+Kernel side (`tap/taptools`): `diffuseur.h` and `scrub.h`, 31 Catch2 scenarios between them, the
+C ABI plus ctypes surfaces (`Metallique`, `Palme`, `Scrub`, and the bare `Plate` and
+`Transducer` components — the family's rule is that parts get reachability from the start), the
+executed `notebooks/diffuseur.ipynb` and `notebooks/scrub.ipynb`, and four more
+`radiohead_render` scenarios. Here: three wrappers, fourteen min-api scenarios, three reference
+pages, three help patchers, and the pin bumped to match.
+
+Still open for this family: the on-Mac validation pass and maxtest starters for every object in
+it, and book chapters for `tap.touche~`, the diffuseurs and `tap.scrub~` — the first two
+probably belong inside an Ondes-family chapter once the `triode` and heterodyne `source` stages
+exist, and the scrub's beside the stammer's, since they share a tape.
+
 Remaining (ongoing, now cross-repo — DSP lands in `tap/taptools`, then bump the submodule pin
 here): lift the remaining simple inline-DSP objects' math into kernel headers opportunistically as
 they're touched. Control/utility and Jitter objects never move — they are Max message-logic, not

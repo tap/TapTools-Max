@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml-stylesheet href="./_c74_ref.xsl" type="text/xsl"?>
+
+<c74object name="tap.palme~" module="msp" category="TapTools, MSP Effects">
+	<digest>The Ondes Martenot's string diffuseur, as a driven resonator</digest>
+	<description>
+		The <o>tap.palme~</o> object is the strangest loudspeaker in music: the Ondes Martenot's <em>palme</em> (1949–50), an electromagnet driving twelve metal strings stretched on a lyre-shaped soundboard. Anything sent through it comes back with a halo, because whichever strings share partials with the signal ring in sympathy and the rest stay quiet. That is the reason the object exists on its own rather than only inside an ondes — sympathetic resonance is useful on any pitched material, and the twelve chromatic strings mean the board answers whatever key you are in. Run a guitar through it. It is <em>driven, not struck</em>, and the driver is upstream: the signal reaches the electromagnet first and its motion excites the strings, so <at>drive</at>, <at>asymmetry</at> and <at>saturation</at> sit before the body. Twelve strings, per the peer-reviewed source (Wijnand and colleagues, Forum Acusticum 2023); widely copied hobbyist build pages say twenty-four, and this follows the peer-reviewed number. Their tuning is not published anywhere found, so <at>tuning</at> is a parameter rather than a reconstruction. For multichannel signals, wrap the object in an <o>mc.</o> operator.
+	</description>
+
+	<!--METADATA-->
+	<metadatalist>
+		<metadata name="author">74 Objects</metadata>
+		<metadata name="tag">TapTools</metadata>
+		<metadata name="tag">Audio</metadata>
+		<metadata name="tag">Effects</metadata>
+	</metadatalist>
+
+	<!--INLETS-->
+	<inletlist>
+		<inlet id="0" type="signal">
+			<digest>Audio input — drives the electromagnet, which drives the strings.</digest>
+		</inlet>
+	</inletlist>
+
+	<!--OUTLETS-->
+	<outletlist>
+		<outlet id="0" type="signal">
+			<digest>The strings, balanced against the input.</digest>
+		</outlet>
+	</outletlist>
+
+	<!--MESSAGES-->
+	<methodlist>
+		<method name="signal">
+			<description>Audio to drive the board with.</description>
+		</method>
+		<method name="clear">
+			<description>Damp every string and reset the driver. Parameters are kept.</description>
+		</method>
+	</methodlist>
+
+	<!--ATTRIBUTES-->
+	<attributelist>
+		<attribute name="root" get="1" set="1" type="float" size="1">
+			<description>Pitch of the lowest string in Hz. The other eleven are laid out from it by <at>tuning</at>.</description>
+		</attribute>
+		<attribute name="tuning" get="1" set="1" type="int" size="1">
+			<description>How the twelve strings are laid out: 0 chromatic across an octave from the root (a string for every pitch class, so the board answers whatever you play), 1 the harmonic series on the root (a drone that answers one key). Not a published detail of the instrument — a design choice, offered as a choice.</description>
+		</attribute>
+		<attribute name="decay" get="1" set="1" type="float" size="1">
+			<description>Ring time of a string in seconds (T60). Not independent of <at>damping</at>: the loop gain is derived from this and then compensated for what the damping filter takes out, but the compensation is capped just under unity to keep the loop stable, and past that point the damping decides how long the string actually rings.</description>
+		</attribute>
+		<attribute name="damping" get="1" set="1" type="float" size="1">
+			<description>In-loop damping corner in Hz: how quickly a string loses its upper partials. Low values are felt cloth on the strings.</description>
+		</attribute>
+		<attribute name="detune" get="1" set="1" type="float" size="1">
+			<description>Depth in cents of the fixed per-string scatter — no two strings on a real board are in perfect relation. Deterministic, drawn from an index-keyed hash rather than a generator, so the board is the same board in every instance. This is scatter between strings, not stiffness within one: the partials of each string stay exactly harmonic, which a real steel string's do not.</description>
+		</attribute>
+		<attribute name="drive" get="1" set="1" type="float" size="1">
+			<description>Linear gain into the electromagnet, before the strings.</description>
+		</attribute>
+		<attribute name="asymmetry" get="1" set="1" type="float" size="1">
+			<description>The moving-iron squared term, 0 to 1. In a moving-iron motor the force follows the square of the gap flux, so the residual squared term puts a second harmonic on the signal in proportion to level. 0 is a linear driver — legitimate, but then a documented stage of the instrument is missing. The coefficient is not fitted to a measurement.</description>
+		</attribute>
+		<attribute name="saturation" get="1" set="1" type="float" size="1">
+			<description>Soft-clip amount after the squared term; 0 is exactly linear. A modelling necessity rather than a measured stage — the squared law is expansive and something has to bound it.</description>
+		</attribute>
+		<attribute name="mix" get="1" set="1" type="float" size="1">
+			<description>Balance between the dry input and the diffuseur, 0 to 100, equal-power. The ends are exact: 0 is the input bit for bit, 100 is the strings alone.</description>
+		</attribute>
+		<attribute name="level" get="1" set="1" type="float" size="1">
+			<description>Output level, linear. Twelve resonant loops add up — a driven board can be much louder than what went into it.</description>
+		</attribute>
+		<attribute name="smooth" get="1" set="1" type="float" size="1">
+			<description>Anti-zipper ramp time for the driver, mix and level setters, in milliseconds (0 = instant). The strings' own parameters are not ramped.</description>
+		</attribute>
+	</attributelist>
+
+	<!--SEEALSO-->
+	<seealsolist>
+		<seealso name="tap.metallique~"/>
+		<seealso name="tap.touche~"/>
+		<seealso name="tap.5comb~"/>
+		<seealso name="tap.chime~"/>
+	</seealsolist>
+</c74object>
