@@ -14,11 +14,13 @@
 ///             control names follow that class's conventional layout rather than asserting what
 ///             any particular unit does.
 ///
-///             @oversample is 1, 2, 4 or 8 and defaults to **2** — which is not a typo and not
-///             laziness. Measured through this kernel, every factor beats no oversampling by
-///             orders of magnitude, but the sequence is not monotone and 2 comes out best; the
-///             kernel header carries the numbers and what is and is not known about why. Reach
-///             for a higher factor only if a specific patch measures better there.
+///             @oversample is 1, 2, 4 or 8 and defaults to **4**. The clipper pair runs inside a
+///             cascade of 2x resampling stages — one doubling and one 8th-order filter each —
+///             which is what makes more oversampling mean less aliasing here; an earlier
+///             single-stage chain measured *worse* at 4x and 8x than at 2x. 2 is kept but is only
+///             safe below about 6 kHz, above which one doubling stops moving the clipper's
+///             harmonics out of the way. 8 earns its keep on bright material. The kernel header
+///             carries the measured table.
 ///
 ///             All DSP lives in the Min-free kernel; this file is only the Max plumbing. For
 ///             multichannel use, wrap the object in an mc. operator.
@@ -115,15 +117,15 @@ class fuzz : public object<fuzz>, public sample_operator<1, 1> {
                             }},
                             description{"Output level in dB (-24..24)."}};
 
-    attribute<int> oversample{this, "oversample", 2, setter{MIN_FUNCTION{
+    attribute<int> oversample{this, "oversample", kernel::k_default_os, setter{MIN_FUNCTION{
                                   const int in = static_cast<int>(args[0]);
                                   const int v  = (in >= 8) ? 8 : (in >= 4) ? 4 : (in >= 2) ? 2 : 1;
                                   m_pedal.set_oversample(v);
                                   return {v};
                               }},
-                              description{"Oversampling factor for the clipper pair: 1, 2, 4 or 8. Default 2, which "
-                                          "measures best — every factor beats 1 by orders of magnitude, but the "
-                                          "sequence is not monotone here, so bigger is not automatically better. "
+                              description{"Oversampling factor for the clipper pair: 1, 2, 4 or 8. Default 4. The "
+                                          "clipper runs inside a cascade of 2x stages, so more is never worse; 2 is "
+                                          "only safe below about 6 kHz, and 8 is worth it on bright material. "
                                           "Changing this reconfigures the filters and is not real-time-safe."}};
 
     attribute<number> smooth{this, "smooth", kernel::k_default_smooth_ms, setter{MIN_FUNCTION{

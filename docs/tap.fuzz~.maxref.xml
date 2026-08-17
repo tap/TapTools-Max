@@ -63,7 +63,7 @@
 			<description>Output level in dB (-24..24).</description>
 		</attribute>
 		<attribute name="oversample" get="1" set="1" type="int" size="1">
-			<description>Oversampling factor for the clipper pair: 1, 2, 4 or 8. The default is 2, which measures best — every factor beats 1 by orders of magnitude, but the sequence is not monotone in this object, so a bigger factor is not automatically better. Changing it reconfigures the filters and is not real-time-safe.</description>
+			<description>Oversampling factor for the clipper pair: 1, 2, 4 or 8. The default is 4. The clipper runs inside a cascade of 2× resampling stages, one doubling and one 8th-order filter each, which is what makes more oversampling mean less aliasing here — an earlier single-stage chain measured worse at 4× and 8× than at 2×. 2 is kept but is only safe below about 6 kHz, above which one doubling stops moving the clipper's harmonics out of the way; 8 earns its keep on bright material. Changing it reconfigures the filters and is not real-time-safe.</description>
 		</attribute>
 		<attribute name="smooth" get="1" set="1" type="float" size="1">
 			<description>Anti-zipper ramp time for the setters, in milliseconds (0 = instant).</description>
