@@ -63,7 +63,13 @@ echo "== clang-tidy ($tidy) over ${#files[@]} file(s) =="
 fail=0
 for f in "${files[@]}"; do
     out="$("$tidy" -p "$build" "$f" 2>/dev/null || true)"
-    if printf '%s\n' "$out" | grep -qE "warning:|error:"; then
+    # Test the captured output in-process, never through a pipe. Under pipefail,
+    # `printf '%s\n' "$out" | grep -q …` fails whenever grep quits at its first
+    # match while printf still has more than a pipe buffer to write (SIGPIPE) —
+    # and the `if` then took the CLEAN branch over real warnings. TapHouse's
+    # scripts/test-tidy.sh feeds this script multi-megabyte output to prove the
+    # verdict holds.
+    if [[ "$out" =~ (warning:|error:) ]]; then
         printf '%s\n' "$out"
         fail=1
     fi
